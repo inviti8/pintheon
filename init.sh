@@ -1,3 +1,4 @@
+#!/bin/sh
 echo "Installing requirements"
 apt update -y
 apt upgrade -y
