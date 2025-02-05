@@ -11,6 +11,8 @@ echo "Cloning axiel"
 git clone https://github.com/inviti8/axiel.git
 echo "Creating Env"
 python3 -m venv axiel/axiel
+echo "refresh the shell"
+source ~/.profile
 echo "Activating Env"
 source axiel/axiel/bin/activate
 echo "Installing requirements:"
