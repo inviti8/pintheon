@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 echo "Creating gunicorn service"
 cat > /etc/systemd/system/gunicorn.service <<  EOF
 [Unit]
