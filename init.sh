@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 echo "Installing requirements"
 sudo apt update -y
 sudo apt upgrade -y
