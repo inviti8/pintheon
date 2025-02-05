@@ -1,4 +1,5 @@
 #!/bin/sh
+echo "Creating gunicorn service"
 cat > /etc/systemd/system/gunicorn.service <<  EOF
 [Unit]
 Description=Gunicorn Service
@@ -20,3 +21,21 @@ echo "Starting Gunicorn Service..."
 sudo systemctl daemon-reload
 sudo systemctl enable gunicorn.service
 sudo systemctl start gunicorn.service
+
+echo "Installing nginx:"
+sudo apt install nginx
+echo "Configuring Nginx"
+
+cat > /etc/nginx/sites-available/axiel.conf<<  EOF
+server{
+    listen 80;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/test/axiel/axiel.sock;
+    }
+}
+EOF
+echo "updating nginx conf:"
+sudo ln -s /etc/nginx/sites-available/axiel.conf /etc/nginx/sites-enabled/axiel.conf
+sudo systemctl restart nginx
