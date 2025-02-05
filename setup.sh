@@ -17,9 +17,6 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-echo "refresh the shell"
-source ~/.profile
-
 echo "Starting Gunicorn Service..."
 sudo systemctl daemon-reload
 sudo systemctl enable gunicorn.service
@@ -30,7 +27,7 @@ echo "Installing nginx:"
 sudo apt install nginx -y
 echo "Configuring Nginx"
 
-cat > /etc/nginx/sites-available/axiel.conf<<  EOF
+cat > /etc/nginx/sites-available/default<<  EOF
 server{
     listen 80;
 
@@ -40,8 +37,6 @@ server{
     }
 }
 EOF
-echo "refresh the shell"
-source ~/.profile
-echo "updating nginx conf:"
-sudo ln -s /etc/nginx/sites-available/axiel.conf /etc/nginx/sites-enabled/axiel.conf
+
+echo "Restarting Nginx"
 sudo systemctl restart nginx

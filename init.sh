@@ -21,4 +21,5 @@ echo "Deactivate the environment"
 deactivate
 echo "Owning the directory"
 sudo chown -R test /home/
+chmod +x axiel/setup.sh
 ./axiel/setup.sh
