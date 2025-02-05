@@ -8,8 +8,8 @@ After=network.target
 User=test
 Group=www-data
 WorkingDirectory=/home/test/axiel
-Environment="PATH=/home/test/env/axiel/bin"
-ExecStart=/home/test/axiel/bin/gunicorn --workers 3 --bind unix:axiel.sock -m 007 wsgi:app
+Environment="PATH=/home/test/axiel/bin"
+ExecStart=/home/test/axiel/axiel/bin/gunicorn --workers 3 --bind unix:axiel.sock -m 007 wsgi:app
 Restart=always
 
 [Install]
