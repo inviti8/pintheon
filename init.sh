@@ -14,7 +14,7 @@ python3 -m venv axiel/axiel
 echo "Activating Env"
 source axiel/axiel/bin/activate
 echo "Installing requirements:"
-pip install -r requirements.txt
+pip install -r /home/test/axiel/requirements.txt
 echo "Deactivate the environment"
 deactivate
 echo "Owning the directory"
