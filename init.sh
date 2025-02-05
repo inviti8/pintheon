@@ -20,4 +20,5 @@ pip install -r /home/test/axiel/requirements.txt
 echo "Deactivate the environment"
 deactivate
 echo "Owning the directory"
-sudo chown -R "$USER" /home/
+sudo chown -R test /home/
+./home/test/axiel/setup.sh

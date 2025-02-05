@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 echo "Creating gunicorn service"
 cat > /etc/systemd/system/gunicorn.service <<  EOF
 [Unit]
@@ -17,13 +17,17 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
+echo "refresh the shell"
+source ~/.profile
+
 echo "Starting Gunicorn Service..."
 sudo systemctl daemon-reload
 sudo systemctl enable gunicorn.service
 sudo systemctl start gunicorn.service
 
+
 echo "Installing nginx:"
-sudo apt install nginx
+sudo apt install nginx -y
 echo "Configuring Nginx"
 
 cat > /etc/nginx/sites-available/axiel.conf<<  EOF
@@ -36,6 +40,8 @@ server{
     }
 }
 EOF
+echo "refresh the shell"
+source ~/.profile
 echo "updating nginx conf:"
 sudo ln -s /etc/nginx/sites-available/axiel.conf /etc/nginx/sites-enabled/axiel.conf
 sudo systemctl restart nginx
