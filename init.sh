@@ -19,7 +19,6 @@ echo "Installing requirements:"
 pip install -r /home/test/axiel/requirements.txt
 echo "Deactivate the environment"
 deactivate
-echo "Owning the directory"
-sudo chown -R test /home/
 chmod +x axiel/setup.sh
+usermod -a -G test www-data
 ./axiel/setup.sh

@@ -40,3 +40,8 @@ EOF
 
 echo "Restarting Nginx"
 sudo systemctl restart nginx
+
+echo "Owning the directory"
+sudo chown -R test /home/
+echo "Owning the directory"
+sudo chown -R test /home/axiel/
