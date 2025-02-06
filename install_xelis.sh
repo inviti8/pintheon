@@ -8,5 +8,7 @@ sudo chown -R test /home/test/xelis-blockchain/
 cd xelis-blockchain
 echo "Building Xelis:"
 cargo build --release
+sudo mv /home/test/xelis-blockchain/target/release/xelis_wallet /usr/local/bin
+sudo mv /home/test/xelis-blockchain/target/release/xelis_daemon /usr/local/bin
 export PATH="/home/test/xelis-blockchain/xelis_wallet:$PATH"
 echo "Xelis is installed."
