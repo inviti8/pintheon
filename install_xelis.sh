@@ -12,6 +12,6 @@ mkdir -p /home/.local/share/xelis-blockchain
 
 mv /home/test/xelis-blockchain/target/release/* /home/.local/share/xelis-blockchain/
 echo "export xelis to path:"
-export PATH="/home/.local/share/xelis-blockchain/:$PATH"
+echo "export PATH=\"/home/.local/share/xelis-blockchain/:\$PATH\"" >> ~/.bashrc
 echo "Xelis is installed."
 source ~/.profile
