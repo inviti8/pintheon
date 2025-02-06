@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Installing Rust:"
-echo 1 | curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+curl --proto '=https' -sSf https://sh.rustup.rs | sh -s -- -y
 sudo apt install cargo -y
 git clone https://github.com/xelis-project/xelis-blockchain
 source ~/.profile
