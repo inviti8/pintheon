@@ -28,8 +28,9 @@ source ~/.profile
 echo "Installing xelis"
 git clone https://github.com/xelis-project/xelis-blockchain
 echo "Building the blockchain"
-cargo build /home/test/xelis-blockchain/ --release
+cd /xelis-blockchain
+cargo --release
+cd ../
 echo "Installing axiel"
-cd /home/test/axiel && python3 setup.py install
 chmod +x axiel/setup.sh
 ./axiel/setup.sh
