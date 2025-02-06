@@ -20,6 +20,5 @@ pip install -r /home/test/axiel/requirements.txt
 echo "Deactivate the environment"
 deactivate
 chmod +x axiel/setup.sh
-chmod +x axiel/install_xelis.sh
 usermod -a -G test www-data
 ./axiel/setup.sh
