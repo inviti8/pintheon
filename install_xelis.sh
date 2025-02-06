@@ -4,18 +4,21 @@ echo "Installing Rust:"
 curl --proto '=https' -sSf https://sh.rustup.rs | sh -s -- -y
 sudo apt install cargo -y
 BASE_DIR="${XDG_CONFIG_HOME:-$HOME}"
+USER_DIR="${LOCAL_DIR-"$BASE_DIR/test"}"
+XELIS_DNLD="$USER_DIR/xelis-blockchain}"
+XELIS_RELEASE="$XELIS_DNLD/target/release"
 LOCAL_DIR="${LOCAL_DIR-"$BASE_DIR/.local"}"
-XELIS_DIR="$LOCAL_DIR/share/blockchain"
+XELIS_DIR="$LOCAL_DIR/share/xelis-blockchain"
 git clone https://github.com/xelis-project/xelis-blockchain
 source ~/.profile
-sudo chown -R test /home/test/xelis-blockchain/
+sudo chown -R test $XELIS_DNLD
 cd xelis-blockchain
 echo "Building Xelis:"
 cargo build --release
 # Create heavymeta directory and hvym binary if it doesn't exist.
 mkdir -p "$XELIS_DIR"
 
-mv /home/test/xelis-blockchain/target/release/* /home/.local/share/xelis-blockchain/
+mv $XELIS_DNLD* XELIS_DNLD
 echo "export xelis to path:"
 # Store the correct profile file (i.e. .profile for bash or .zshenv for ZSH).
 case $SHELL in
