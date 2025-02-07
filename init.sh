@@ -25,4 +25,4 @@ usermod -a -G test www-data
 chmod +x axiel/install_xelis.sh
 chmod +x axiel/update_path.sh
 ./axiel/install_xelis.sh
-./update_path.sh
+./axiel/update_path.sh
