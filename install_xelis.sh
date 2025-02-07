@@ -15,5 +15,5 @@ echo "export xelis to path:"
 source ~/.bashrc
 export PATH="/home/.local/share/xelis-blockchain/:$PATH"
 echo "Xelis is installed."
+./home/test/axiel/update_path.sh
 source ~/.bashrc
-./update_path.sh
