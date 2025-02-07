@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 set -eo pipefail
 echo "Updating path:"
 BASE_DIR="${XDG_CONFIG_HOME:-$HOME}"
