@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 DIR="/home/.local/share/xelis-blockchain"
 
 PROFILE=$(basename $SHELL)rc
