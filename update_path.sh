@@ -1,6 +1,3 @@
 #!/bin/sh
-DIR="/home/.local/share/xelis-blockchain"
-
-PROFILE=$(basename $SHELL)rc
-
-echo "export PATH=\"\$PATH:$DIR\"" >> ~/.$PROFILE
+export PATH=/home/.local/share/xelis-blockchain:$PATH
+exec /bin/bash
