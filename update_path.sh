@@ -1,3 +1,2 @@
-#!/bin/sh
-export PATH=/home/.local/share/xelis-blockchain:$PATH
-exec /bin/bash
+#!/bin/bash
+echo 'export PATH="$PATH":/home/test/.local/share/xelis-blockchain' | tee -a ~/.bashrc
