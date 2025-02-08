@@ -25,5 +25,5 @@ usermod -a -G test www-data
 chmod +x axiel/install_xelis.sh
 chmod +x axiel/update_path.sh
 ./axiel/install_xelis.sh
-eval `/axiel/update_path.sh`
-source ~/.bashrc
+echo "Updating path:"
+./axiel/update_path.sh
