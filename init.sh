@@ -27,3 +27,4 @@ chmod +x axiel/update_path.sh
 ./axiel/install_xelis.sh
 echo "Updating path:"
 ./axiel/update_path.sh
+source ~/.profile
