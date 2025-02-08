@@ -23,7 +23,7 @@ source ~/.bashrc
 echo "Creating Xelis Daemon service"
 cat > /etc/systemd/system/xelis_daemon.service <<  EOF
 [Unit]
-Description=Xelis Service
+Description=Xelis Daemon Service
 After=network.target
 
 [Service]
@@ -31,7 +31,7 @@ User=test
 Group=www-data
 WorkingDirectory=/home/.local/share/xelis-blockchain
 Environment="PATH=/home/.local/share/xelis-blockchain"
-ExecStart=/home/.local/share/xelis-blockchain/xelis_daemon
+ExecStart=/home/.local/share/xelis-blockchain/xelis_daemon --allow-fast-sync --auto-prune-keep-n-blocks 1000 --p2p-bind-address 0.0.0.0:2121
 Restart=always
 
 [Install]
