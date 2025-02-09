@@ -16,7 +16,8 @@ echo "Building Xelis:"
 cargo build --release
 mkdir -p /home/.local/share/xelis-blockchain
 
-mv /home/test/xelis-blockchain/target/release/* /home/.local/share/xelis-blockchain/
+mv /home/test/xelis-blockchain/target/release/* $DIR
+sudo chown -R test /home/.local/share/xelis-blockchain/
 echo "export xelis to path:"
 source ~/.bashrc
 
@@ -29,9 +30,9 @@ After=network.target
 [Service]
 User=test
 Group=www-data
-WorkingDirectory=/home/.local/share/xelis-blockchain
-Environment="PATH=/home/.local/share/xelis-blockchain"
-ExecStart=/home/.local/share/xelis-blockchain/xelis_daemon --allow-fast-sync --auto-prune-keep-n-blocks 1000 --disable-ip-sharing --p2p-bind-address 0.0.0.0:2121
+WorkingDirectory=$DIR
+Environment="PATH=$DIR"
+ExecStart=$DIR/xelis_daemon --allow-fast-sync --auto-prune-keep-n-blocks 1000 --disable-ip-sharing --p2p-bind-address 0.0.0.0:2121
 Restart=always
 
 [Install]
