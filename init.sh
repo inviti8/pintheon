@@ -23,5 +23,7 @@ chmod +x axiel/setup.sh
 usermod -a -G test www-data
 ./axiel/setup.sh
 chmod +x axiel/install_xelis.sh
+chmod +x axiel/install_kubo.sh
 chmod +x axiel/update_path.sh
 ./axiel/install_xelis.sh
+./axiel/install_kubo.sh
