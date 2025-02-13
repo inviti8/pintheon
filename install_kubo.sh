@@ -51,10 +51,9 @@ ipfs repo gc
 #SETUP IPFS AS SERVICE
 cat >>/etc/systemd/system/ipfs.service <<EOL
 Description=IPFS Daemon
-After=syslog.target network.target remote-fs.target nss-lookup.target
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/ipfs daemon --enable-namesys-pubsub
+ExecStart=ipfs daemon --enable-namesys-pubsub
 User=test
 [Install]
 WantedBy=multi-user.target
