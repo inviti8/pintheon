@@ -11,7 +11,9 @@ export SWARM_KEY=$(tr -dc a-f0-9 </dev/urandom | head -c 64; echo '')
 echo "Created secret: $SWARM_KEY"
 
 export LIBP2P_FORCE_PNET=1
-export IPFS_PATH="$HOME/.ipfs"
+echo 'export IPFS_PATH=/data/ipfs' >>~/.bash_profile
+source ~/.bash_profile
+
 ver="v0.31.0" 
 echo 'wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz'
 wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz
@@ -25,26 +27,26 @@ echo './kubo/install.sh'
 #sudo bash $HOME/kubo/install.sh
 ipfs --version
 
-mkdir -p $HOME/.ipfs
+mkdir -p $IPFS_PATH
 
 #CREATE THE SWARM KEY
 echo "/key/swarm/psk/1.0.0/
 /base16/
-$SWARM_KEY" > $HOME/.ipfs/swarm.key
+$SWARM_KEY" > $IPFS_PATH/swarm.key
 
-chmod 600 home/.ipfs/test/swarm.key
+chmod 600 $$IPFS_PATH/swarm.key
 echo "swarm key created!!"
 
-sudo chown -R test $HOME/.ipfs/
+sudo chown -R test $IPFS_PATH
 
 echo 'ipfs init --profile=server'
-sudo ipfs init --profile=server
+ipfs init --profile=server
 
 echo 'ipfs bootstrap rm --all'
-sudo ipfs bootstrap rm --all
+ipfs bootstrap rm --all
 
 echo 'ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm'
-sudo ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
+ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
 
 echo 'ipfs repo gc'
 ipfs repo gc
