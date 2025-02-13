@@ -34,6 +34,8 @@ $SWARM_KEY" > /$HOME/.ipfs/swarm.key
 chmod 600 $HOME/.ipfs/swarm.key
 echo "swarm key created!!"
 
+sudo chown -R test $HOME/.ipfs/
+
 echo 'ipfs init --profile server'
 ipfs init --profile server
 
