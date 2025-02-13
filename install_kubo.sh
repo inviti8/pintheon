@@ -37,13 +37,13 @@ echo "swarm key created!!"
 sudo chown -R test $HOME/.ipfs/
 
 echo 'ipfs init --profile=server'
-ipfs init --profile=server
+sudo ipfs init --profile=server
 
 echo 'ipfs bootstrap rm --all'
-ipfs bootstrap rm --all
+sudo ipfs bootstrap rm --all
 
 echo 'ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm'
-ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
+sudo ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
 
 echo 'ipfs repo gc'
 ipfs repo gc
