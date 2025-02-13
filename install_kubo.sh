@@ -31,12 +31,12 @@ mkdir -p /home/.ipfs
 #CREATE THE SWARM KEY
 echo "/key/swarm/psk/1.0.0/
 /base16/
-$SWARM_KEY" > /home/.ipfs/swarm.key
+$SWARM_KEY" > /home/test/.ipfs/swarm.key
 
 chmod 600 home/.ipfs/swarm.key
 echo "swarm key created!!"
 
-sudo chown -R test /home/.ipfs/
+sudo chown -R test /home/test/.ipfs/
 
 echo 'ipfs init --profile=server'
 ipfs init --profile=server
@@ -54,7 +54,7 @@ ipfs repo gc
 echo "Creating Xelis Daemon service"
 cat > /etc/systemd/system/ipfs.service <<  EOF
 [Unit]
-Description=Xelis Daemon Service
+Description=Kubo Service
 After=network.target
 
 [Service]
