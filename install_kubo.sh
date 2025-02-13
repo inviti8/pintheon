@@ -11,6 +11,7 @@ export SWARM_KEY=$(tr -dc a-f0-9 </dev/urandom | head -c 64; echo '')
 echo "Created secret: $SWARM_KEY"
 
 export LIBP2P_FORCE_PNET=1
+export IPFS_PATH="$HOME/.ipfs"
 ver="v0.31.0" 
 echo 'wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz'
 wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz
