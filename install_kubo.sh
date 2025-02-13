@@ -20,8 +20,8 @@ wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz
 echo 'tar -xvzf kubo_v0.31.0_linux-amd64.tar.gz'
 tar -xvzf kubo_v0.31.0_linux-amd64.tar.gz
 
-echo 'sudo bash kubo/install.sh'
-sudo bash $script_dir/kubo/install.sh
+echo './kubo/install.sh'
+./kubo/install.sh
 
 #sudo bash $HOME/kubo/install.sh
 ipfs --version
@@ -29,12 +29,12 @@ ipfs --version
 #CREATE THE SWARM KEY
 echo "/key/swarm/psk/1.0.0/
 /base16/
-$SWARM_KEY" > /$HOME/.ipfs/swarm.key
+$SWARM_KEY" > /home/.ipfs/swarm.key
 
-chmod 600 $HOME/.ipfs/swarm.key
+chmod 600 home/.ipfs/swarm.key
 echo "swarm key created!!"
 
-sudo chown -R test $HOME/.ipfs/
+sudo chown -R test home/.ipfs/
 
 echo 'ipfs init --profile server'
 ipfs init --profile server
