@@ -48,8 +48,6 @@ ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
 echo 'ipfs repo gc'
 ipfs repo gc
 
-ipfs init
-
 #SETUP IPFS AS SERVICE
 cat >>/etc/systemd/system/ipfs.service <<EOL
 Description=IPFS Daemon
