@@ -26,6 +26,8 @@ echo './kubo/install.sh'
 #sudo bash $HOME/kubo/install.sh
 ipfs --version
 
+mkdir -p /home/.ipfs
+
 #CREATE THE SWARM KEY
 echo "/key/swarm/psk/1.0.0/
 /base16/
@@ -36,7 +38,7 @@ echo "swarm key created!!"
 
 sudo chown -R test home/.ipfs/
 
-echo 'ipfs init --profile server'
+echo 'ipfs init --profile=server'
 ipfs init --profile server
 
 echo 'ipfs bootstrap rm --all'
@@ -49,15 +51,21 @@ echo 'ipfs repo gc'
 ipfs repo gc
 
 #SETUP IPFS AS SERVICE
-cat >>/etc/systemd/system/ipfs.service <<EOL
-Description=IPFS Daemon
+echo "Creating Xelis Daemon service"
+cat > /etc/systemd/system/ipfs.service <<  EOF
+[Unit]
+Description=Xelis Daemon Service
+After=network.target
+
 [Service]
-Type=simple
-ExecStart=/usr/local/bin/ipfs daemon
 User=test
+ExecStart=/usr/local/bin/ipfs daemon
+Restart=always
+
 [Install]
 WantedBy=multi-user.target
-EOL
+EOF
+
 echo "ipfs sevice created."
 
 sudo systemctl daemon-reload
