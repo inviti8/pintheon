@@ -51,7 +51,7 @@ echo 'ipfs repo gc'
 ipfs repo gc
 
 #SETUP IPFS AS SERVICE
-echo "Creating Xelis Daemon service"
+echo "Creating Kubo service"
 cat > /etc/systemd/system/ipfs.service <<  EOF
 [Unit]
 Description=Kubo Service
