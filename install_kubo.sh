@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 echo "ipfs install"
 # . "$HOME/.bash_profile"
 echo 'sudo apt update'
