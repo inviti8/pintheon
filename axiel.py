@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request
+from flask import render_template, request, session, redirect, jsonify
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 
@@ -11,7 +11,9 @@ log_book = db.table('log_book')
 
 @app.route('/')
 def home():
- return jsonify(message='||AXIEL||')
+ return render_template('index.html')
+ #return jsonify(message='||AXIEL||')
+
 
 @app.route('/data', methods=['POST'])
 def create_data():
