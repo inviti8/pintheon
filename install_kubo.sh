@@ -45,6 +45,8 @@ sudo chown -R test /home/test/.ipfs
 echo 'ipfs init --profile=server'
 ipfs init --profile=server
 
+sudo chown -R test /home/test/.ipfs
+
 echo 'ipfs bootstrap rm --all'
 ipfs bootstrap rm --all
 
