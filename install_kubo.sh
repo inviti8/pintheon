@@ -26,7 +26,7 @@ echo './kubo/install.sh'
 #sudo bash $HOME/kubo/install.sh
 ipfs --version
 
-mkdir -p /home/.ipfs
+mkdir -p /home/test/.ipfs
 
 #CREATE THE SWARM KEY
 echo "/key/swarm/psk/1.0.0/
@@ -59,6 +59,7 @@ After=network.target
 
 [Service]
 User=test
+WorkingDirectory=/home/test/.ipfs
 ExecStart=/usr/local/bin/ipfs daemon
 Restart=always
 
