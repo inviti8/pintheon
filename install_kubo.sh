@@ -11,7 +11,7 @@ export SWARM_KEY=$(tr -dc a-f0-9 </dev/urandom | head -c 64; echo '')
 echo "Created secret: $SWARM_KEY"
 
 export LIBP2P_FORCE_PNET=1
-echo 'export IPFS_PATH=/data/ipfs' >>~/.bash_profile
+echo 'export IPFS_PATH=/$HOME/.ipfs' >>~/.bash_profile
 source ~/.bash_profile
 
 ver="v0.31.0" 
