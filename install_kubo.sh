@@ -7,8 +7,6 @@ sudo apt update -y
 echo 'sudo apt upgrade'
 sudo apt upgrade -y
 
-script_dir=$(dirname "$0")
-
 export SWARM_KEY=$(tr -dc a-f0-9 </dev/urandom | head -c 64; echo '')
 echo "Created secret: $SWARM_KEY"
 
@@ -26,17 +24,17 @@ echo './kubo/install.sh'
 #sudo bash $HOME/kubo/install.sh
 ipfs --version
 
-mkdir -p /home/test/.ipfs
+mkdir -p $HOME/.ipfs
 
 #CREATE THE SWARM KEY
 echo "/key/swarm/psk/1.0.0/
 /base16/
-$SWARM_KEY" > /home/test/.ipfs/swarm.key
+$SWARM_KEY" > $HOME/.ipfs/swarm.key
 
-chmod 600 home/.ipfs/swarm.key
+chmod 600 home/.ipfs/test/swarm.key
 echo "swarm key created!!"
 
-sudo chown -R test /home/test/.ipfs/
+sudo chown -R test $HOME/.ipfs/
 
 echo 'ipfs init --profile=server'
 ipfs init --profile=server
