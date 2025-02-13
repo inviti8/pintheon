@@ -30,17 +30,17 @@ echo './kubo/install.sh'
 #sudo bash $HOME/kubo/install.sh
 ipfs --version
 
-mkdir -p $IPFS_PATH
+mkdir -p /home/test/.ipfs
 
 #CREATE THE SWARM KEY
 echo "/key/swarm/psk/1.0.0/
 /base16/
-$SWARM_KEY" > $IPFS_PATH/swarm.key
+$SWARM_KEY" > /home/test/.ipfs/swarm.key
 
-chmod 600 $$IPFS_PATH/swarm.key
+chmod 600 /home/test/.ipfs/swarm.key
 echo "swarm key created!!"
 
-sudo chown -R test $IPFS_PATH
+sudo chown -R test /home/test/.ipfs
 
 echo 'ipfs init --profile=server'
 ipfs init --profile=server
