@@ -14,7 +14,7 @@ source ~/.profile
 echo "Cloning axiel"
 git clone https://github.com/inviti8/axiel.git
 git clone https://github.com/xelis-project/xelis-paper-wallet.git
-cp -r xelis-paper-wallet/ /home/test/axiel/
+cp -r xelis-paper-wallet/xelis-paper-wallet/ /home/test/axiel/
 echo "Creating Env"
 python3 -m venv axiel/axiel
 echo "refresh the shell"
