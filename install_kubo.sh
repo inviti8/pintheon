@@ -64,7 +64,7 @@ After=syslog.target network.target remote-fs.target nss-lookup.target
 [Service]
 User=test
 WorkingDirectory=$IPFS_PATH
-ExecStart=/usr/local/bin/ipfs daemon --enable-namesys-pubsub
+ExecStart=/usr/local/bin/ipfs daemon
 Restart=always
 
 [Install]
