@@ -54,6 +54,9 @@ ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
 echo 'ipfs repo gc'
 ipfs repo gc
 
+echo 'ipfs config Addresses.Gateway /ip4/127.0.0.1/tcp/8082'
+ipfs config Addresses.Gateway /ip4/127.0.0.1/tcp/8082
+
 #SETUP IPFS AS SERVICE
 echo "Creating Kubo service"
 cat > /etc/systemd/system/ipfs.service <<  EOF
