@@ -8,7 +8,6 @@ sudo apt install python3-pip -y
 sudo apt install python3.12-venv -y
 
 sudo apt-get install gcc
-sudo apt install rustup
 source ~/.profile
 
 echo "Cloning axiel"
