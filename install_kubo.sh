@@ -59,12 +59,12 @@ echo "Creating Kubo service"
 cat > /etc/systemd/system/ipfs.service <<  EOF
 [Unit]
 Description=Kubo Service
-After=network.target
+After=syslog.target network.target remote-fs.target nss-lookup.target
 
 [Service]
 User=test
 WorkingDirectory=$IPFS_PATH
-ExecStart=/usr/local/bin/ipfs daemon
+ExecStart=/usr/local/bin/ipfs daemon --enable-namesys-pubsub
 Restart=always
 
 [Install]
@@ -74,6 +74,7 @@ EOF
 echo "ipfs sevice created."
 
 sudo chown -R test $IPFS_PATH
+source ~/.profile
 
 sudo systemctl daemon-reload
 echo "systemctl daemon reloaded."
