@@ -1,5 +1,5 @@
 import os
-from flask import render_template, request, session, redirect, jsonify
+from flask import Flask, render_template, request, session, redirect, jsonify
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 
