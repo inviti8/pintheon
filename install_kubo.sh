@@ -30,22 +30,20 @@ echo './kubo/install.sh'
 #sudo bash $HOME/kubo/install.sh
 ipfs --version
 
-mkdir -p /home/test/.ipfs
+mkdir -p $IPFS_PATH
 
 #CREATE THE SWARM KEY
 echo "/key/swarm/psk/1.0.0/
 /base16/
-$SWARM_KEY" > /home/test/.ipfs/swarm.key
+$SWARM_KEY" > $IPFS_PATH/swarm.key
 
-chmod 600 /home/test/.ipfs/swarm.key
+chmod 600 $IPFS_PATH/swarm.key
 echo "swarm key created!!"
 
-sudo chown -R test /home/test/.ipfs
+sudo chown -R test $IPFS_PATH
 
 echo 'ipfs init --profile=server'
 ipfs init --profile=server
-
-sudo chown -R test /home/test/.ipfs
 
 echo 'ipfs bootstrap rm --all'
 ipfs bootstrap rm --all
@@ -65,7 +63,7 @@ After=network.target
 
 [Service]
 User=test
-WorkingDirectory=/home/test/.ipfs
+WorkingDirectory=$IPFS_PATH
 ExecStart=/usr/local/bin/ipfs daemon
 Restart=always
 
@@ -74,6 +72,8 @@ WantedBy=multi-user.target
 EOF
 
 echo "ipfs sevice created."
+
+sudo chown -R test $IPFS_PATH
 
 sudo systemctl daemon-reload
 echo "systemctl daemon reloaded."
