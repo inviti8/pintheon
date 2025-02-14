@@ -19,8 +19,10 @@ echo "Installing requirements:"
 pip install -r /home/test/axiel/requirements.txt
 echo "Deactivate the environment"
 deactivate
+chmod +x axiel/xelis_wallet_gen.sh
 chmod +x axiel/setup.sh
 usermod -a -G test www-data
+./axiel/xelis_wallet_gen.sh
 ./axiel/setup.sh
 chmod +x axiel/install_xelis.sh
 chmod +x axiel/install_kubo.sh

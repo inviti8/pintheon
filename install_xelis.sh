@@ -4,8 +4,8 @@ DIR="/home/.local/share/xelis-blockchain"
 PROFILE=$(basename $SHELL)rc
 
 echo "Installing Rust:"
-curl --proto '=https' -sSf https://sh.rustup.rs | sh -s -- -y
-sudo apt install cargo -y
+# curl --proto '=https' -sSf https://sh.rustup.rs | sh -s -- --default-toolchain -y
+# sudo apt install cargo -y
 git clone https://github.com/xelis-project/xelis-blockchain
 source ~/.profile
 sudo chown -R test /home/test/xelis-blockchain/
@@ -15,8 +15,7 @@ cargo build --release
 mkdir -p /home/.local/share/xelis-blockchain
 
 mv /home/test/xelis-blockchain/target/release/* $DIR
-sudo chown -R test /home/.local/share/xelis-blockchain/
-echo "export xelis to path:"
+sudo chown -R test $DIR
 source ~/.bashrc
 
 echo "Creating Xelis Daemon service"
