@@ -8,9 +8,13 @@ sudo apt install python3-pip -y
 sudo apt install python3.12-venv -y
 
 sudo apt-get install gcc
+#sudo apt install rustup
 
 echo "Cloning axiel"
 git clone https://github.com/inviti8/axiel.git
+git clone https://github.com/xelis-project/xelis-paper-wallet.git
+cd xelis-paper-wallet
+cp -r xelis-paper-wallet/ /home/test/axiel/
 echo "Creating Env"
 python3 -m venv axiel/axiel
 echo "refresh the shell"

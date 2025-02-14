@@ -20,6 +20,7 @@ fi
 cargo install wasm-pack
 
 # Create WASM lib for javascript browser
+cd xelis-paper-wallet
 wasm-pack build --no-typescript --target no-modules --release
 
 # Copy files in static folder
