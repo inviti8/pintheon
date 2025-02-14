@@ -7,6 +7,8 @@ sudo apt install python3-dev -y
 sudo apt install python3-pip -y
 sudo apt install python3.12-venv -y
 
+sudo apt-get install gcc
+
 echo "Cloning axiel"
 git clone https://github.com/inviti8/axiel.git
 echo "Creating Env"

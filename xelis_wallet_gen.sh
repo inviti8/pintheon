@@ -10,7 +10,8 @@ else
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable -y
 
   # Source the Cargo env
-  source "$HOME/.cargo/env"
+  #source "$HOME/.cargo/env"
+  sudo apt install cargo -y
 
   echo "Cargo installed successfully."
 fi
