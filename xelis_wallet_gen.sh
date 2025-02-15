@@ -22,8 +22,10 @@ cargo install wasm-pack
 source ~/.bashrc
 source ~/.profile
 
+wasm-pack --version
+
 # Create WASM lib for javascript browser
-cd xelis-paper-wallet
+cd /home/test/axiel/xelis-paper-wallet
 wasm-pack build --no-typescript --target no-modules --release
 
 # Copy files in static folder
