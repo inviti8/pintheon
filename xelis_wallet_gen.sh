@@ -29,5 +29,5 @@ cd /home/test/axiel/xelis-paper-wallet
 wasm-pack build --no-typescript --target no-modules --release
 
 # Copy files in static folder
-cp pkg/xelis_paper_wallet_bg.wasm ../axiel/static/
-cp pkg/xelis_paper_wallet.js ../axiel/static/
+cp pkg/xelis_paper_wallet_bg.wasm ../static/
+cp pkg/xelis_paper_wallet.js ../static/
