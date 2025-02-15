@@ -19,7 +19,8 @@ fi
 sudo apt install rustup
 
 # Make sure wasm-pack is installed
-cargo install wasm-pack
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+#cargo install wasm-pack
 
 source ~/.bashrc
 
