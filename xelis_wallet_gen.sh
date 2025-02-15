@@ -18,11 +18,14 @@ fi
 
 sudo apt install rustup -y
 
+source ~/.bashrc
+source ~/.profile
+
 # Make sure wasm-pack is installed
-sudo curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-#cargo install wasm-pack
+cargo install wasm-pack
 
 source ~/.bashrc
+source ~/.profile
 
 # Create WASM lib for javascript browser
 cd xelis-paper-wallet
