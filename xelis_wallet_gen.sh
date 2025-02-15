@@ -1,26 +1,25 @@
 #!/bin/bash
 
 # Make sure Cargo is installed and needed as a dependency to create the WASM lib
-# if command -v cargo &> /dev/null; then
-#   echo "Cargo is installed."
-# else 
-#   echo "Installing Cargo..."
+if command -v cargo &> /dev/null; then
+  echo "Cargo is installed."
+else 
+  echo "Installing Cargo..."
 
-#   # Download & run rustup installer
-#   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  # Download & run rustup installer
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-#   # Source the Cargo env
-#   #source "$HOME/.cargo/env"
-#   sudo apt install cargo -y
+  # Source the Cargo env
+  source "$HOME/.cargo/env"
 
-#   echo "Cargo installed successfully."
-# fi
-
-sudo apt install rustup -y
-rustup default stable
-
+  echo "Cargo installed successfully."
+fi
+source ~/.bashrc
+source ~/.profile
 # Make sure wasm-pack is installed
 cargo install wasm-pack
+
+
 
 # Create WASM lib for javascript browser
 cd xelis-paper-wallet
