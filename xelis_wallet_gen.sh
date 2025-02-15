@@ -16,10 +16,10 @@ else
   echo "Cargo installed successfully."
 fi
 
-sudo apt install rustup
+sudo apt install rustup -y
 
 # Make sure wasm-pack is installed
-curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+sudo curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 #cargo install wasm-pack
 
 source ~/.bashrc
