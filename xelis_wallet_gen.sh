@@ -19,7 +19,8 @@ source ~/.profile
 # Make sure wasm-pack is installed
 cargo install wasm-pack
 
-
+source ~/.bashrc
+source ~/.profile
 
 # Create WASM lib for javascript browser
 cd xelis-paper-wallet
