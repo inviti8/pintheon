@@ -2,9 +2,9 @@
 
 __version__ = "0.01"
 import os
+import json
 import requests
 import subprocess
-from pexpect import *
 from transitions import Machine, State
 from cryptography.fernet import Fernet 
 
@@ -12,11 +12,13 @@ class AxielMachine(object):
 
     states = [State(name='spawned', on_enter=['on_spawn']), 'initializing', 'establishing', 'idle', 'handling_file', 'redeeming']
 
-    def __init__(self, xelis_endpoint, ipfs_endpoint):
+    def __init__(self, wallet_path, xelis_daemon, ipfs_daemon, xelis_network="Mainnet"):
 
         self.id = Fernet.generate_key()
-        self.xelis_endpoint = xelis_endpoint
-        self.ipfs_endpoint = ipfs_endpoint
+        self.wallet_path = wallet_path
+        self.xelis_daemon = xelis_daemon
+        self.ipfs_daemon = ipfs_daemon
+        self.xelis_network = xelis_network
 
         # Initialize the state machine
         self.machine = Machine(model=self, states=AxielMachine.states, initial='spawned')
@@ -60,12 +62,46 @@ class AxielMachine(object):
         def on_file_handled(self):
             print('file handled')
 
+        def _wallet_config(self, outPath):
+            wallet_config = {
+                "rpc": {
+                    "rpc_bind_address": None,
+                    "rpc_username": None,
+                    "rpc_password": None,
+                    "rpc_threads": None
+                },
+                "network_handler": {
+                    "daemon_address": f"{self.xelis_daemon}",
+                    "offline_mode": False
+                },
+                "precomputed_tables": {
+                    "precomputed_tables_l1": 26,
+                    "precomputed_tables_path": None
+                },
+                "log": {
+                    "log_level": "info",
+                    "file_log_level": None,
+                    "disable_file_logging": False,
+                    "disable_file_log_date_based": False,
+                    "disable_log_color": False,
+                    "disable_interactive_mode": False,
+                    "filename_log": "xelis-wallet.log",
+                    "logs_path": "logs/",
+                    "logs_modules": []
+                },
+                "wallet_path": f"{self.wallet_path}",
+                "password": None,
+                "seed": "null",
+                "network": f"{self.xelis_network}",
+                "enable_xswd": False,
+                "disable_history_scan": False,
+                "force_stable_balance": False
+            }
+            with open(os.path.join(outPath, 'wallet_config.json'), 'w') as f:
+                json.dump(wallet_config, f)
+
         def _open_wallet(self):
             print('open wallet')
-            #child = spawn('xelis_wallet')
-            #child.expect('(?i)passphrase')
-            # child.sendline(pw)
-            # output = child.read().decode("utf-8")
 
         def _add_file_to_ipfs(file_name, file_data):
             url = f'{self.ipfs_endpoint}/api/v0/add'

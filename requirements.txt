@@ -24,13 +24,13 @@ gunicorn==23.0.0
 h11==0.14.0
 hexbytes==1.2.1
 idna==3.10
+importlib_metadata==8.6.1
 itsdangerous==2.2.0
 Jinja2==3.1.4
 MarkupSafe==3.0.2
 packaging==24.2
 parsimonious==0.10.0
 passlib==1.7.4
-pexpect==4.9.0
 ptyprocess==0.7.0
 pycparser==2.22
 pycryptodome==3.21.0
@@ -53,3 +53,4 @@ urllib3==2.2.3
 uWSGI==2.0.28
 Werkzeug==3.1.2
 wsproto==1.2.0
+zipp==3.21.0
