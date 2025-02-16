@@ -1,7 +1,7 @@
-<ons-navigator swipeable id="Nav" page="page1.html"></ons-navigator>
+<ons-navigator swipeable id="Nav" page="new_node.html"></ons-navigator>
 
-<template id="page1.html">
-    <ons-page id="page1">
+<template id="new_node.html">
+    <ons-page id="new_node">
       <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
         <ons-card>
           <div class="centered-content">
@@ -10,7 +10,10 @@
             </div>
             <div class="content">
               <p>
-                <textarea class="textarea" rows="3" placeholder="SEED"></textarea><ons-button><ons-icon icon="sync"></ons-icon></ons-button>
+                <ons-button><ons-icon icon="sync"></ons-icon></ons-button>
+              </p>
+              <p>
+                <textarea class="textarea" rows="3" placeholder="SEED"></textarea>
               </p>
               <p>
                 <ons-input id="name" modifier="underbar" placeholder="NAME" float></ons-input>
@@ -19,7 +22,8 @@
                 <ons-input id="password" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
               </p>
               <div style="text-align: center;">
-              <ons-button modifier="large" onclick="window.fn.showLoadingDialog()">ESTABLISH</ons-button>
+              <ons-button modifier="large" onclick="window.fn.showDialog('loading-dialog')">ESTABLISH</ons-button>
+              <ons-button id="debug-button" style="margin: 20px;" onclick="window.fn.pushPage('initialize')" >DEBUG</ons-button>
               </div>
             </div>
           </div>
@@ -28,10 +32,10 @@
     </ons-page>
   </template>
 
-  <template id="page2.html">
-    <ons-page id="page2">
+  <template id="initialize.html">
+    <ons-page id="initialize">
       <ons-toolbar>
-        <div class="left"><ons-back-button>Page 1</ons-back-button></div>
+        <div class="left"><ons-back-button>BACK</ons-back-button></div>
         <div class="center"></div>
       </ons-toolbar>
 

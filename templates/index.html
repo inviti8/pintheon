@@ -6,23 +6,12 @@
   <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
 </head>
 <body>
-  {{ components | safe }}
 
-  <template id="loading-dialog.html">
-    <ons-dialog id="loading-dialog">
-      <div style="text-align: center; padding: 10px;">
-        <p>
-          LOADING
-        </p>
-  
-        <p>
-          <ons-button onclick="window.fn.hideDialog('loading-dialog')">Close</ons-button>
-        </p>
-      </div>
-    </ons-dialog>
-  </template>
+  {{ components | safe }}
+  {{ shared_dialogs | safe }}
 
   <script src="{{js}}"></script>
+  <script src="{{shared_dialogs_js}}"></script>
 
 </body>
 </html>

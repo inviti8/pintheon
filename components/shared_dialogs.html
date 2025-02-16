@@ -1,0 +1,16 @@
+<template id="loading-dialog.html">
+    <ons-dialog id="loading-dialog">
+      <div style="text-align: center; padding: 10px;">
+        <p>
+          <span>
+            <ons-progress-circular style="scale: 0.8; vertical-align: middle;" indeterminate></ons-progress-circular>
+            LOADING
+          </span>
+        </p>
+  
+        <p>
+          <ons-button onclick="window.fn.hideDialog('loading-dialog')">Close</ons-button>
+        </p>
+      </div>
+    </ons-dialog>
+  </template>
