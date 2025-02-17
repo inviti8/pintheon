@@ -30,7 +30,8 @@ def home():
  js=_load_js('new_node')
  shared_dialogs=_load_components('shared_dialogs')
  shared_dialogs_js=_load_js('shared_dialogs')
- return render_template('index.html', components=components, js=js, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js)
+ logo=url_for('static', filename='hvym_logo.png')
+ return render_template('index.html', components=components, js=js, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, logo=logo)
  #return jsonify(message='||AXIEL||')
 
 

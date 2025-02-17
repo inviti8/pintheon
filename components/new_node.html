@@ -10,20 +10,17 @@
             </div>
             <div class="content">
               <p>
-                <ons-button><ons-icon icon="sync"></ons-icon></ons-button>
+                <ons-button modifier="outline"><ons-icon icon="sync"></ons-icon></ons-button>
               </p>
               <p>
-                <textarea class="textarea" rows="3" placeholder="SEED"></textarea>
-              </p>
-              <p>
-                <ons-input id="name" modifier="underbar" placeholder="NAME" float></ons-input>
+                <textarea modifier="large" class="textarea" rows="4" placeholder="SEED"></textarea>
               </p>
               <p>
                 <ons-input id="password" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
               </p>
               <div style="text-align: center;">
-              <ons-button modifier="large" onclick="window.fn.showDialog('loading-dialog')">ESTABLISH</ons-button>
-              <ons-button id="debug-button" style="margin: 20px;" onclick="window.fn.pushPage('initialize')" >DEBUG</ons-button>
+              <ons-button modifier="large outline" onclick="window.fn.showDialog('loading-dialog')">ESTABLISH</ons-button>
+              <ons-button id="debug-button" style="margin: 20px;" onclick="window.fn.pushPage('establish')" >DEBUG</ons-button>
               </div>
             </div>
           </div>
@@ -32,13 +29,42 @@
     </ons-page>
   </template>
 
-  <template id="initialize.html">
-    <ons-page id="initialize">
+  <template id="establish.html">
+    <ons-page id="establish">
       <ons-toolbar>
         <div class="left"><ons-back-button>BACK</ons-back-button></div>
         <div class="center"></div>
       </ons-toolbar>
-
-      <p>This is the second page.</p>
+      <ons-col width="33.33%"></ons-col>
+      <ons-col width="33.33%">
+        <ons-card>
+          <ons-list>
+            <ons-list-item>
+              <div class="left">
+                <img id="logo" class="list-item__thumbnail" src="">
+              </div>
+              <div class="center">
+                <span class="list-item__title">AXIEL NODE</span><span class="list-item__subtitle">XRO Network</span>
+              </div>
+            </ons-list-item>
+          </ons-list>
+          <p>
+            <ons-input id="name" modifier="underbar" type="text" placeholder="NAME"></ons-input>
+          </p>
+          <p>
+            <ons-input id="descriptor" modifier="underbar" type="text" placeholder="DESCRIPTOR"></ons-input>
+          </p>
+          <p>
+            <ons-button style="margin: 20px;">SELECT LOGO</ons-button><input type="file" id="logo-file" accept=".png">
+          </p>
+          <p>
+            <textarea modifier="large" class="metadata" rows="4" placeholder="META-DATA"></textarea>
+          </p>
+          <p style="text-align: center;">
+            <ons-button modifier="large" onclick="window.fn.showDialog('loading-dialog')">ESTABLISH</ons-button>
+          </p>
+        </ons-card>
+      </ons-col>
+      <ons-col width="33.33%"></ons-col>
     </ons-page>
   </template>

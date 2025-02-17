@@ -19,6 +19,8 @@ class AxielMachine(object):
         self.xelis_daemon = xelis_daemon
         self.ipfs_daemon = ipfs_daemon
         self.xelis_network = xelis_network
+        self.view_template = 'index.html'
+        self.view_components = 'new_node'
 
         # Initialize the state machine
         self.machine = Machine(model=self, states=AxielMachine.states, initial='spawned')

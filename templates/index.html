@@ -3,6 +3,7 @@
 <head>
   <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
   <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
 </head>
 <body>
@@ -10,6 +11,11 @@
   {{ components | safe }}
   {{ shared_dialogs | safe }}
 
+  <script type="module">
+    window.constants = {};
+    window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
+  </script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
   <script src="{{js}}"></script>
   <script src="{{shared_dialogs_js}}"></script>
 
