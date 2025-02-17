@@ -11,6 +11,18 @@
   {{ components | safe }}
   {{ shared_dialogs | safe }}
 
+  <!-- dynamic card header template: -->
+  <template id="node-data-card-header-template">
+    <ons-list-item>
+      <div class="left">
+        <img id="node-data-card-header-logo" class="list-item__thumbnail" src="">
+      </div>
+      <div class="center">
+        <span id="node-data-card-header-name" class="list-item__title"></span><span id="node-data-card-header-descriptor"  class="list-item__subtitle"></span>
+      </div>
+    </ons-list-item>
+  </template>
+
   <script type="module">
     window.constants = {};
     window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";

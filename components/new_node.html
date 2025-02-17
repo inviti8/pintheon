@@ -2,8 +2,9 @@
 
 <template id="new_node.html">
     <ons-page id="new_node">
-      <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+      <div class="card-container">
         <ons-card>
+          <ons-col width="100%">
           <div class="centered-content">
             <div class="title" style="text-align: center;">
               NEW AXIEL NODE
@@ -13,10 +14,10 @@
                 <ons-button modifier="outline"><ons-icon icon="sync"></ons-icon></ons-button>
               </p>
               <p>
-                <textarea modifier="large" class="textarea" rows="4" placeholder="SEED"></textarea>
+                <textarea modifier="large" class="textarea card-content" rows="4" placeholder="SEED"></textarea>
               </p>
               <p>
-                <ons-input id="password" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
+                <ons-input id="password" class="card-content" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
               </p>
               <div style="text-align: center;">
               <ons-button modifier="large outline" onclick="window.fn.showDialog('loading-dialog')">ESTABLISH</ons-button>
@@ -24,6 +25,7 @@
               </div>
             </div>
           </div>
+        </ons-col>
         </ons-card>
       </div>
     </ons-page>
@@ -35,36 +37,43 @@
         <div class="left"><ons-back-button>BACK</ons-back-button></div>
         <div class="center"></div>
       </ons-toolbar>
+      <div class="card-container">
       <ons-col width="33.33%"></ons-col>
       <ons-col width="33.33%">
         <ons-card>
+          <ons-col width="100%">
           <ons-list>
-            <ons-list-item>
+            <ons-lazy-repeat id="node-data-card-header"></ons-lazy-repeat>
+            <!-- <ons-list-item>
               <div class="left">
                 <img id="logo" class="list-item__thumbnail" src="">
               </div>
               <div class="center">
-                <span class="list-item__title">AXIEL NODE</span><span class="list-item__subtitle">XRO Network</span>
-              </div>
+                <span id="card-header-name" class="list-item__title">AXIEL NODE</span><span id="card-header-descriptor"  class="list-item__subtitle">XRO Network</span>
+              </div> -->
             </ons-list-item>
           </ons-list>
           <p>
-            <ons-input id="name" modifier="underbar" type="text" placeholder="NAME"></ons-input>
+            <ons-input id="name" class="card-content" modifier="underbar" type="text" placeholder="NAME"></ons-input>
           </p>
           <p>
-            <ons-input id="descriptor" modifier="underbar" type="text" placeholder="DESCRIPTOR"></ons-input>
+            <ons-input id="descriptor" class="card-content" modifier="underbar" type="text" placeholder="DESCRIPTOR"></ons-input>
           </p>
           <p>
-            <ons-button style="margin: 20px;">SELECT LOGO</ons-button><input type="file" id="logo-file" accept=".png">
+            <ons-button id="btn-logo-file" style="margin: 20px;"></ons-icon>UPDATE LOGO  <ons-icon icon="upload"></ons-icon>
+              <input style="display: none" type="file" id="logo-file" accept=".png">
+            </ons-button>
           </p>
           <p>
-            <textarea modifier="large" class="metadata" rows="4" placeholder="META-DATA"></textarea>
+            <textarea modifier="large" class="textarea card-content" rows="4" placeholder="META-DATA"></textarea>
           </p>
           <p style="text-align: center;">
             <ons-button modifier="large" onclick="window.fn.showDialog('loading-dialog')">ESTABLISH</ons-button>
           </p>
+        </ons-col>
         </ons-card>
       </ons-col>
       <ons-col width="33.33%"></ons-col>
+    </div>
     </ons-page>
   </template>

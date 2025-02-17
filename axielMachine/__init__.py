@@ -7,6 +7,7 @@ import requests
 import subprocess
 from transitions import Machine, State
 from cryptography.fernet import Fernet 
+from flask import url_for
 
 class AxielMachine(object):
 
@@ -19,6 +20,9 @@ class AxielMachine(object):
         self.xelis_daemon = xelis_daemon
         self.ipfs_daemon = ipfs_daemon
         self.xelis_network = xelis_network
+        self.logo_url = None
+        self.node_name = None
+        self.node_descriptor = None
         self.view_template = 'index.html'
         self.view_components = 'new_node'
 

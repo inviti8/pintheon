@@ -2,16 +2,17 @@ window.fn = {};
 
 document.addEventListener('init', function(event) {
     var page = event.target;
-    console.log('page!!!!!!!!!!!!!!!')
-    console.log(page)
 
     if (page.id === 'new_node') {
         // page.querySelector('#push-button').onclick = function() {
         //   document.querySelector('#Nav').pushPage('page2.html', {data: {title: 'Page 2'}});
         // };
     } else if (page.id === 'establish') {
+        document.querySelector('#btn-logo-file').onclick = function () {
+            document.querySelector('#logo-file').click();
+        };
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
-        page.querySelector('#logo').src = page.data.logo;
+        window.fn.updateNodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');
     }
 });
 
