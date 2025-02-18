@@ -2,16 +2,26 @@ import os
 from flask import Flask, render_template, request, session, redirect, jsonify, url_for
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
+from platformdirs import *
+from axielMachine import AxielMachine
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-
-db = TinyDB('db.json')
-log_book = db.table('log_book')
+xelis_wallet_dirs = PlatformDirs('xelis-blockchain', 'Xelis')
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
 STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
+DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
+WALLET_PATH = xelis_wallet_dirs.user_data_dir
+
+AXIEL = AxielMachine(DB_PATH, WALLET_PATH)
+
+print('DB_PATH!!!')
+print(DB_PATH)
+print('STATE')
+print(AXIEL.state)
+AXIEL.initialize()
 
 def _load_components(comp):
  result = None

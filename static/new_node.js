@@ -12,7 +12,7 @@ document.addEventListener('init', function(event) {
             document.querySelector('#logo-file').click();
         };
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
-        window.fn.updateNodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');
+        window.fn.renderNodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');
     }
 });
 

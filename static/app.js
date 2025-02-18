@@ -10,8 +10,8 @@ document.addEventListener('init', function(event) {
         });
     });
 
-    //Creates a dynamic shared header element for ui cards
-    window.fn.updateNodeCardHeader = function(logo, name, descriptor){
+    //Shared Rendering methods
+    window.fn.renderNodeCardHeader = function(logo, name, descriptor){
         const elem = 'node-data-card-header';
         let list = document.querySelector('#'+elem);
 

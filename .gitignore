@@ -4,3 +4,5 @@ __pycache__/wsgi.cpython-310.pyc
 __pycache__/axiel.cpython-310.pyc
 
 __pycache__/
+
+enc_db.json
