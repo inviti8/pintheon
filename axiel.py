@@ -15,12 +15,7 @@ DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 WALLET_PATH = xelis_wallet_dirs.user_data_dir
 
-AXIEL = AxielMachine(DB_PATH, WALLET_PATH)
-
-print('DB_PATH!!!')
-print(DB_PATH)
-print('STATE')
-print(AXIEL.state)
+AXIEL = AxielMachine(STATIC_PATH, DB_PATH, WALLET_PATH)
 AXIEL.initialize()
 
 def _load_components(comp):
@@ -36,11 +31,11 @@ def _load_js(comp):
 
 @app.route('/')
 def home():
- components=_load_components('new_node')
- js=_load_js('new_node')
+ components=_load_components(AXIEL.view_components)
+ js=_load_js(AXIEL.view_components)
+ logo=AXIEL.logo_url
  shared_dialogs=_load_components('shared_dialogs')
  shared_dialogs_js=_load_js('shared_dialogs')
- logo=url_for('static', filename='hvym_logo.png')
  return render_template('index.html', components=components, js=js, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, logo=logo)
  #return jsonify(message='||AXIEL||')
 

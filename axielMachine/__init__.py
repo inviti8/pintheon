@@ -15,9 +15,11 @@ class AxielMachine(object):
 
     states = ['spawned', 'initializing', 'waiting', 'establishing', 'idle', 'handling_file', 'redeeming']
 
-    def __init__(self, db_path, wallet_path, xelis_daemon='https://node.xelis.io/json_rpc', ipfs_daemon='http://127.0.0.1:5001', xelis_network="Mainnet"):
+    def __init__(self, static_path, db_path, wallet_path, xelis_daemon='https://node.xelis.io/json_rpc', ipfs_daemon='http://127.0.0.1:5001', xelis_network="Mainnet"):
 
-        self.key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
+        #self.key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
+        self.key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
+        self.static_path = static_path
         self.db_path = db_path
         self.db = None
         self.node_data = None
@@ -36,7 +38,7 @@ class AxielMachine(object):
 
         self.machine.add_transition(trigger='initialize', source='spawned', dest='initializing', conditions=['do_initialize'])
 
-        self.machine.add_transition(trigger='wait', source='initializing', dest='waiting')
+        self.machine.add_transition(trigger='wait', source='initializing', dest='waiting', conditions=['do_wait'])
 
         self.machine.add_transition(trigger='establish', source='waiting', dest='establishing', conditions=['do_establish'])
 
@@ -54,18 +56,21 @@ class AxielMachine(object):
 
     @property
     def do_initialize(self):
-        print('initializing')
-        #print(url_for('static', filename='hvym_logo.png'))
-        #self._update_node_data(url_for('static', filename='hvym_logo.png'), 'AXIEL', 'XRO Network')
+        print('initializing!!')
+        self._update_node_data(os.path.join(self.static_path, 'hvym_logo.png'), 'AXIEL', 'XRO Network')
         return True
+    
+    @property
+    def do_wait(self):
+        print('waiting!!')
 
     @property
     def do_establish(self):
-        print('establishing')
+        print('establishing!!')
         
     @property
     def on_established(self):
-        print('established')
+        print('established!!')
 
     def do_redeem(self):
         print('redeem')
@@ -75,15 +80,15 @@ class AxielMachine(object):
 
     @property
     def do_handle_file(self):
-        print('handle file')
+        print('handle file!!')
             
     @property
     def on_file_handled(self):
-        print('file handled')
+        print('file handled!!')
 
     def _update_node_data(self, logo_url, name, descriptor):
         self._open_db()
-        self.logo_url = url_for(logo_url)
+        self.logo_url = logo_url
         self.node_name = name
         self.node_descriptor = descriptor
 
