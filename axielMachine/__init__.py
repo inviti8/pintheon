@@ -13,7 +13,7 @@ import tinydb_encrypted_jsonstorage as tae
 
 class AxielMachine(object):
 
-    states = ['spawned', 'initializing', 'waiting', 'establishing', 'idle', 'handling_file', 'redeeming']
+    states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
     def __init__(self, static_path, db_path, wallet_path, xelis_daemon='https://node.xelis.io/json_rpc', ipfs_daemon='http://127.0.0.1:5001', xelis_network="Mainnet"):
 
@@ -36,11 +36,9 @@ class AxielMachine(object):
         # Initialize the state machine
         self.machine = Machine(model=self, states=AxielMachine.states, initial='spawned')
 
-        self.machine.add_transition(trigger='initialize', source='spawned', dest='initializing', conditions=['do_initialize'])
+        self.machine.add_transition(trigger='initialize', source='spawned', dest='initialized', conditions=['do_initialize'])
 
-        self.machine.add_transition(trigger='wait', source='initializing', dest='waiting', conditions=['do_wait'])
-
-        self.machine.add_transition(trigger='establish', source='waiting', dest='establishing', conditions=['do_establish'])
+        self.machine.add_transition(trigger='establish', source='initialized', dest='establishing', conditions=['do_establish'])
 
         self.machine.add_transition(trigger='established', source='establishing', dest='idle', conditions=['on_established'])
 
