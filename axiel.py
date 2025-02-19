@@ -37,7 +37,7 @@ def home():
    logo=AXIEL.logo_url
    shared_dialogs=_load_components(AXIEL.shared_dialogs)
    shared_dialogs_js=_load_js(AXIEL.shared_dialogs)
-   client_tokens= _load_js('biscuit/index')
+   client_tokens= _load_js('macaroon_js/bundle')
    session_pub = AXIEL.new_session()
    return render_template(template, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_pub=session_pub)
    #return jsonify(message='||AXIEL||')
