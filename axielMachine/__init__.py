@@ -10,6 +10,11 @@ from transitions import Machine, State
 from cryptography.fernet import Fernet 
 from tinydb import TinyDB
 import tinydb_encrypted_jsonstorage as tae
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 class AxielMachine(object):
 
@@ -32,6 +37,9 @@ class AxielMachine(object):
         self.node_descriptor = None
         self.view_template = 'index.html'
         self.view_components = 'new_node'
+        self.shared_dialogs = 'shared_dialogs'
+        self.session_priv = None
+        self.session_pub = None
 
         # Initialize the state machine
         self.machine = Machine(model=self, states=AxielMachine.states, initial='spawned')
@@ -51,6 +59,12 @@ class AxielMachine(object):
         self.machine.add_transition(trigger='redeemed', source='redeeming', dest='idle', conditions=['on_redeemed'])
 
         self._initialize_db()
+
+    def new_session(self):
+        self.session_priv = ec.generate_private_key(ec.SECP384R1(), default_backend())
+        bytes = self.session_priv.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+        self.session_pub = bytes.decode('utf-8')
+        return self.session_pub
 
     @property
     def do_initialize(self):

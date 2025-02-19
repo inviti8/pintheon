@@ -22,10 +22,21 @@
       </div>
     </ons-list-item>
   </template>
-
+  <!-- <script type="module" src="{{client_tokens}}"></script> -->
   <script type="module">
     window.constants = {};
     window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
+
+    const WINDOW_KEYPAIR = await window.crypto.subtle.generateKey(
+      {
+        name: "ECDH",
+        namedCurve: "P-384",
+      },
+      false,
+      ["deriveKey"],
+    );
+
+    console.log(WINDOW_KEYPAIR.publicKey)
   </script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
   <script src="{{js}}"></script>
