@@ -61,9 +61,9 @@ class AxielMachine(object):
         self._initialize_db()
 
     def new_session(self):
-        self.session_priv = ec.generate_private_key(ec.SECP384R1(), default_backend())
+        self.session_priv = ec.generate_private_key(ec.SECP256R1(), default_backend())
         bytes = self.session_priv.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
-        self.session_pub = bytes.decode('utf-8')
+        self.session_pub = bytes.decode('utf-8').replace('\n', '\\n')
         return self.session_pub
 
     @property
