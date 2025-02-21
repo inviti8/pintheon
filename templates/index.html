@@ -23,20 +23,21 @@
     </ons-list-item>
   </template>
   <script type="module" src="{{client_tokens}}"></script>
+  <script src="{{ url_for('static', filename='xelis_paper_wallet.js') }}"></script>
   <script src="{{ url_for('static', filename='cryptographic.js') }}"></script>
   <script type="module">
     window.constants = {};
     window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
-    window.constants.B64_SESSION_PUB = "{{session_pub}}";
-
     window.constants.CLIENT_SESSION_KEYS = await generateClientKeys();
-    window.constants.SERVER_PUBLIC_KEY = await importServerPub(window.constants.B64_SESSION_PUB);
+    window.constants.SERVER_PUBLIC_KEY = await importServerPub("{{session_pub}}");
     window.constants.SESSION_TOKEN = await generateSessionToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey);
 
     console.log(window.constants.SESSION_TOKEN)
 
 
     console.log(window.constants.CLIENT_SESSION_KEYS.publicKey)
+    let pub = await exportPublicKey(window.constants.CLIENT_SESSION_KEYS)
+    console.log(pub)
   </script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
   <script src="{{js}}"></script>

@@ -28,7 +28,6 @@ def _load_components(comp):
 def _load_js(comp):
  return url_for('static', filename=f'{comp}.js')
  
-
 @app.route('/')
 def home():
    template = AXIEL.view_template

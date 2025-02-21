@@ -33,6 +33,16 @@ const generateClientKeys = async () => {
     }
 };
 
+const exportPublicKey = async (keyPair) => {
+    try {
+        const exported = await window.crypto.subtle.exportKey('spki', keyPair.publicKey);
+        return ab_to_b64(new Uint8Array(exported));  // Convert ArrayBuffer to base64 string.
+    } catch (err) {
+        console.error("Error in exporting public key: ", err);
+        throw err;   // Re-throw the error so it can be caught where this function is called.
+    }
+};
+
 const importServerPub = async (base64PEM) => {
     try {
         const bin = b64_to_ab(base64PEM.replace('-----BEGIN PUBLIC KEY-----', '').replace('-----END PUBLIC KEY-----', ''));
@@ -104,10 +114,33 @@ const generateSessionToken = async (serverPub, clientPriv) => {
     try {
 
         let location = window.location.href;
-        let secretKey = ab_to_b64(generateSharedBits(serverPub, clientPriv));
+        let secretKey = await generateSharedSecret(serverPub, clientPriv);
         let identifier = "AXIEL_SESSION";
         let token = window.MacaroonsBuilder.create(location, secretKey, identifier);
 
+        return token;
+    } catch (err) {
+        console.error("Error in generating session token: ", err);
+        throw err;  // Re-throw the error so it can be caught where this function is called.
+    }
+};
+
+const generateToken = async (location, secret, identifier, firstPartCaveats, thirdPartyCaveat=undefined, caveatKey=undefined) => {
+    try {
+
+      let token;
+
+      if(thirdPartyCaveat!=undefined){
+        token = new MacaroonsBuilder(location, secret, identifier)
+        .add_first_party_caveat(firstPartCaveats.map(caveat => `${caveat}`)).join()
+        .add_third_party_caveat(thirdPartyCaveat, caveatKey, identifier).join()
+        .getMacaroon();
+      }else{
+        token = new MacaroonsBuilder(location, secret, identifier)
+        .add_first_party_caveat(firstPartCaveats.map(caveat => `${caveat}`)).join()
+        .getMacaroon();
+      };
+      
         return token;
     } catch (err) {
         console.error("Error in generating session token: ", err);
