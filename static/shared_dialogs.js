@@ -1,5 +1,5 @@
 window.fn.showDialog = function(id) {
-    var dialog = document.getElementById(id);
+    let dialog = document.getElementById(id);
 
     if (dialog) {
         dialog.show();
@@ -12,7 +12,10 @@ window.fn.showDialog = function(id) {
   };
 
 window.fn.hideDialog = function(id) {
+  let dialog = document.getElementById(id);
+  if(dialog){
     document
     .getElementById(id)
     .hide();
+  };
 };

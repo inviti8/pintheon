@@ -38,13 +38,21 @@ def home():
    shared_dialogs_js=_load_js(AXIEL.shared_dialogs)
    client_tokens= _load_js('macaroons_js_bundle')
    session_pub = AXIEL.new_session()
+   print(session_pub)
    return render_template(template, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_pub=session_pub)
    #return jsonify(message='||AXIEL||')
 
 @app.route('/establish', methods=['POST'])
 def establish():
    data = request.get_json()
-   # Here you would normally save the data to a database
+   print(data)
+   pem = AXIEL.pem_format(data['client_pub'])
+   print(pem)
+   secret = AXIEL.generate_shared_secret(pem)
+   print('-----------------------------------')
+   print(secret)
+   print('-----------------------------------')
+   #Here you would normally save the data to a database
    return jsonify(message='Data received', data=data), 201
 
 @app.route('/data', methods=['POST'])

@@ -1,6 +1,5 @@
 // This file is for shared application wide for cryptographic methods
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+
 
 const hex2ab = function(hex){
     return new Uint8Array(hex.match(/[\da-f]{2}/gi).map(function (h) {return parseInt(h, 16)}));
@@ -36,10 +35,10 @@ const generateClientKeys = async () => {
 const exportPublicKey = async (keyPair) => {
     try {
         const exported = await window.crypto.subtle.exportKey('spki', keyPair.publicKey);
-        return ab_to_b64(new Uint8Array(exported));  // Convert ArrayBuffer to base64 string.
+        return btoa(String.fromCharCode(...new Uint8Array(exported)));  // Convert ArrayBuffer to base64 string.
     } catch (err) {
         console.error("Error in exporting public key: ", err);
-        throw err;   // Re-throw the error so it can be caught where this function is called.
+        throw err;    // Re-throw the error so it can be caught where this function is called.
     }
 };
 
@@ -82,7 +81,7 @@ const generateSharedSecret = async (serverPub, clientPriv) => {
     try {
 
         const bits = await generateSharedBits(serverPub, clientPriv)
-
+        
         return ab_to_b64(bits);
     } catch (err) {
         console.error("Error in generating shared secret: ", err);

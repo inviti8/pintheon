@@ -8,7 +8,7 @@ async function load_xelis_wallet() {
 
 load_xelis_wallet();
 
-window.fn.generate_xelis_wallet = function () {
+const generate_xelis_wallet = function () {
   
     const mainnet = "mainnet";
     const language_idx = 0;
@@ -22,13 +22,50 @@ window.fn.generate_xelis_wallet = function () {
     return seed
 };
 
+const establish_node = async (token, client_pub) => {
+    window.fn.showDialog('loading-dialog')
+    let requestBody = JSON.stringify({
+        'token': token,
+        'client_pub': client_pub
+      });
+
+    fetch('/establish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: requestBody
+      })
+      .then(response => {
+        console.log(response)
+        if (response.status === 200) {
+              return response.json();
+        } else {
+            window.fn.hideDialog('loading-dialog')
+            window.fn.showDialog('fail-dialog');
+            throw new Error('Request failed with status ' + response.status);
+        }
+      })
+      .then(data => {
+
+        console.log("establish : ",data);
+        console.log('-------------------------------------------------');
+          
+      });
+      //window.fn.hideDialog('loading-dialog')
+};
+
 document.addEventListener('init', function(event) {
     var page = event.target;
 
     if (page.id === 'new_node') {
         document.querySelector('#generate-xelis-seed').onclick = function () {
-            let seed = window.fn.generate_xelis_wallet();
+            let seed = generate_xelis_wallet();
             document.querySelector('#xelis-seed-text').value = seed.splice(0, (seed.length+1)).join(" ");
+        };
+        document.querySelector('#establish-button').onclick = function () {
+
+            establish_node( window.constants.SESSION_TOKEN.serialize(), window.constants.CLIENT_PUBLIC_KEY );
         };
     } else if (page.id === 'establish') {
         document.querySelector('#btn-logo-file').onclick = function () {

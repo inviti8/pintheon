@@ -7,10 +7,20 @@
             LOADING
           </span>
         </p>
-  
         <p>
           <ons-button onclick="window.fn.hideDialog('loading-dialog')">Close</ons-button>
         </p>
       </div>
     </ons-dialog>
   </template>
+
+  <template id="fail-dialog.html">
+    <ons-dialog id="fail-dialog" cancelable>
+        <div style="text-align: center; padding: 10px;">
+          <p id="fail-dialog-text">FAILED</p>
+          <p>
+            <ons-button id="fail-dialog-button" onclick="fn.hideDialog('fail-dialog')">  OK  </ons-button>
+          </p>
+        </div>
+    </ons-dialog>
+</template>

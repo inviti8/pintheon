@@ -5,6 +5,7 @@
   <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+  <script src="https://unpkg.com/ec-key@0.0.6/src/ec-key.js"></script>
 </head>
 <body>
 
@@ -30,14 +31,15 @@
     window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
     window.constants.CLIENT_SESSION_KEYS = await generateClientKeys();
     window.constants.SERVER_PUBLIC_KEY = await importServerPub("{{session_pub}}");
+    window.constants.CLIENT_PUBLIC_KEY = await exportPublicKey(window.constants.CLIENT_SESSION_KEYS);
     window.constants.SESSION_TOKEN = await generateSessionToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey);
 
     console.log(window.constants.SESSION_TOKEN)
 
 
     console.log(window.constants.CLIENT_SESSION_KEYS.publicKey)
-    let pub = await exportPublicKey(window.constants.CLIENT_SESSION_KEYS)
-    console.log(pub)
+
+    console.log( window.constants.CLIENT_PUBLIC_KEY )
   </script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
   <script src="{{js}}"></script>

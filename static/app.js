@@ -11,7 +11,7 @@ document.addEventListener('init', function(event) {
     });
 
     //Shared Rendering methods
-    window.fn.renderNodeCardHeader = function(logo, name, descriptor){
+    window.fn.renderNodeCardHeader = function(logo, name, descriptor, qty=1){
         const elem = 'node-data-card-header';
         let list = document.querySelector('#'+elem);
 
@@ -28,7 +28,7 @@ document.addEventListener('init', function(event) {
               return clone.firstElementChild; // Ensure that the returned value is a proper DOM element
             },
             countItems: function() {
-              return 1;
+              return qty;
             }
         };
 

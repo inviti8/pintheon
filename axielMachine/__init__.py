@@ -4,6 +4,7 @@ __version__ = "0.01"
 import os
 import json
 import base64
+from base64 import b64encode, b64decode
 import requests
 import subprocess
 from transitions import Machine, State
@@ -15,6 +16,9 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography import x509
+from Crypto.PublicKey import ECC
+
 
 class AxielMachine(object):
 
@@ -60,11 +64,29 @@ class AxielMachine(object):
 
         self._initialize_db()
 
+    def ab2hexstring(b):
+        return ''.join('{:02x}'.format(c) for c in b)
+    
     def new_session(self):
         self.session_priv = ec.generate_private_key(ec.SECP256R1(), default_backend())
         bytes = self.session_priv.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
         self.session_pub = bytes.decode('utf-8').replace('\n', '\\n')
         return self.session_pub
+    
+    def generate_shared_secret(self, pem_string):
+        pub_key = serialization.load_pem_public_key(pem_string.encode('utf-8'), default_backend())
+        shared_secret = self.session_priv.exchange(ec.ECDH(), pub_key)
+        return base64.b64encode(shared_secret).decode('utf-8')
+    
+
+    def pem_format(self, base64_string, type='PUBLIC KEY'):
+        header = f"-----BEGIN {type}-----"
+        footer = f"-----END {type}-----"
+        
+        # Split the base64 string into 64-character chunks except for the last one
+        lines = [base64_string[i:i+64] for i in range(0, len(base64_string), 64)]
+        
+        return "\n".join([header] + lines + [footer])
 
     @property
     def do_initialize(self):
