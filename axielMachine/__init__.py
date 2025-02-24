@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography import x509
 from Crypto.PublicKey import ECC
+from pymacaroons import Macaroon, Verifier
 
 
 class AxielMachine(object):

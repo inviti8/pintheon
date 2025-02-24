@@ -56,7 +56,8 @@ const establish_node = async (token, client_pub) => {
 };
 
 document.addEventListener('init', function(event) {
-    var page = event.target;
+    let page = event.target;
+    let inputs = ['logo-file', 'key-store-file'];
 
     if (page.id === 'new_node') {
         document.querySelector('#generate-xelis-seed').onclick = function () {
@@ -68,9 +69,12 @@ document.addEventListener('init', function(event) {
             establish_node( window.constants.SESSION_TOKEN.serialize(), window.constants.CLIENT_PUBLIC_KEY );
         };
     } else if (page.id === 'establish') {
-        document.querySelector('#btn-logo-file').onclick = function () {
-            document.querySelector('#logo-file').click();
-        };
+        inputs.forEach(function(inp) {
+            document.querySelector('#btn-'+inp).onclick = function () {
+                document.querySelector('#'+inp).click();
+            };
+        });
+        
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
         window.fn.renderNodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');
     }

@@ -2,11 +2,11 @@ ons-list{
   opacity: 90%;
 }
 ons-row{
-    padding: 2%;
+  padding: 2%;
 }
 ons-col, ons-card{
-    min-width: 350px;
-    margin: 0 auto;
+  min-width: 350px;
+  margin: 0 auto;
 }
 ons-card {
   max-width:100%;
@@ -105,5 +105,28 @@ header {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.fab-container {
+  position: relative; /* This will be the new positioning context */
+  height: 50px; /* Replace with actual image height, in pixels */
+  width: 50px; /* Replace with actual image width, in pixels */
+  z-index: -1;
+}
+.node-data-card-header-list-item {
+  z-index: -1;
+}
+.horizontal-button-container {
+  display: flex;
+}
+.list-item__thumbnail {
+  height: 100%; /* Ensure the image takes up the full height of its container */
+  width: 100%; /* Ensure the image takes up the full width of its container */
+  z-index: -1;
+}
+#node-data-card-header-logo {
+  position: absolute; /* This will place the image in a relative context, according to the .fab-container */
+  bottom: 0; /* Place the image at the bottom edge of the container */
+  right: 0; /* Place the image at the right edge of the container */
+  z-index: -1;
 }
 

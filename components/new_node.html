@@ -44,13 +44,6 @@
           <ons-col width="100%">
           <ons-list>
             <ons-lazy-repeat id="node-data-card-header"></ons-lazy-repeat>
-            <!-- <ons-list-item>
-              <div class="left">
-                <img id="logo" class="list-item__thumbnail" src="">
-              </div>
-              <div class="center">
-                <span id="card-header-name" class="list-item__title">AXIEL NODE</span><span id="card-header-descriptor"  class="list-item__subtitle">XRO Network</span>
-              </div> -->
             </ons-list-item>
           </ons-list>
           <p>
@@ -59,11 +52,19 @@
           <p>
             <ons-input id="descriptor" class="card-content" modifier="underbar" type="text" placeholder="DESCRIPTOR"></ons-input>
           </p>
-          <p>
-            <ons-button id="btn-logo-file" style="margin: 20px;"></ons-icon>UPDATE LOGO  <ons-icon icon="upload"></ons-icon>
-              <input style="display: none" type="file" id="logo-file" accept=".png">
-            </ons-button>
-          </p>
+            <div class="row horizontal-button-container">
+              <ons-col width="50%">
+                <ons-button id="btn-logo-file"></ons-icon>UPDATE LOGO <ons-icon icon="upload"></ons-icon>
+                  <input style="display: none" name="Select Logo" type="file" id="logo-file" accept=".png">
+                </ons-button>
+              </ons-col>
+              
+              <ons-col width="50%">
+                <ons-button id="btn-key-store-file"></ons-icon>SAVE KEYSTORE <ons-icon icon="download"></ons-icon>
+                  <input style="display: none" name="Select File" type="file" id="key-store-file" webkitdirectory>
+                </ons-button>
+              </ons-col>
+            </div>
           <p>
             <textarea modifier="large" class="textarea card-content" rows="4" placeholder="META-DATA"></textarea>
           </p>
