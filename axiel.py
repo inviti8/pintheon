@@ -4,6 +4,7 @@ from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 from platformdirs import *
 from axielMachine import AxielMachine
+from pymacaroons import Macaroon, Verifier
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -30,6 +31,18 @@ def _load_js(comp):
  
 @app.route('/')
 def home():
+   hsh = AXIEL.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
+   print(AXIEL.hash_key(hsh))
+   m = Macaroon(
+            location='',
+            identifier='AXIEL_LAUNCH_TOKEN',
+            key=hsh
+        )
+   print(m.identifier)
+   print('-----------------------------------')
+   print(m.serialize())
+   print(AXIEL.state)
+   print('-----------------------------------')
    template = AXIEL.view_template
    components=_load_components(AXIEL.view_components)
    js=_load_js(AXIEL.view_components)

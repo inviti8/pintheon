@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography import x509
 from Crypto.PublicKey import ECC
 from pymacaroons import Macaroon, Verifier
+import hashlib
 
 
 class AxielMachine(object):
@@ -28,7 +29,8 @@ class AxielMachine(object):
     def __init__(self, static_path, db_path, wallet_path, xelis_daemon='https://node.xelis.io/json_rpc', ipfs_daemon='http://127.0.0.1:5001', xelis_network="Mainnet"):
 
         #self.key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
-        self.key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
+        self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSBw-FqJroa1LoO3BLEIN4yAKWVj603js_qjQ9Xo3tmNMwo'
+        self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
         self.db_path = db_path
         self.db = None
@@ -45,6 +47,8 @@ class AxielMachine(object):
         self.shared_dialogs = 'shared_dialogs'
         self.session_priv = None
         self.session_pub = None
+        self.node_priv = None
+        self.node_pub = None
 
         # Initialize the state machine
         self.machine = Machine(model=self, states=AxielMachine.states, initial='spawned')
@@ -68,17 +72,35 @@ class AxielMachine(object):
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
     
+    def verify_launch(self, launch_key):
+        result = False
+        v = Verifier()
+        m = Macaroon.deserialize(self.launch_token)
+
+        if m.identifier == 'AXIEL_LAUNCH_TOKEN':
+            result = v.verify( m, launch_key)
+        
+        return result
+    
+    def hash_key(self, key):
+        return hashlib.sha256(key.encode('utf-8')).hexdigest()
+    
     def new_session(self):
-        self.session_priv = ec.generate_private_key(ec.SECP256R1(), default_backend())
-        bytes = self.session_priv.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
-        self.session_pub = bytes.decode('utf-8').replace('\n', '\\n')
+        keypair = self._new_keypair()
+        self.session_priv = keypair['priv']
+        self.session_pub = keypair['pub']
+        return self.session_pub
+    
+    def new_node(self):
+        keypair = self._new_keypair()
+        self.node_priv = keypair['priv']
+        self.node_pub = keypair['pub']
         return self.session_pub
     
     def generate_shared_secret(self, pem_string):
         pub_key = serialization.load_pem_public_key(pem_string.encode('utf-8'), default_backend())
         shared_secret = self.session_priv.exchange(ec.ECDH(), pub_key)
-        return base64.b64encode(shared_secret).decode('utf-8')
-    
+        return base64.b64encode(shared_secret).decode('utf-8') 
 
     def pem_format(self, base64_string, type='PUBLIC KEY'):
         header = f"-----BEGIN {type}-----"
@@ -121,6 +143,13 @@ class AxielMachine(object):
     def on_file_handled(self):
         print('file handled!!')
 
+    def _new_keypair(self,):
+        priv = ec.generate_private_key(ec.SECP256R1(), default_backend())
+        bytes = priv.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+        pub = bytes.decode('utf-8').replace('\n', '\\n')
+
+        return { 'pub': pub, 'priv': priv }
+
     def _update_node_data(self, logo_url, name, descriptor):
         self._open_db()
         self.logo_url = logo_url
@@ -136,7 +165,7 @@ class AxielMachine(object):
         self.db.close()
 
     def _open_db(self):
-        self.db = TinyDB(encryption_key=self.key, path=self.db_path, storage=tae.EncryptedJSONStorage)
+        self.db = TinyDB(encryption_key=self.master_key, path=self.db_path, storage=tae.EncryptedJSONStorage)
         self.node_data = self.db.table('node_data')
 
     def _wallet_config(self, outPath):

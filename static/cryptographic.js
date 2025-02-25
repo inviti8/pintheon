@@ -32,30 +32,6 @@ const generateClientKeys = async () => {
     }
 };
 
-const generateClientKeyStoreJSON = async () => {
-    try {
-        const keys = await generateClientKeys();
-        
-        const exportedPrivateKey = await window.crypto.subtle.exportKey('raw', keys.privateKey);
-        const exportedPublicKey = await window.crypto.subtle.exportKey('raw', keys.publicKey);
-
-        // Convert the ArrayBuffers to base64 strings for JSON
-        const privateKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(exportedPrivateKey)));
-        const publicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(exportedPublicKey)));
-
-        // Create the keystore in JSON format
-        const keyStoreJSON = {
-            privateKey: privateKeyBase64,
-            publicKey: publicKeyBase64,
-        };
-
-        return keyStoreJSON;
-    } catch (err) {
-        console.error("Error in generating keys: ", err);
-        throw err;   // Re-throw the error so it can be caught where this function is called.
-    }
-};
-
 const loadKeypairFromJSON = async (unencryptedKeyStoreJSON) => {
     try {
         // Parse the JSON string into an object
@@ -76,17 +52,15 @@ const loadKeypairFromJSON = async (unencryptedKeyStoreJSON) => {
     }
 };
 
-const generateEncryptedClientKeyStoreJSON = async (password) => {
+const hashKey = function(key){
+    return window.crypto.subtle.digest('SHA-256', key).then(hash => {
+        let result = Array.from(new Uint8Array(hash)).map(b => ('00' + b.toString(16)).slice(-2)).join('');
+        return result;
+    });
+};
+
+const generateEncryptedClientKeyStoreJSON = async (keys, password) => {
     try {
-        const keys = await window.crypto.subtle.generateKey(
-            {
-                name: "ECDH",
-                namedCurve: "P-256",
-            },
-            false,
-            ["deriveKey", "deriveBits"],
-        );
-        
         const exportedPrivateKey = await window.crypto.subtle.exportKey('raw', keys.privateKey);
         const exportedPublicKey = await window.crypto.subtle.exportKey('raw', keys.publicKey);
 
@@ -156,9 +130,9 @@ const decryptClientKeys = async (password, encryptedKeyStoreJSON) => {
     }
 }
 
-const exportPublicKey = async (keyPair) => {
+const exportKey = async (key) => {
     try {
-        const exported = await window.crypto.subtle.exportKey('spki', keyPair.publicKey);
+        const exported = await window.crypto.subtle.exportKey('spki', key);
         return btoa(String.fromCharCode(...new Uint8Array(exported)));  // Convert ArrayBuffer to base64 string.
     } catch (err) {
         console.error("Error in exporting public key: ", err);

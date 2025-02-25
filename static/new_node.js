@@ -1,12 +1,14 @@
 const { KeyPair, get_languages } = wasm_bindgen;
 window.fn = {};
+let generator_keys;
 
 // load wasm wallet and generate wallet seed right away
-async function load_xelis_wallet() {
+async function init() {
     await wasm_bindgen();
+    generator_keys = await generateClientKeys();
 };
 
-load_xelis_wallet();
+init();
 
 const generate_xelis_wallet = function () {
   
@@ -60,6 +62,7 @@ document.addEventListener('init', function(event) {
     let inputs = ['logo-file', 'key-store-file'];
 
     if (page.id === 'new_node') {
+
         document.querySelector('#generate-xelis-seed').onclick = function () {
             let seed = generate_xelis_wallet();
             document.querySelector('#xelis-seed-text').value = seed.splice(0, (seed.length+1)).join(" ");

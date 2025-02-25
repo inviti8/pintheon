@@ -31,7 +31,7 @@
     window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
     window.constants.CLIENT_SESSION_KEYS = await generateClientKeys();
     window.constants.SERVER_PUBLIC_KEY = await importServerPub("{{session_pub}}");
-    window.constants.CLIENT_PUBLIC_KEY = await exportPublicKey(window.constants.CLIENT_SESSION_KEYS);
+    window.constants.CLIENT_PUBLIC_KEY = await exportKey(window.constants.CLIENT_SESSION_KEYS.publicKey);
     window.constants.SESSION_TOKEN = await generateSessionToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey);
 
     console.log(window.constants.SESSION_TOKEN)
