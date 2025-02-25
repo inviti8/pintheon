@@ -39,18 +39,33 @@ document.addEventListener('init', function(event) {
         required: true
     };
 
-    window.fn.validateAllInputs = function() {
-      const inputs = document.querySelectorAll('input,  select, textarea');
-      let result = true;
-      for (let i = 0; i < inputs.length; i++) {
-        const input = inputs[i];
-        if (!approve.value(input.value, rules).approved) {
-          result = false;
-          break;
+    window.fn.validateAllInputs = function(confirmMsg, failMsg, callback, ...args) {
+        const inputs = document.querySelectorAll('input,  select, textarea');
+        let result = true;
+        for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
+            if (!approve.value(input.value, rules).approved) {
+            result = false;
+            break;
+            };
         };
-      };
-        return result
+
+        window.fn.handleBoolDescisionDlgs(result, confirmMsg, failMsg, callback, ...args)
     };
+
+    //Dialog Utilities
+    window.fn.handleBoolDescisionDlgs = function(result, confirmMsg, failMsg, callback, ...args){
+        if(result){
+            ons.notification.confirm(confirmMsg)
+        .then(function(answer) {
+            if(answer>0){
+                callback(...args);    
+            };
+         });
+        }else{
+            ons.notification.alert(failMsg);
+        };
+    };  
     
 });
 

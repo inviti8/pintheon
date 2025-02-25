@@ -68,18 +68,7 @@ document.addEventListener('init', function(event) {
             document.querySelector('#xelis-seed-text').value = seed.splice(0, (seed.length+1)).join(" ");
         };
         document.querySelector('#establish-button').onclick = function () {
-            if(window.fn.validateAllInputs()){
-
-                ons.notification.confirm('Establish new Node?')
-                .then(function(yes) {
-                    if(yes>0){
-                        establish_node( window.constants.SESSION_TOKEN.serialize(), window.constants.CLIENT_PUBLIC_KEY );
-                    };
-                });
-                
-            }else{
-                ons.notification.alert('All fields are required.');
-            };
+            window.fn.validateAllInputs('Establish new Node?', 'All fields are required.', establish_node, window.constants.SESSION_TOKEN.serialize(), window.constants.CLIENT_PUBLIC_KEY);
         };
     } else if (page.id === 'establish') {
         inputs.forEach(function(inp) {
@@ -94,6 +83,5 @@ document.addEventListener('init', function(event) {
 });
 
 window.fn.pushPage = function(page) {
-
     document.querySelector('#Nav').pushPage(page+'.html', {data: {title: '|| ESTABLISH ||', logo: window.constants.LOGO}});
 };
