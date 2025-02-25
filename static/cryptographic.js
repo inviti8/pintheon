@@ -13,6 +13,12 @@ const ab_to_b64 = function(arrayBuffer){
     return btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
 }
 
+function ab2hex(buffer) {
+    return [...new Uint8Array(buffer)]
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('');
+};
+
 const generateClientKeys = async () => {
     try {
 
@@ -59,6 +65,75 @@ const hashKey = function(key){
     });
 };
 
+async function getCryptoKey(password) {
+    const encoder = new TextEncoder();
+    const keyMaterial = encoder.encode(password);
+    return crypto.subtle.importKey(
+        'raw',
+        keyMaterial,
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+    );
+}
+
+async function deriveKey(password, salt) {
+    const keyMaterial = await getCryptoKey(password);
+    return crypto.subtle.deriveKey(
+        {
+            name: 'PBKDF2',
+            salt: salt,
+            iterations: 100000,
+            hash: 'SHA-256'
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+    );
+};
+
+
+async function generateEncryptedText(text, password) {
+    const encoder = new TextEncoder();
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(password, salt);
+
+    const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        encoder.encode(text)
+    );
+
+    return {
+        cipherText: ab2hex(encrypted),
+        iv: ab2hex(iv),
+        salt: ab2hex(salt)
+    };
+};
+
+async function generateDecryptedText(encryptedData, password) {
+    const { cipherText, iv, salt } = encryptedData;
+    const key = await deriveKey(password, hex2ab(salt));
+
+    const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: hex2ab(iv) },
+        key,
+        hex2ab(cipherText)
+    );
+
+    const decoder = new TextDecoder();
+    return decoder.decode(decrypted);
+}
+
+const generateSharedEncryptedText = async (txt, serverPub, clientPriv) => {
+    const secret = await generateSharedSecret(serverPub, clientPriv);
+    const cipherTxt = await generateEncryptedText(txt, secret);
+
+    return cipherTxt
+};
+
 const generateEncryptedClientKeyStoreJSON = async (keys, password) => {
     try {
         const exportedPrivateKey = await window.crypto.subtle.exportKey('raw', keys.privateKey);
@@ -67,22 +142,15 @@ const generateEncryptedClientKeyStoreJSON = async (keys, password) => {
         // Convert the ArrayBuffers to base64 strings for JSON
         const privateKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(exportedPrivateKey)));
         const publicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(exportedPublicKey)));
-
-        // Generate a key using the password
-        const encoder = new TextEncoder();
-        const passwordUint8Array = encoder.encode(password);
-        const salt = crypto.getRandomValues(new Uint8Array(16));  // generate random salt
-        const importedKey = await window.crypto.subtle.importKey('raw', passwordUint8Array, {name: 'PBKDF2'}, false, ['encrypt']);
         
         // Encrypt the keys with the generated key and the salt
-        const encryptedPrivateKey = btoa(String.fromCharCode(...new Uint8Array(await window.crypto.subtle.encrypt({name: 'PBKDF2', salt}, importedKey, encoder.encode(privateKeyBase64)))));
-        const encryptedPublicKey = btoa(String.fromCharCode(...new Uint8Array(await window.crypto.subtle.encrypt({name: 'PBKDF2', salt}, importedKey, encoder.encode(publicKeyBase64)))));
+        const encryptedPrivateKey = generateEncryptedText(password, privateKeyBase64);
+        const encryptedPublicKey = generateEncryptedText(password, publicKeyBase64);
         
         // Create the keystore in JSON format with encrypted keys
         const keyStoreJSON = {
             privateKey: encryptedPrivateKey,
-            publicKey: encryptedPublicKey,
-            salt: btoa(String.fromCharCode(...salt)),  // store the salt for decryption
+            publicKey: encryptedPublicKey
         };
 
         return keyStoreJSON;
@@ -97,32 +165,9 @@ const decryptClientKeys = async (password, encryptedKeyStoreJSON) => {
         // Parse the JSON string into an object
         const encryptedKeyStore = JSON.parse(encryptedKeyStoreJSON);
         
-        // Convert the base64 encoded strings back to ArrayBuffers for decryption
-        const encryptedPrivateKeyBase64 = atob(encryptedKeyStore.privateKey);
-        const encryptedPublicKeyBase64 = atob(encryptedKeyStore.publicKey);
-        const saltBase64 = atob(encryptedKeyStore.salt);
-        
-        // Convert the base64 strings to ArrayBuffers for decryption
-        const encryptedPrivateKeyArrayBuffer = Uint8Array.from(atob(encryptedPrivateKeyBase64), c => c.charCodeAt(0));
-        const encryptedPublicKeyArrayBuffer = Uint8Array.from(atob(encryptedPublicKeyBase64), c => c.charCodeAt(0));
-        const saltArrayBuffer = Uint8Array.from(atob(saltBase64), c => c.charCodeAt(0));
-        
-        // Generate a key using the password and the stored salt
-        const encoder = new TextEncoder();
-        const passwordUint8Array = encoder.encode(password);
-        const importedKey = await window.crypto.subtle.importKey('raw', passwordUint8Array, {name: 'PBKDF2'}, false, ['decrypt']);
-        
-        // Decrypt the keys with the generated key and the salt
-        const decryptedPrivateKeyArrayBuffer = new Uint8Array(await window.crypto.subtle.decrypt({name: 'PBKDF2', salt: saltArrayBuffer}, importedKey, encryptedPrivateKeyArrayBuffer));
-        const decryptedPublicKeyArrayBuffer = new Uint8Array(await window.crypto.subtle.decrypt({name: 'PBKDF2', salt: saltArrayBuffer}, importedKey, encryptedPublicKeyArrayBuffer));
-        
-        // Convert the ArrayBuffers to base64 strings for JSON formatting and return an unencrypted keystore
-        const decryptedPrivateKeyBase64 = btoa(String.fromCharCode(...decryptedPrivateKeyArrayBuffer));
-        const decryptedPublicKeyBase64 = btoa(String.fromCharCode(...decryptedPublicKeyArrayBuffer));
-        
         return {
-            privateKey: decryptedPrivateKeyBase64,
-            publicKey: decryptedPublicKeyBase64,
+            privateKey: generateDecryptedText(encryptedKeyStore.privateKey, password),
+            publicKey: generateDecryptedText(encryptedKeyStore.publicKey, password),
         };
     } catch (err) {
         console.error("Error in generating keys: ", err);
@@ -207,13 +252,24 @@ const generateSharedKey = async (serverPub, clientPriv) => {
     }
 };
 
-const generateSessionToken = async (serverPub, clientPriv) => {
+const generateLaunchToken = async (launchKey) => {
     try {
 
         let location = window.location.href;
-        let secretKey = await generateSharedSecret(serverPub, clientPriv);
-        let identifier = "AXIEL_SESSION";
-        let token = window.MacaroonsBuilder.create(location, secretKey, identifier);
+        let identifier = "AXIEL_LAUNCH";
+        let token = window.MacaroonsBuilder.create(location, hashKey(launchKey), identifier);
+
+        return token;
+    } catch (err) {
+        console.error("Error in generating launch token: ", err);
+        throw err;  // Re-throw the error so it can be caught where this function is called.
+    }
+};
+
+const generateSessionToken = async (serverPub, clientPriv) => {
+    try {
+
+        let token = window.MacaroonsBuilder.create(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION");
 
         return token;
     } catch (err) {

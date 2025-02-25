@@ -24,11 +24,17 @@ const generate_xelis_wallet = function () {
     return seed
 };
 
-const establish_node = async (token, client_pub) => {
-    window.fn.showDialog('loading-dialog')
+const establish_node = async () => {
+    window.fn.showDialog('loading-dialog');
+    const seedCipher = await generateEncryptedText(document.querySelector('#xelis-seed-text').value, document.querySelector('#launch-key').value);
+    console.log(seedCipher)
+    let seed = await generateDecryptedText(seedCipher, document.querySelector('#launch-key').value)
+    console.log(seed)
+
+
     let requestBody = JSON.stringify({
-        'token': token,
-        'client_pub': client_pub
+        'token': window.constants.SESSION_TOKEN.serialize(),
+        'client_pub': window.constants.CLIENT_PUBLIC_KEY
       });
 
     fetch('/establish', {
@@ -68,7 +74,12 @@ document.addEventListener('init', function(event) {
             document.querySelector('#xelis-seed-text').value = seed.splice(0, (seed.length+1)).join(" ");
         };
         document.querySelector('#establish-button').onclick = function () {
-            window.fn.validateAllInputs('Establish new Node?', 'All fields are required.', establish_node, window.constants.SESSION_TOKEN.serialize(), window.constants.CLIENT_PUBLIC_KEY);
+            //console.log(document.querySelector('#launch-key').value)
+            window.fn.validateAllInputsAndCall(
+                'Establish new Node?',
+                 'All fields are required.',
+                  establish_node
+                );
         };
     } else if (page.id === 'establish') {
         inputs.forEach(function(inp) {

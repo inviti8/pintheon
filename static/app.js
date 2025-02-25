@@ -39,7 +39,7 @@ document.addEventListener('init', function(event) {
         required: true
     };
 
-    window.fn.validateAllInputs = function(confirmMsg, failMsg, callback, ...args) {
+    window.fn.validateAllInputsAndCall = function(confirmMsg, failMsg, callback, ...args) {
         const inputs = document.querySelectorAll('input,  select, textarea');
         let result = true;
         for (let i = 0; i < inputs.length; i++) {
