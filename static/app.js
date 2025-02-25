@@ -33,6 +33,24 @@ document.addEventListener('init', function(event) {
         };
 
     };
+
+    //Validation Methods
+    let rules = {
+        required: true
+    };
+
+    window.fn.validateAllInputs = function() {
+      const inputs = document.querySelectorAll('input,  select, textarea');
+      let result = true;
+      for (let i = 0; i < inputs.length; i++) {
+        const input = inputs[i];
+        if (!approve.value(input.value, rules).approved) {
+          result = false;
+          break;
+        };
+      };
+        return result
+    };
     
 });
 
