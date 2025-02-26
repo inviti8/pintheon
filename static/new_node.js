@@ -26,15 +26,12 @@ const generate_xelis_wallet = function () {
 
 const establish_node = async () => {
     window.fn.showDialog('loading-dialog');
-    const seedCipher = await generateEncryptedText(document.querySelector('#xelis-seed-text').value, document.querySelector('#launch-key').value);
-    console.log(seedCipher)
-    let seed = await generateDecryptedText(seedCipher, document.querySelector('#launch-key').value)
-    console.log(seed)
-
 
     let requestBody = JSON.stringify({
         'token': window.constants.SESSION_TOKEN.serialize(),
-        'client_pub': window.constants.CLIENT_PUBLIC_KEY
+        'client_pub': window.constants.CLIENT_PUBLIC_KEY,
+        'launch_token': await generateLaunchToken(document.querySelector('#launch-key').value),
+        'seed_cipher': await generateSharedEncryptedText(document.querySelector('#xelis-seed-text').value, window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey),
       });
 
     fetch('/establish', {

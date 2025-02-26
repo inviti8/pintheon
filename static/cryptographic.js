@@ -19,6 +19,15 @@ function ab2hex(buffer) {
         .join('');
 };
 
+function b2ab(b64) {
+    const str = atob(b64);  // Convert from Base64 back to original string
+    let ab = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; ++i) {
+        ab[i] = str.charCodeAt(i);
+    }
+    return ab;
+}
+
 const generateClientKeys = async () => {
     try {
 
@@ -58,12 +67,59 @@ const loadKeypairFromJSON = async (unencryptedKeyStoreJSON) => {
     }
 };
 
-const hashKey = function(key){
-    return window.crypto.subtle.digest('SHA-256', key).then(hash => {
-        let result = Array.from(new Uint8Array(hash)).map(b => ('00' + b.toString(16)).slice(-2)).join('');
-        return result;
-    });
-};
+const hashKey = async function(key){
+    const encoder = new TextEncoder();  // Used to convert key string to UTF-8 ArrayBuffer
+    const data = encoder.encode(key);  // Convert the key string into an ArrayBuffer
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);  // Hash the key with SHA-256 algorithm
+    return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');  // Convert hash to hexadecimal string
+}
+
+function padKey(key) {
+    let keyBuffer = Buffer.from(key, 'utf-8');
+    if (keyBuffer.length > 32) {
+      return keyBuffer.subarray(0, 32); // Trim if the key is too long
+    } else if (keyBuffer.length < 32) {
+      const paddedKey = Buffer.alloc(32, 0);
+      keyBuffer.copy(paddedKey);
+      return paddedKey; // Pad with null bytes if too short
+    }
+    return keyBuffer;
+}
+
+const encryptAES = async function(data, key) {
+    const textEncoder = new TextEncoder();
+    let keyBytes = textEncoder.encode(key);
+    
+    if (keyBytes.length > 32){
+        keyBytes = keyBytes.slice(0, 32)
+        
+    }else if (keyBytes.length < 32) {
+         let padding = new Uint8Array(32 - keyBytes.length);
+         keyBytes = new Uint8Array([...keyBytes, ...padding]);
+     }
+    
+    // Generate a random IV (16 bytes)
+    const iv = crypto.getRandomValues(new Uint8Array(16));  
+    
+    // Convert the JSON data to bytes and apply PKCS7 padding (similar to Python's pad)
+    let dataBytes = textEncoder.encode(JSON.stringify(data));
+  
+    const paddedData = new Uint8Array(16 - dataBytes.length % 16); // Create an array of padding bytes
+    
+    dataBytes = new Uint8Array([...dataBytes, ...paddedData]); // Combine the original and padding arrays
+        
+    let encryptedData;
+    try { 
+        const keyObj = await window.crypto.subtle.importKey('raw', keyBytes, 'AES-CBC', false, ['encrypt']);
+        encryptedData = await crypto.subtle.encrypt({ name: "AES-CBC", iv }, keyObj, dataBytes);
+
+        // Return the base64 encoded IV concatenated with the encrypted data
+    return btoa(String.fromCharCode(...new Uint8Array([...iv, ...new Uint8Array(encryptedData)]))); 
+
+    } catch(e) { console.error("Failed to import key"); throw e; }
+    
+     
+}
 
 async function getCryptoKey(password) {
     const encoder = new TextEncoder();
@@ -107,21 +163,21 @@ async function generateEncryptedText(text, password) {
     );
 
     return {
-        cipherText: ab2hex(encrypted),
-        iv: ab2hex(iv),
-        salt: ab2hex(salt)
+        cipherText: btoa(String.fromCharCode(...new Uint8Array(encrypted))), // Use btoa instead of ab2hex for JavaScript base64 encoding
+        iv: btoa(String.fromCharCode(...new Uint8Array(iv))),  // Use btoa instead of ab2hex for JavaScript base64 encoding
+        salt: btoa(String.fromCharCode(...new Uint8Array(salt)))  // Use btoa instead of ab2hex for JavaScript base64 encoding
     };
 };
 
 async function generateDecryptedText(encryptedData, password) {
     const { cipherText, iv, salt } = encryptedData;
-    const key = await deriveKey(password, hex2ab(salt));
+    const key = await deriveKey(password, b2ab(salt));
 
     const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: hex2ab(iv) },
+        { name: 'AES-GCM', iv: b2ab(iv) },
         key,
-        hex2ab(cipherText)
-    );
+        b2ab(cipherText)
+     );
 
     const decoder = new TextDecoder();
     return decoder.decode(decrypted);
@@ -129,7 +185,7 @@ async function generateDecryptedText(encryptedData, password) {
 
 const generateSharedEncryptedText = async (txt, serverPub, clientPriv) => {
     const secret = await generateSharedSecret(serverPub, clientPriv);
-    const cipherTxt = await generateEncryptedText(txt, secret);
+    const cipherTxt = await encryptAES(txt, secret);
 
     return cipherTxt
 };
@@ -160,7 +216,7 @@ const generateEncryptedClientKeyStoreJSON = async (keys, password) => {
     }
 };
 
-const decryptClientKeys = async (password, encryptedKeyStoreJSON) => {
+const decryptClientKeyStoreJSON = async (password, encryptedKeyStoreJSON) => {
     try {
         // Parse the JSON string into an object
         const encryptedKeyStore = JSON.parse(encryptedKeyStoreJSON);
@@ -255,11 +311,11 @@ const generateSharedKey = async (serverPub, clientPriv) => {
 const generateLaunchToken = async (launchKey) => {
     try {
 
-        let location = window.location.href;
-        let identifier = "AXIEL_LAUNCH";
-        let token = window.MacaroonsBuilder.create(location, hashKey(launchKey), identifier);
+        let location = '';
+        let identifier = "AXIEL_LAUNCH_TOKEN";
+        let token = window.MacaroonsBuilder.create(location, launchKey, identifier);
 
-        return token;
+        return token.serialize();
     } catch (err) {
         console.error("Error in generating launch token: ", err);
         throw err;  // Re-throw the error so it can be caught where this function is called.

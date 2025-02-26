@@ -4,7 +4,7 @@ from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 from platformdirs import *
 from axielMachine import AxielMachine
-from pymacaroons import Macaroon, Verifier
+from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -36,7 +36,8 @@ def home():
    m = Macaroon(
             location='',
             identifier='AXIEL_LAUNCH_TOKEN',
-            key=hsh
+            key='bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=',
+            version=MACAROON_V1
         )
    print(m.identifier)
    print('-----------------------------------')
@@ -59,11 +60,15 @@ def home():
 def establish():
    data = request.get_json()
    print(data)
-   pem = AXIEL.pem_format(data['client_pub'])
-   print(pem)
-   secret = AXIEL.generate_shared_secret(pem)
+   secret = AXIEL.generate_shared_secret(data['client_pub'])
    print('-----------------------------------')
    print(secret)
+   print('-----------------------------------')
+   print('-----------------------------------')
+   print(AXIEL.verify_launch(data['launch_token']))
+   print('-----------------------------------')
+   print('-----------------------------------')
+   print(AXIEL.decrypt_aes(data['seed_cipher'], secret))
    print('-----------------------------------')
    #Here you would normally save the data to a database
    return jsonify(message='Data received', data=data), 201

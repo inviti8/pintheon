@@ -8,7 +8,7 @@ from base64 import b64encode, b64decode
 import requests
 import subprocess
 from transitions import Machine, State
-from cryptography.fernet import Fernet 
+from cryptography.fernet import Fernet, InvalidToken
 from tinydb import TinyDB
 import tinydb_encrypted_jsonstorage as tae
 from cryptography.hazmat.primitives import serialization, hashes
@@ -17,9 +17,15 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography import x509
+from Crypto.Protocol.KDF import HKDF
+from Crypto.Hash import SHA256
 from Crypto.PublicKey import ECC
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 from pymacaroons import Macaroon, Verifier
 import hashlib
+import hashlib, binascii
 
 
 class AxielMachine(object):
@@ -29,7 +35,7 @@ class AxielMachine(object):
     def __init__(self, static_path, db_path, wallet_path, xelis_daemon='https://node.xelis.io/json_rpc', ipfs_daemon='http://127.0.0.1:5001', xelis_network="Mainnet"):
 
         #self.key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
-        self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSBw-FqJroa1LoO3BLEIN4yAKWVj603js_qjQ9Xo3tmNMwo'
+        self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSB7MtcrDXWZNrLHqD5rVyOduvQKQ7EF2GaOEwW5phJUbAo'
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
         self.db_path = db_path
@@ -39,6 +45,7 @@ class AxielMachine(object):
         self.xelis_daemon = xelis_daemon
         self.ipfs_daemon = ipfs_daemon
         self.xelis_network = xelis_network
+        self.BLOCK_SIZE = 16
         self.logo_url = None
         self.node_name = None
         self.node_descriptor = None
@@ -72,18 +79,26 @@ class AxielMachine(object):
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
     
-    def verify_launch(self, launch_key):
+    def verify_launch(self, client_launch_token):
         result = False
-        v = Verifier()
-        m = Macaroon.deserialize(self.launch_token)
+        server_token = Macaroon.deserialize(self.launch_token)
+        client_token = Macaroon.deserialize(client_launch_token)
 
-        if m.identifier == 'AXIEL_LAUNCH_TOKEN':
-            result = v.verify( m, launch_key)
+        if server_token.signature == client_token.signature:
+            result = True
         
         return result
     
     def hash_key(self, key):
         return hashlib.sha256(key.encode('utf-8')).hexdigest()
+    
+    def pad_key(self, key):
+        key_bytes = key.encode('utf-8')
+        if len(key_bytes) > 32:
+            return key_bytes[:32]  # Trim if the key is too long
+        elif len(key_bytes) < 32:
+            return key_bytes.ljust(32, b'\0')  # Pad with null bytes if too short
+        return key_bytes
     
     def new_session(self):
         keypair = self._new_keypair()
@@ -97,10 +112,11 @@ class AxielMachine(object):
         self.node_pub = keypair['pub']
         return self.session_pub
     
-    def generate_shared_secret(self, pem_string):
+    def generate_shared_secret(self, b64_pub):
+        pem_string = self.pem_format(b64_pub)
         pub_key = serialization.load_pem_public_key(pem_string.encode('utf-8'), default_backend())
         shared_secret = self.session_priv.exchange(ec.ECDH(), pub_key)
-        return base64.b64encode(shared_secret).decode('utf-8') 
+        return base64.b64encode(shared_secret).decode('utf-8')   
 
     def pem_format(self, base64_string, type='PUBLIC KEY'):
         header = f"-----BEGIN {type}-----"
@@ -110,6 +126,55 @@ class AxielMachine(object):
         lines = [base64_string[i:i+64] for i in range(0, len(base64_string), 64)]
         
         return "\n".join([header] + lines + [footer])
+        
+    def derive_key(self, password, salt):
+        """Derive a key from a password and a salt"""
+        dk = hashlib.pbkdf2_hmac('sha256', password.encode(), binascii.unhexlify(salt), 100000)
+        return dk
+    
+    def decrypt_aes(self, data, key):
+        # Prepare the key
+        padded = self.pad_key(key)  # Ensure the key is 32 bytes for AES-256
+
+        # Decode the base64 data
+        data = base64.b64decode(data.encode('utf-8'))
+
+        # Extract the IV and the encrypted data
+        iv = data[:self.BLOCK_SIZE]
+        encrypted_data = data[self.BLOCK_SIZE:]
+
+        # Create a cipher object with the key and the IV
+        cipher = AES.new(padded, AES.MODE_CBC, iv)
+
+        # Decrypt the data and remove the padding
+        decrypted_data = cipher.decrypt(encrypted_data)
+        unpadded_data = decrypted_data.rstrip(b'\0')
+        decrypted_data = unpadded_data.decode('utf-8')
+        # Return the JSON data as a dictionary
+        return decrypted_data
+    
+    def decrypt_text(self, encryptedData, password):
+        """Decrypt data with AES-GCM"""
+        data = base64.b64decode(encryptedData["cipherText"])  
+        iv = base64.b64decode(encryptedData["iv"])
+        salt = base64.b64decode(encryptedData["salt"])
+
+        decrypted = self.decrypt_aes(self.pad_key(password), data)  # assuming AES MODE is ECB
+
+        return decrypted
+
+    # def decrypt_text(self, encryptedData, password):
+    #     """Decrypt data with AES-GCM"""
+    #     cipherText = b64decode(encryptedData['cipherText'])
+    #     iv = b64decode(encryptedData['iv'])
+    #     salt = b64decode(encryptedData['salt'])
+        
+    #     key = self.derive_key(password, salt)
+        
+    #     cipher = AES.new(key[:32], AES.MODE_GCM, nonce=iv[:16])
+    #     decrypted = cipher.decrypt_and_verify(cipherText, None)
+
+    #     return decrypted
 
     @property
     def do_initialize(self):
