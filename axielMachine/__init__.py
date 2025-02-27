@@ -40,6 +40,7 @@ class AxielMachine(object):
         self.static_path = static_path
         self.db_path = db_path
         self.db = None
+        self.xelis_config = None
         self.node_data = None
         self.wallet_path = wallet_path
         self.xelis_daemon = xelis_daemon
@@ -121,60 +122,30 @@ class AxielMachine(object):
     def pem_format(self, base64_string, type='PUBLIC KEY'):
         header = f"-----BEGIN {type}-----"
         footer = f"-----END {type}-----"
-        
-        # Split the base64 string into 64-character chunks except for the last one
+
         lines = [base64_string[i:i+64] for i in range(0, len(base64_string), 64)]
         
         return "\n".join([header] + lines + [footer])
         
     def derive_key(self, password, salt):
-        """Derive a key from a password and a salt"""
         dk = hashlib.pbkdf2_hmac('sha256', password.encode(), binascii.unhexlify(salt), 100000)
         return dk
     
     def decrypt_aes(self, data, key):
-        # Prepare the key
-        padded = self.pad_key(key)  # Ensure the key is 32 bytes for AES-256
+        padded = self.pad_key(key)
 
-        # Decode the base64 data
         data = base64.b64decode(data.encode('utf-8'))
 
-        # Extract the IV and the encrypted data
         iv = data[:self.BLOCK_SIZE]
         encrypted_data = data[self.BLOCK_SIZE:]
 
-        # Create a cipher object with the key and the IV
         cipher = AES.new(padded, AES.MODE_CBC, iv)
 
-        # Decrypt the data and remove the padding
         decrypted_data = cipher.decrypt(encrypted_data)
         unpadded_data = decrypted_data.rstrip(b'\0')
         decrypted_data = unpadded_data.decode('utf-8')
-        # Return the JSON data as a dictionary
+
         return decrypted_data
-    
-    def decrypt_text(self, encryptedData, password):
-        """Decrypt data with AES-GCM"""
-        data = base64.b64decode(encryptedData["cipherText"])  
-        iv = base64.b64decode(encryptedData["iv"])
-        salt = base64.b64decode(encryptedData["salt"])
-
-        decrypted = self.decrypt_aes(self.pad_key(password), data)  # assuming AES MODE is ECB
-
-        return decrypted
-
-    # def decrypt_text(self, encryptedData, password):
-    #     """Decrypt data with AES-GCM"""
-    #     cipherText = b64decode(encryptedData['cipherText'])
-    #     iv = b64decode(encryptedData['iv'])
-    #     salt = b64decode(encryptedData['salt'])
-        
-    #     key = self.derive_key(password, salt)
-        
-    #     cipher = AES.new(key[:32], AES.MODE_GCM, nonce=iv[:16])
-    #     decrypted = cipher.decrypt_and_verify(cipherText, None)
-
-    #     return decrypted
 
     @property
     def do_initialize(self):
@@ -227,13 +198,19 @@ class AxielMachine(object):
     def _initialize_db(self):
         print('INITIALIZE DB!!')
         self._open_db()
+        self.node_data = self.db.table('node_data')
+        self.xelis_config = self.db.table('xelis_config')
         self.db.close()
 
     def _open_db(self):
         self.db = TinyDB(encryption_key=self.master_key, path=self.db_path, storage=tae.EncryptedJSONStorage)
         self.node_data = self.db.table('node_data')
+        self.xelis_config = self.db.table('xelis_config')
 
-    def _wallet_config(self, outPath):
+    def _wallet_config_gen(self, clientPub, seedCipher, outPath):
+
+        seed = self.decrypt_aes(seedCipher, self.generate_shared_secret(clientPub))
+
         wallet_config = {
                 "rpc": {
                     "rpc_bind_address": None,
@@ -261,20 +238,26 @@ class AxielMachine(object):
                     "logs_modules": []
                 },
                 "wallet_path": f"{self.wallet_path}",
-                "password": None,
-                "seed": "null",
+                "password": f"{self.master_key}",
+                "seed": f"{seed}",
                 "network": f"{self.xelis_network}",
                 "enable_xswd": False,
                 "disable_history_scan": False,
                 "force_stable_balance": False
             }
-        with open(os.path.join(outPath, 'wallet_config.json'), 'w') as f:
-            json.dump(wallet_config, f)
+        
+        self._open_db()
+        self.xelis_config.insert(wallet_config)
+
+    # def _save_wallet_config(self, outPath):
+    #     print('save wallet config')
+    #     with open(os.path.join(outPath, 'wallet_config.json'), 'w') as f:
+    #         json.dump(wallet_config, f)
 
     def _open_wallet(self):
         print('open wallet')
 
-    def _add_file_to_ipfs(file_name, file_data):
+    def _add_file_to_ipfs(self, file_name, file_data):
         url = f'{self.ipfs_endpoint}/api/v0/add'
 
         files = {

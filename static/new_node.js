@@ -44,20 +44,20 @@ const establish_node = async () => {
       .then(response => {
         console.log(response)
         if (response.status === 200) {
-              return response.json();
+            return response.json();
         } else {
-            window.fn.hideDialog('loading-dialog')
+            window.fn.hideDialog('loading-dialog');
             window.fn.showDialog('fail-dialog');
             throw new Error('Request failed with status ' + response.status);
         }
       })
       .then(data => {
-
+        window.fn.hideDialog('loading-dialog');
         console.log("establish : ",data);
-        console.log('-------------------------------------------------');
           
       });
-      //window.fn.hideDialog('loading-dialog')
+
+      
 };
 
 document.addEventListener('init', function(event) {

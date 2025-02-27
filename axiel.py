@@ -1,5 +1,6 @@
 import os
-from flask import Flask, render_template, request, session, redirect, jsonify, url_for
+from flask import Flask, render_template, request, session, abort, redirect, jsonify, url_for
+from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 from platformdirs import *
@@ -28,6 +29,15 @@ def _load_components(comp):
 
 def _load_js(comp):
  return url_for('static', filename=f'{comp}.js')
+
+def _payload_valid(fields, data):
+   result = True
+   for field in fields:
+      if field not in data:
+         result = False
+         break
+
+   return result
  
 @app.route('/')
 def home():
@@ -58,20 +68,22 @@ def home():
 
 @app.route('/establish', methods=['POST'])
 def establish():
+   required = ['token','client_pub','launch_token', 'seed_cipher']
    data = request.get_json()
-   print(data)
-   secret = AXIEL.generate_shared_secret(data['client_pub'])
-   print('-----------------------------------')
-   print(secret)
-   print('-----------------------------------')
-   print('-----------------------------------')
-   print(AXIEL.verify_launch(data['launch_token']))
-   print('-----------------------------------')
-   print('-----------------------------------')
-   print(AXIEL.decrypt_aes(data['seed_cipher'], secret))
-   print('-----------------------------------')
-   #Here you would normally save the data to a database
-   return jsonify(message='Data received', data=data), 201
+
+   if not _payload_valid(required, data):
+        abort(400)  # Bad Request
+
+   elif not AXIEL.state == 'initialized':  # AXIEL must be initialized
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_launch(data['launch_token']):  # client must send valid launch token
+        raise Unauthorized()  # Unauthorized
+
+   else:
+        data = {"key": "value"}  # replace with actual data
+        return jsonify(data), 200
+
 
 @app.route('/data', methods=['POST'])
 def create_data():
