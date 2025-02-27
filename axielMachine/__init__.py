@@ -2,6 +2,7 @@
 
 __version__ = "0.01"
 import os
+import uuid
 import json
 import base64
 from base64 import b64encode, b64decode
@@ -14,13 +15,6 @@ import tinydb_encrypted_jsonstorage as tae
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography import x509
-from Crypto.Protocol.KDF import HKDF
-from Crypto.Hash import SHA256
-from Crypto.PublicKey import ECC
-from Crypto.Random import get_random_bytes
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from pymacaroons import Macaroon, Verifier
@@ -34,8 +28,9 @@ class AxielMachine(object):
 
     def __init__(self, static_path, db_path, wallet_path, xelis_daemon='https://node.xelis.io/json_rpc', ipfs_daemon='http://127.0.0.1:5001', xelis_network="Mainnet"):
 
-        #self.key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
+        self.uid = str(uuid.uuid4())
         self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSB7MtcrDXWZNrLHqD5rVyOduvQKQ7EF2GaOEwW5phJUbAo'
+        #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
         self.db_path = db_path
@@ -44,6 +39,7 @@ class AxielMachine(object):
         self.node_data = None
         self.wallet_path = wallet_path
         self.xelis_daemon = xelis_daemon
+        self.xelis_wallet_rpc = 'http://127.0.0.1:8081'
         self.ipfs_daemon = ipfs_daemon
         self.xelis_network = xelis_network
         self.BLOCK_SIZE = 16
@@ -57,6 +53,9 @@ class AxielMachine(object):
         self.session_pub = None
         self.node_priv = None
         self.node_pub = None
+
+        self._client_session_pub = None
+        self._seed_cipher = None
 
         # Initialize the state machine
         self.machine = Machine(model=self, states=AxielMachine.states, initial='spawned')
@@ -76,6 +75,12 @@ class AxielMachine(object):
         self.machine.add_transition(trigger='redeemed', source='redeeming', dest='idle', conditions=['on_redeemed'])
 
         self._initialize_db()
+
+    def set_client_session_pub(self, client_pub):
+        self._client_session_pub = client_pub
+    
+    def set_seed_cipher(self, seedCipher):
+        self._seed_cipher = seedCipher
 
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
@@ -149,17 +154,13 @@ class AxielMachine(object):
 
     @property
     def do_initialize(self):
-        print('initializing!!')
         self._update_node_data(os.path.join(self.static_path, 'hvym_logo.png'), 'AXIEL', 'XRO Network')
         return True
-    
-    @property
-    def do_wait(self):
-        print('waiting!!')
 
     @property
     def do_establish(self):
         print('establishing!!')
+        self._wallet_config_gen()
         
     @property
     def on_established(self):
@@ -207,15 +208,15 @@ class AxielMachine(object):
         self.node_data = self.db.table('node_data')
         self.xelis_config = self.db.table('xelis_config')
 
-    def _wallet_config_gen(self, clientPub, seedCipher, outPath):
+    def _wallet_config_gen(self):
 
-        seed = self.decrypt_aes(seedCipher, self.generate_shared_secret(clientPub))
+        seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_secret(self._client_session_pub))
 
         wallet_config = {
                 "rpc": {
-                    "rpc_bind_address": None,
-                    "rpc_username": None,
-                    "rpc_password": None,
+                    "rpc_bind_address": f'{self.xelis_wallet_rpc}',
+                    "rpc_username": f'{self.uid}',
+                    "rpc_password": f'{self.master_key}',
                     "rpc_threads": None
                 },
                 "network_handler": {
@@ -248,11 +249,13 @@ class AxielMachine(object):
         
         self._open_db()
         self.xelis_config.insert(wallet_config)
+        self.db.close()
 
-    # def _save_wallet_config(self, outPath):
-    #     print('save wallet config')
-    #     with open(os.path.join(outPath, 'wallet_config.json'), 'w') as f:
-    #         json.dump(wallet_config, f)
+    def _save_wallet_config(self, outPath):
+        print('save wallet config')
+        wallet_config = self.xelis_config.all()
+        with open(os.path.join(outPath, 'wallet_config.json'), 'w') as f:
+            json.dump(wallet_config, f)
 
     def _open_wallet(self):
         print('open wallet')

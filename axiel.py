@@ -68,7 +68,7 @@ def home():
 
 @app.route('/establish', methods=['POST'])
 def establish():
-   required = ['token','client_pub','launch_token', 'seed_cipher']
+   required = ['token', 'client_pub', 'launch_token', 'seed_cipher']
    data = request.get_json()
 
    if not _payload_valid(required, data):
@@ -81,8 +81,10 @@ def establish():
         raise Unauthorized()  # Unauthorized
 
    else:
-        data = {"key": "value"}  # replace with actual data
-        return jsonify(data), 200
+        AXIEL.set_client_session_pub(data['client_pub'])
+        AXIEL.set_seed_cipher(data['seed_cipher'])
+        return jsonify({'message': 'Established'}), 200
+
 
 
 @app.route('/data', methods=['POST'])
