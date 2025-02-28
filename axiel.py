@@ -83,6 +83,8 @@ def establish():
    else:
         AXIEL.set_client_session_pub(data['client_pub'])
         AXIEL.set_seed_cipher(data['seed_cipher'])
+        AXIEL.establish()
+        
         return jsonify({'message': 'Established'}), 200
 
 

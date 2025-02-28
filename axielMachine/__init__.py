@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
 from pymacaroons import Macaroon, Verifier
 import hashlib
 import hashlib, binascii
@@ -128,6 +128,9 @@ class AxielMachine(object):
             return key_bytes.ljust(32, b'\0')  # Pad with null bytes if too short
         return key_bytes
     
+    def _unpad(self, s):
+        return s[:-ord(s[len(s)-1:])]
+    
     def new_session(self):
         keypair = self._new_keypair()
         self.session_priv = keypair['priv']
@@ -170,9 +173,11 @@ class AxielMachine(object):
 
         decrypted_data = cipher.decrypt(encrypted_data)
         unpadded_data = decrypted_data.rstrip(b'\0')
+        unpadded_data = unpad(unpadded_data, AES.block_size)
         decrypted_data = unpadded_data.decode('utf-8')
+        arr = decrypted_data.split('"')
 
-        return decrypted_data
+        return arr[1]
 
     @property
     def do_initialize(self):
@@ -268,7 +273,7 @@ class AxielMachine(object):
                 },
                 "wallet_path": f"{self.wallet_path}",
                 "password": f"{self.master_key}",
-                "seed": f"{seed}",
+                "seed": seed,
                 "network": f"{self.xelis_network}",
                 "enable_xswd": False,
                 "disable_history_scan": False,
@@ -283,7 +288,7 @@ class AxielMachine(object):
         print('save wallet config')
         self._open_db()
         wallet_config = self.xelis_config.all()
-        with open(os.path.join(self._xelis_wallet_path, 'wallet_config.json'), 'w') as f:
+        with open(self._xelis_wallet_path, 'w') as f:
             json.dump(wallet_config, f)
 
         self.db.close()
