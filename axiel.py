@@ -68,8 +68,10 @@ def home():
 
 @app.route('/establish', methods=['POST'])
 def establish():
-   required = ['token', 'client_pub', 'launch_token', 'seed_cipher']
+   required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']
    data = request.get_json()
+
+   print(data)
 
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
@@ -81,11 +83,13 @@ def establish():
         raise Unauthorized()  # Unauthorized
 
    else:
+        AXIEL.new_node()
         AXIEL.set_client_session_pub(data['client_pub'])
         AXIEL.set_seed_cipher(data['seed_cipher'])
+        AXIEL.set_client_node_pub(data['generator_pub'])
         AXIEL.establish()
         
-        return jsonify({'message': 'Established'}), 200
+        return AXIEL.establish_data(), 200
 
 
 

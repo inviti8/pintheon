@@ -1,11 +1,11 @@
 const { KeyPair, get_languages } = wasm_bindgen;
 window.fn = {};
-let generator_keys;
+window.fn.generator_keys;
 
 // load wasm wallet and generate wallet seed right away
 async function init() {
     await wasm_bindgen();
-    generator_keys = await generateClientKeys();
+    window.fn.generator_keys = await generateClientKeys();
 };
 
 init();
@@ -32,6 +32,7 @@ const establish_node = async () => {
         'client_pub': window.constants.CLIENT_PUBLIC_KEY,
         'launch_token': await generateLaunchToken(document.querySelector('#launch-key').value),
         'seed_cipher': await generateSharedEncryptedText(document.querySelector('#xelis-seed-text').value, window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey),
+        'generator_pub': await exportKey(window.fn.generator_keys.publicKey),
       });
 
     fetch('/establish', {

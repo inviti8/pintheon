@@ -32,6 +32,7 @@ class AxielMachine(object):
         self.uid = str(uuid.uuid4())
         self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSB7MtcrDXWZNrLHqD5rVyOduvQKQ7EF2GaOEwW5phJUbAo'
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
+        self.root_token = None
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
         self.logo_url = None
@@ -66,8 +67,10 @@ class AxielMachine(object):
         self.node_pub = None
 
          #-------PRIVATE VARS--------
+        self._generator_token = None
         self._BLOCK_SIZE = 16
 
+        self._client_node_pub = None
         self._client_session_pub = None
         self._seed_cipher = None
 
@@ -97,6 +100,9 @@ class AxielMachine(object):
         print(self._dirs.user_data_dir)
         print(self._dirs.user_config_dir)
         print(self._xelis_wallet_path)
+
+    def set_client_node_pub(self, client_pub):
+        self._client_node_pub = client_pub
 
     def set_client_session_pub(self, client_pub):
         self._client_session_pub = client_pub
@@ -128,9 +134,6 @@ class AxielMachine(object):
             return key_bytes.ljust(32, b'\0')  # Pad with null bytes if too short
         return key_bytes
     
-    def _unpad(self, s):
-        return s[:-ord(s[len(s)-1:])]
-    
     def new_session(self):
         keypair = self._new_keypair()
         self.session_priv = keypair['priv']
@@ -143,11 +146,11 @@ class AxielMachine(object):
         self.node_pub = keypair['pub']
         return self.session_pub
     
-    def generate_shared_secret(self, b64_pub):
-        pem_string = self.pem_format(b64_pub)
-        pub_key = serialization.load_pem_public_key(pem_string.encode('utf-8'), default_backend())
-        shared_secret = self.session_priv.exchange(ec.ECDH(), pub_key)
-        return base64.b64encode(shared_secret).decode('utf-8')   
+    def generate_shared_session_secret(self, b64_pub):
+        return self._create_shared_secret(b64_pub, self.session_priv)
+
+    def generate_shared_node_secret(self):
+        return self._create_shared_secret(self._client_node_pub, self.node_priv)
 
     def pem_format(self, base64_string, type='PUBLIC KEY'):
         header = f"-----BEGIN {type}-----"
@@ -178,10 +181,39 @@ class AxielMachine(object):
         arr = decrypted_data.split('"')
 
         return arr[1]
+    
+    def establish_data(self):
+        return {'node_id': self.uid, 'node_pub': self.node_pub, 'root_token': self.root_token, 'master_key': self.master_key}
+    
+    def verify_generator(self, clientDischargeToken):
+        v = Verifier()
+        root = Macaroon.deserialize(self.root_token)
+        discharge = Macaroon.deserialize(clientDischargeToken)
+        discharged = discharge.prepare_for_request(discharge)
+        return v.verify(root, self.generate_shared_node_secret(), [discharged])
+    
+    def _create_shared_secret(self, b64_pub, server_priv):
+        pem_string = self.pem_format(b64_pub)
+        pub_key = serialization.load_pem_public_key(pem_string.encode('utf-8'), default_backend())
+        shared_secret = server_priv.exchange(ec.ECDH(), pub_key)
+        return base64.b64encode(shared_secret).decode('utf-8')
+    
+    def _create_root_token(self):
+        self.root_token = Macaroon(
+            location='',
+            identifier='AXIEL_ROOT_TOKEN',
+            key=self.generate_shared_node_secret()
+        ).serialize()
+
+    def _create_generator_token(self):
+        server_token = Macaroon.deserialize(self.root_token)
+        server_token.add_third_party_caveat('', self.root_token, 'AXIEL_GENERATOR_TOKEN')
+        return server_token
 
     @property
     def do_initialize(self):
         self._update_node_data(os.path.join(self.static_path, 'hvym_logo.png'), self._dirs.appname, self._dirs.appauthor)
+        self._update_state_data()
         return True
 
     @property
@@ -189,10 +221,15 @@ class AxielMachine(object):
         print('establishing!!')
         self._wallet_config_gen()
         self._save_wallet_config()
+        self._create_root_token()
+        self._update_state_data()
+        return True
         
     @property
     def on_established(self):
         print('established!!')
+        self._update_state_data()
+        return True
 
     def do_redeem(self):
         print('redeem')
@@ -214,25 +251,38 @@ class AxielMachine(object):
         pub = bytes.decode('utf-8').replace('\n', '\\n')
 
         return { 'pub': pub, 'priv': priv }
+    
+    def _update_state_data(self):
+        self._open_db()
+        data = { 'current_state':str(self.state) }
+        self._update_table_doc(self.state_data, data)
+        self.db.close()
 
     def _update_node_data(self, logo_url, name, descriptor):
         self._open_db()
         self.logo_url = logo_url
         self.node_name = name
-        self.node_descriptor = descriptor
+        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
+        
+        self._update_table_doc(self.node_data, data)
 
-        self.node_data.insert({ 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'master_key':self.master_key, 'launch_token': self.launch_token })
+        print(self.node_data.all())
+
         self.db.close()
 
     def _initialize_db(self):
         self._open_db()
-        self.state_data = self.db.table('state_data')
-        self.node_data = self.db.table('node_data')
-        self.xelis_config = self.db.table('xelis_config')
         self.db.close()
+
+    def _update_table_doc(self, table, data, id=1):
+        if not table.contains(doc_id=id):
+            table.insert(data)
+        else:
+            table.get(doc_id=id).update(data)
 
     def _open_db(self):
         self.db = TinyDB(encryption_key=self.master_key, path=self.db_path, storage=tae.EncryptedJSONStorage)
+        self.state_data = self.db.table('state_data')
         self.node_data = self.db.table('node_data')
         self.xelis_config = self.db.table('xelis_config')
 
@@ -243,7 +293,7 @@ class AxielMachine(object):
 
     def _wallet_config_gen(self):
 
-        seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_secret(self._client_session_pub))
+        seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_session_secret(self._client_session_pub))
 
         wallet_config = {
                 "rpc": {
@@ -281,13 +331,15 @@ class AxielMachine(object):
             }
         
         self._open_db()
-        self.xelis_config.insert(wallet_config)
+
+        self._update_table_doc(self.xelis_config, wallet_config)
+
         self.db.close()
 
     def _save_wallet_config(self):
         print('save wallet config')
         self._open_db()
-        wallet_config = self.xelis_config.all()
+        wallet_config = self.xelis_config.get(doc_id=1)
         with open(self._xelis_wallet_path, 'w') as f:
             json.dump(wallet_config, f)
 
