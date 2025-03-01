@@ -66,8 +66,8 @@ def home():
    return render_template(template, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_pub=session_pub)
    #return jsonify(message='||AXIEL||')
 
-@app.route('/establish', methods=['POST'])
-def establish():
+@app.route('/new_node', methods=['POST'])
+def new_node():
    required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']
    data = request.get_json()
 
@@ -87,12 +87,12 @@ def establish():
         AXIEL.set_client_session_pub(data['client_pub'])
         AXIEL.set_seed_cipher(data['seed_cipher'])
         AXIEL.set_client_node_pub(data['generator_pub'])
-        AXIEL.establish()
+        AXIEL.new()
         
         return AXIEL.establish_data(), 200
 
 
-@app.route('/establishing', methods=['POST'])
+@app.route('/establish', methods=['POST'])
 def establishing():
    required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']
    data = request.get_json()
@@ -101,7 +101,7 @@ def establishing():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not AXIEL.state == 'initializing':  # AXIEL must be initializing
+   elif not AXIEL.state == 'establishing':  # AXIEL must be establishing
         abort(Forbidden())  # Forbidden
     
    elif not AXIEL.verify_request(data['client_pub'], data['token']):  # client must send valid launch token

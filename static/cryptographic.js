@@ -28,7 +28,7 @@ function b2ab(b64) {
     return ab;
 }
 
-const generateClientKeys = async () => {
+const generateClientKeys = async (extractable=false) => {
     try {
 
         const keys = await window.crypto.subtle.generateKey(
@@ -36,7 +36,7 @@ const generateClientKeys = async () => {
               name: "ECDH",
               namedCurve: "P-256",
             },
-            false,
+            extractable,
             ["deriveKey", "deriveBits"],
         );
 
@@ -119,6 +119,58 @@ const encryptAES = async function(data, key) {
     } catch(e) { console.error("Failed to import key"); throw e; }
     
      
+}
+
+function decryptAES(encryptedData, key) {
+    // Prepare the key and decode the base64 data
+    const keyBuffer = padKey(key);
+    const data = Buffer.from(encryptedData, 'base64');
+  
+    // Extract the IV and the encrypted data
+    const iv = data.subarray(0, BLOCK_SIZE);
+    const encryptedText = data.subarray(BLOCK_SIZE);
+  
+    // Create a decipher object with the key and the IV
+    const decipher = crypto.createDecipheriv('aes-256-cbc', keyBuffer, iv);
+  
+    // Decrypt the data
+    let decrypted = decipher.update(encryptedText, 'binary', 'utf-8');
+    decrypted += decipher.final('utf-8');
+  
+    // Return the JSON data
+    return decrypted;
+}
+
+function convertBinaryToPem(binaryData, label) {
+    var base64Cert = ab_to_b64(binaryData)
+    var pemCert = "-----BEGIN " + label + "-----\r\n"
+    var nextIndex = 0
+    var lineLength
+    while (nextIndex < base64Cert.length) {
+      if (nextIndex + 64 <= base64Cert.length) {
+        pemCert += base64Cert.substr(nextIndex, 64) + "\r\n"
+      } else {
+        pemCert += base64Cert.substr(nextIndex) + "\r\n"
+      }
+      nextIndex += 64
+    }
+    pemCert += "-----END " + label + "-----\r\n"
+    return pemCert
+}
+
+function convertPemToBinary(pem) {
+    var lines = pem.split('\n')
+    var encoded = ''
+    for(var i = 0;i < lines.length;i++){
+      if (lines[i].trim().length > 0 &&
+          lines[i].indexOf('-BEGIN RSA PRIVATE KEY-') < 0 &&
+          lines[i].indexOf('-BEGIN RSA PUBLIC KEY-') < 0 &&
+          lines[i].indexOf('-END RSA PRIVATE KEY-') < 0 &&
+          lines[i].indexOf('-END RSA PUBLIC KEY-') < 0) {
+        encoded += lines[i].trim()
+      }
+    }
+    return b64_to_ab(encoded)
 }
 
 async function getCryptoKey(password) {
@@ -231,15 +283,16 @@ const decryptClientKeyStoreJSON = async (password, encryptedKeyStoreJSON) => {
     }
 }
 
-const exportKey = async (key) => {
+const exportKey = async (key, format='spki') => {
     try {
-        const exported = await window.crypto.subtle.exportKey('spki', key);
+        const exported = await window.crypto.subtle.exportKey(format, key);
         return btoa(String.fromCharCode(...new Uint8Array(exported)));  // Convert ArrayBuffer to base64 string.
     } catch (err) {
         console.error("Error in exporting public key: ", err);
         throw err;    // Re-throw the error so it can be caught where this function is called.
     }
 };
+
 
 const importServerPub = async (base64PEM) => {
     try {

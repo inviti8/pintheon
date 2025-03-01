@@ -83,7 +83,7 @@ class AxielMachine(object):
 
         self.machine.add_transition(trigger='initialize', source='spawned', dest='initialized', conditions=['do_initialize'])
 
-        self.machine.add_transition(trigger='establish', source='initialized', dest='establishing', conditions=['do_establish'])
+        self.machine.add_transition(trigger='new', source='initialized', dest='establishing', conditions=['create_new_node'])
 
         self.machine.add_transition(trigger='established', source='establishing', dest='idle', conditions=['on_established'])
 
@@ -233,8 +233,8 @@ class AxielMachine(object):
         return True
 
     @property
-    def do_establish(self):
-        print('establishing!!')
+    def create_new_node(self):
+        print('creating new node...')
         self._wallet_config_gen()
         self._save_wallet_config()
         self._create_root_token()

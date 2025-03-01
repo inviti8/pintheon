@@ -47,10 +47,10 @@
             </ons-list-item>
           </ons-list>
           <p>
-            <ons-input id="name" class="card-content" modifier="underbar" type="text" placeholder="NAME"></ons-input>
+            <ons-input id="node-name" class="card-content" modifier="underbar" type="text" placeholder="NAME"></ons-input>
           </p>
           <p>
-            <ons-input id="descriptor" class="card-content" modifier="underbar" type="text" placeholder="DESCRIPTOR"></ons-input>
+            <ons-input id="node-descriptor" class="card-content" modifier="underbar" type="text" placeholder="DESCRIPTOR"></ons-input>
           </p>
             <div class="row horizontal-button-container">
               <ons-col width="50%">
@@ -60,16 +60,19 @@
               </ons-col>
               
               <ons-col width="50%">
-                <ons-button id="btn-key-store-file"></ons-icon>SAVE KEYSTORE <ons-icon icon="download"></ons-icon>
-                  <input style="display: none" name="Select File" type="file" id="key-store-file" webkitdirectory>
-                </ons-button>
+                
               </ons-col>
             </div>
           <p>
-            <textarea modifier="large" class="textarea card-content" rows="4" placeholder="META-DATA"></textarea>
+            <textarea  id="node-meta-data" modifier="large" class="textarea card-content" rows="4" placeholder="META-DATA"></textarea>
+          </p>
+          <p>
+            <ons-button id="btn-key-store-file" modifier="large"></ons-icon>SAVE KEYSTORE <ons-icon icon="download"></ons-icon>
+              <input style="display: none" name="Select File" type="file" id="key-store-file" webkitdirectory>
+            </ons-button>
           </p>
           <p style="text-align: center;">
-            <ons-button modifier="large" onclick="window.fn.showDialog('loading-dialog')">ESTABLISH</ons-button>
+            <ons-button modifier="large" onclick="window.fn.showDialog('loading-dialog')" style="display: none">ESTABLISH</ons-button>
           </p>
         </ons-col>
         </ons-card>

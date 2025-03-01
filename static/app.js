@@ -1,3 +1,5 @@
+window.fn = {};
+
 // This file is for shared application wide for ui related js methods
 document.addEventListener('init', function(event) {
 
