@@ -79,7 +79,32 @@ def establish():
    elif not AXIEL.state == 'initialized':  # AXIEL must be initialized
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_launch(data['launch_token']):  # client must send valid launch token
+   elif not AXIEL.verify_request(data['client_pub'], data['token']) or not AXIEL.verify_launch(data['launch_token']):  # client must send valid launch token
+        raise Unauthorized()  # Unauthorized
+
+   else:
+        AXIEL.new_node()
+        AXIEL.set_client_session_pub(data['client_pub'])
+        AXIEL.set_seed_cipher(data['seed_cipher'])
+        AXIEL.set_client_node_pub(data['generator_pub'])
+        AXIEL.establish()
+        
+        return AXIEL.establish_data(), 200
+
+
+@app.route('/establishing', methods=['POST'])
+def establishing():
+   required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']
+   data = request.get_json()
+   print(data)
+
+   if not _payload_valid(required, data):
+        abort(400)  # Bad Request
+
+   elif not AXIEL.state == 'initializing':  # AXIEL must be initializing
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
         raise Unauthorized()  # Unauthorized
 
    else:

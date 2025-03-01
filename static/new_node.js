@@ -54,6 +54,9 @@ const establish_node = async () => {
       })
       .then(data => {
         window.fn.hideDialog('loading-dialog');
+        document.querySelector('#xelis-seed-text').value ="";
+        document.querySelector('#launch-key').value="";
+        window.fn.pushPage('establish')
         console.log("establish : ",data);
           
       });

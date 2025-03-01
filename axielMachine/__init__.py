@@ -113,6 +113,22 @@ class AxielMachine(object):
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
     
+    def verify_request(self, b64_pub, client_launch_token):
+        result = False
+
+        client_token = Macaroon.deserialize(client_launch_token)
+        token = Macaroon(
+            location=client_token.location,
+            identifier='AXIEL_SESSION',
+            key=self.generate_shared_session_secret(b64_pub)
+        )
+        
+
+        if token.signature == client_token.signature:
+            result = True
+        
+        return result
+    
     def verify_launch(self, client_launch_token):
         result = False
         server_token = Macaroon.deserialize(self.launch_token)
@@ -245,11 +261,11 @@ class AxielMachine(object):
     def on_file_handled(self):
         print('file handled!!')
 
-    def _new_keypair(self,):
+    def _new_keypair(self):
         priv = ec.generate_private_key(ec.SECP256R1(), default_backend())
         bytes = priv.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
         pub = bytes.decode('utf-8').replace('\n', '\\n')
-
+        
         return { 'pub': pub, 'priv': priv }
     
     def _update_state_data(self):
