@@ -3,15 +3,15 @@
 
 const hex2ab = function(hex){
     return new Uint8Array(hex.match(/[\da-f]{2}/gi).map(function (h) {return parseInt(h, 16)}));
-}
+};
 
 const b64_to_ab = function(base64_string){
     return Uint8Array.from(atob(base64_string), c => c.charCodeAt(0));
-}
+};
 
 const ab_to_b64 = function(arrayBuffer){
     return btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
-}
+};
 
 function ab2hex(buffer) {
     return [...new Uint8Array(buffer)]
@@ -27,6 +27,10 @@ function b2ab(b64) {
     }
     return ab;
 }
+
+const removeNullBytes = function(str){
+    return str.split("").filter(char => char.codePointAt(0)).join("")
+};
 
 const generateClientKeys = async (extractable=false) => {
     try {
@@ -140,7 +144,7 @@ const decryptAES = async function(data, key) {
         for (let i = 0; i < decoded.length; ++i) {
             result += String.fromCharCode(decoded[i]);
         }
-     return result; // Base64 encode the decrypted data
+     return removeNullBytes(result);
     }); 
 } 
 
