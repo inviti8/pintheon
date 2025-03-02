@@ -89,57 +89,60 @@ function padKey(key) {
 const encryptAES = async function(data, key) {
     const textEncoder = new TextEncoder();
     let keyBytes = textEncoder.encode(key);
-    
+
     if (keyBytes.length > 32){
         keyBytes = keyBytes.slice(0, 32)
-        
+
     }else if (keyBytes.length < 32) {
          let padding = new Uint8Array(32 - keyBytes.length);
          keyBytes = new Uint8Array([...keyBytes, ...padding]);
      }
-    
+
     // Generate a random IV (16 bytes)
-    const iv = crypto.getRandomValues(new Uint8Array(16));  
-    
+    const iv = crypto.getRandomValues(new Uint8Array(16));
+
     // Convert the JSON data to bytes and apply PKCS7 padding (similar to Python's pad)
     let dataBytes = textEncoder.encode(JSON.stringify(data));
-  
+
     const paddedData = new Uint8Array(16 - dataBytes.length % 16); // Create an array of padding bytes
-    
+
     dataBytes = new Uint8Array([...dataBytes, ...paddedData]); // Combine the original and padding arrays
-        
+
     let encryptedData;
-    try { 
+    try {
         const keyObj = await window.crypto.subtle.importKey('raw', keyBytes, 'AES-CBC', false, ['encrypt']);
         encryptedData = await crypto.subtle.encrypt({ name: "AES-CBC", iv }, keyObj, dataBytes);
 
         // Return the base64 encoded IV concatenated with the encrypted data
-    return btoa(String.fromCharCode(...new Uint8Array([...iv, ...new Uint8Array(encryptedData)]))); 
+    return btoa(String.fromCharCode(...new Uint8Array([...iv, ...new Uint8Array(encryptedData)])));
 
     } catch(e) { console.error("Failed to import key"); throw e; }
-    
-     
+
+
 }
 
-function decryptAES(encryptedData, key) {
-    // Prepare the key and decode the base64 data
-    const keyBuffer = padKey(key);
-    const data = Buffer.from(encryptedData, 'base64');
-  
-    // Extract the IV and the encrypted data
-    const iv = data.subarray(0, BLOCK_SIZE);
-    const encryptedText = data.subarray(BLOCK_SIZE);
-  
-    // Create a decipher object with the key and the IV
-    const decipher = crypto.createDecipheriv('aes-256-cbc', keyBuffer, iv);
-  
-    // Decrypt the data
-    let decrypted = decipher.update(encryptedText, 'binary', 'utf-8');
-    decrypted += decipher.final('utf-8');
-  
-    // Return the JSON data
-    return decrypted;
-}
+const decryptAES = async function(data, key) {
+    const byteArray = Uint8Array.from(atob(data), c => c.charCodeAt(0)); 
+     
+    let paddedKey = await padKey(key) ;
+             
+    const iv = byteArray.slice(0,16); // This should be equal to block size
+    const encrypted_data = byteArray.slice(16);
+              
+    const algorithmIdentifier = { name: "AES-CBC", iv: iv }; 
+    
+    let cryptoKey =  await window.crypto.subtle.importKey("raw", new TextEncoder().encode(paddedKey), algorithmIdentifier, false, ["decrypt"]);  
+               
+    return await window.crypto.subtle.decrypt(algorithmIdentifier, cryptoKey, encrypted_data).then(function(decryptedData){
+        decoded = new Uint8Array(decryptedData) ; 
+        
+        let result='';
+        for (let i = 0; i < decoded.length; ++i) {
+            result += String.fromCharCode(decoded[i]);
+        }
+     return result; // Base64 encode the decrypted data
+    }); 
+} 
 
 function convertBinaryToPem(binaryData, label) {
     var base64Cert = ab_to_b64(binaryData)
@@ -148,9 +151,9 @@ function convertBinaryToPem(binaryData, label) {
     var lineLength
     while (nextIndex < base64Cert.length) {
       if (nextIndex + 64 <= base64Cert.length) {
-        pemCert += base64Cert.substr(nextIndex, 64) + "\r\n"
+        pemCert += base64Cert.substring(nextIndex, nextIndex+64) + "\r\n"
       } else {
-        pemCert += base64Cert.substr(nextIndex) + "\r\n"
+        pemCert += base64Cert.substring(nextIndex) + "\r\n"
       }
       nextIndex += 64
     }
@@ -171,6 +174,34 @@ function convertPemToBinary(pem) {
       }
     }
     return b64_to_ab(encoded)
+}
+
+function exportPublicKey(keys) {
+    return new Promise(function(resolve) {
+      window.crypto.subtle.exportKey('spki', keys.publicKey).
+      then(function(spki) {
+        resolve(convertBinaryToPem(spki, "PUBLIC KEY"))
+      })
+    })
+  }
+
+function exportPrivateKey(keys) {
+    return new Promise(function(resolve) {
+      var expK = window.crypto.subtle.exportKey('pkcs8', keys.privateKey)
+      expK.then(function(pkcs8) {
+        resolve(convertBinaryToPem(pkcs8, "PRIVATE KEY"))
+      })
+    })
+  }
+
+function exportPemKeys(keys) {
+    return new Promise(function(resolve) {
+      exportPublicKey(keys).then(function(pubKey) {
+        exportPrivateKey(keys).then(function(privKey) {
+          resolve({publicKey: pubKey, privateKey: privKey})
+        })
+      })
+    })
 }
 
 async function getCryptoKey(password) {

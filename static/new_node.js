@@ -70,14 +70,18 @@ const save_keystore = async () => {
         'name': document.querySelector('#node-name').value,
         'descriptor': document.querySelector('#node-descriptor').value,
         'meta_data': document.querySelector('#node-meta-data').value,
-        'generator_pub': await exportKey(window.fn.generator_keys.publicKey, 'raw'),
-        'generator_priv': await exportKey(window.fn.generator_keys, 'raw'),
+        'generator_pub': await exportPublicKey(window.fn.generator_keys),
+        'generator_priv': await exportPrivateKey(window.fn.generator_keys),
         'node_data': window.fn.establish_data
     });
 
-    let enc = encryptAES(keystore, 'test12345');
+    let enc = await encryptAES(keystore, 'test12345');
 
     console.log(enc);
+
+    let decr = await decryptAES(enc, 'test12345');
+
+    console.log(decr)
 
 };
 
