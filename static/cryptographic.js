@@ -79,15 +79,16 @@ const hashKey = async function(key){
 }
 
 function padKey(key) {
-    let keyBuffer = Buffer.from(key, 'utf-8');
-    if (keyBuffer.length > 32) {
-      return keyBuffer.subarray(0, 32); // Trim if the key is too long
-    } else if (keyBuffer.length < 32) {
-      const paddedKey = Buffer.alloc(32, 0);
-      keyBuffer.copy(paddedKey);
-      return paddedKey; // Pad with null bytes if too short
-    }
-    return keyBuffer;
+    const textEncoder = new TextEncoder();
+    let keyBytes = textEncoder.encode(key);
+    if (keyBytes.length > 32){
+        keyBytes = keyBytes.slice(0, 32)
+
+    }else if (keyBytes.length < 32) {
+         let padding = new Uint8Array(32 - keyBytes.length);
+         keyBytes = new Uint8Array([...keyBytes, ...padding]);
+     }
+    return keyBytes;
 }
 
 const encryptAES = async function(data, key) {
@@ -128,14 +129,14 @@ const encryptAES = async function(data, key) {
 const decryptAES = async function(data, key) {
     const byteArray = Uint8Array.from(atob(data), c => c.charCodeAt(0)); 
      
-    let paddedKey = await padKey(key) ;
+    let paddedKey = await padKey(key);
              
     const iv = byteArray.slice(0,16); // This should be equal to block size
     const encrypted_data = byteArray.slice(16);
               
     const algorithmIdentifier = { name: "AES-CBC", iv: iv }; 
     
-    let cryptoKey =  await window.crypto.subtle.importKey("raw", new TextEncoder().encode(paddedKey), algorithmIdentifier, false, ["decrypt"]);  
+    let cryptoKey =  await window.crypto.subtle.importKey("raw", paddedKey, algorithmIdentifier, false, ["decrypt"]);  
                
     return await window.crypto.subtle.decrypt(algorithmIdentifier, cryptoKey, encrypted_data).then(function(decryptedData){
         decoded = new Uint8Array(decryptedData) ; 
@@ -146,7 +147,36 @@ const decryptAES = async function(data, key) {
         }
      return removeNullBytes(result);
     }); 
-} 
+}
+
+const  encryptJsonObject = async function(obj, password) {
+    let ob = structuredClone(obj);
+    for (let key in obj) {
+      // Checking if value is an object and not null
+      if (typeof obj[key] === 'object' && obj[key] !== null){
+        ob[key] = await encryptJsonObject(obj[key]);
+      } else if (typeof obj[key] === 'string'){ 
+          ob[key] = await encryptAES(obj[key], password);
+      }
+    }
+
+    return ob
+}
+
+const  decryptJsonObject = async function(obj, password) {
+    let ob = structuredClone(obj);
+    for (let key in obj) {
+      // Checking if value is an object and not null
+      if (typeof obj[key] === 'object' && obj[key] !== null){
+        ob[key] = await decryptJsonObject(obj[key]);
+      } else if (typeof obj[key] === 'string'){ 
+          ob[key] = await decryptAES(obj[key], password);
+          ob[key] = ob[key].replace(`/\\r|\\n|\\/|\"/g`, "").replace(/"/g, "")
+      }
+    }
+
+    return ob
+}
 
 function convertBinaryToPem(binaryData, label) {
     var base64Cert = ab_to_b64(binaryData)

@@ -23,4 +23,21 @@
           </p>
         </div>
     </ons-dialog>
-</template>
+  </template>
+
+  <template id="password-dialog.html">
+    <ons-dialog id="password-dialog" cancelable>
+        <div style="text-align: center; padding: 10px;">
+          <p id="password-dialog-text">ENTER YOUR PASSWORD</p>
+          <p>
+            <ons-input id="password-dialog-input" class="card-content" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
+          </p>
+          <p>
+            <ons-input id="password-dialog-confirm-input" class="card-content" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
+          </p>
+          <p>
+            <ons-button id="password-dialog-button">  ENTER  </ons-button>
+          </p>
+        </div>
+    </ons-dialog>
+  </template>

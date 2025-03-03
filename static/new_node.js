@@ -66,22 +66,20 @@ const new_node = async () => {
 
 const save_keystore = async () => {
 
-    let keystore = JSON.stringify({
+    let keystore = {
         'name': document.querySelector('#node-name').value,
         'descriptor': document.querySelector('#node-descriptor').value,
         'meta_data': document.querySelector('#node-meta-data').value,
         'generator_pub': await exportPublicKey(window.fn.generator_keys),
         'generator_priv': await exportPrivateKey(window.fn.generator_keys),
         'node_data': window.fn.establish_data
-    });
+    };
 
-    let enc = await encryptAES(keystore, 'test12345');
+    let encrypted = await encryptJsonObject (keystore, 'test12345');
+    console.log(encrypted)
 
-    console.log(enc);
-
-    let decr = await decryptAES(enc, 'test12345');
-
-    console.log(decr)
+    let decrypted = await decryptJsonObject(encrypted, 'test12345');
+    console.log(decrypted)
 
 };
 

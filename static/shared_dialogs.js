@@ -19,3 +19,16 @@ window.fn.hideDialog = function(id) {
     .hide();
   };
 };
+
+window.fn.validatePasswords = function(id) {
+  let result = false;
+  const dialog = document.getElementById(id);
+  const pwInput = document.getElementById(id + '-input');
+  const confirmPwInput = document.getElementById(id + '-confirm-input');
+
+  if(dialog){
+    result = (pwInput.value === confirmPwInput.value);
+  };
+
+  return result
+};
