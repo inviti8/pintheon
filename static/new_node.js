@@ -25,7 +25,7 @@ const generate_xelis_wallet = function () {
 };
 
 const new_node = async () => {
-    window.fn.showDialog('loading-dialog');
+    window.dlg.show('loading-dialog');
 
     let requestBody = JSON.stringify({
         'token': window.constants.SESSION_TOKEN.serialize(),
@@ -47,13 +47,13 @@ const new_node = async () => {
         if (response.status === 200) {
             return response.json();
         } else {
-            window.fn.hideDialog('loading-dialog');
-            window.fn.showDialog('fail-dialog');
+            window.dlg.hide('loading-dialog');
+            window.dlg.show('fail-dialog');
             throw new Error('Request failed with status ' + response.status);
         }
       })
       .then(data => {
-        window.fn.hideDialog('loading-dialog');
+        window.dlg.hide('loading-dialog');
         window.fn.establish_data = data;
         // document.querySelector('#xelis-seed-text').value ="";
         // document.querySelector('#launch-key').value="";
@@ -68,9 +68,9 @@ const save_keystore = async ( keystore, password ) => {
     if(window.fn.validatePasswords('password-dialog')){
         let encrypted = await encryptJsonObject (keystore, password);
         window.fn.download(JSON.stringify(encrypted), 'text/plain', 'AXIEL_KEYSTORE.json');
-        window.fn.hideDialog('password-dialog');
+        window.dlg.hide('password-dialog');
     }else{
-        window.fn.showDialog('fail-dialog');
+        window.dlg.show('fail-dialog');
     };
 
 };
@@ -86,11 +86,11 @@ const create_keystore = async () => {
         'node_data': window.fn.establish_data
     };
 
-    window.fn.showDialog('password-dialog', save_keystore, keystore);
+    window.dlg.show('password-dialog', save_keystore, keystore);
 };
 
 const establish = async () => {
-    window.fn.showDialog('loading-dialog');
+    window.dlg.show('loading-dialog');
 
     let requestBody = JSON.stringify({
         'token': window.constants.SESSION_TOKEN.serialize(),
@@ -111,13 +111,13 @@ const establish = async () => {
         if (response.status === 200) {
             return response.json();
         } else {
-            window.fn.hideDialog('loading-dialog');
-            window.fn.showDialog('fail-dialog');
+            window.dlg.hide('loading-dialog');
+            window.dlg.show('fail-dialog');
             throw new Error('Request failed with status ' + response.status);
         }
       })
       .then(data => {
-        window.fn.hideDialog('loading-dialog');
+        window.dlg.hide('loading-dialog');
         document.querySelector('#xelis-seed-text').value ="";
         document.querySelector('#launch-key').value="";
         window.fn.pushPage('establish')
@@ -157,7 +157,7 @@ document.addEventListener('init', function(event) {
         };
         
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
-        window.fn.renderNodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');
+        window.rndr.nodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');
     }
 });
 

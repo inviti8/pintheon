@@ -1,4 +1,5 @@
 window.fn = {};
+window.rndr = {};
 
 // This file is for shared application wide for ui related js methods
 document.addEventListener('init', function(event) {
@@ -13,7 +14,7 @@ document.addEventListener('init', function(event) {
     });
 
     //Shared Rendering methods
-    window.fn.renderNodeCardHeader = function(logo, name, descriptor, qty=1){
+    window.rndr.nodeCardHeader = function(logo, name, descriptor, qty=1){
         const elem = 'node-data-card-header';
         let list = document.querySelector('#'+elem);
 
@@ -37,8 +38,16 @@ document.addEventListener('init', function(event) {
     };
 
     //Validation Methods
-    let rules = {
+    let input_rules = {
         required: true
+    };
+
+    var password_rules = {
+        required: true,
+        strength: {
+            min: 6,
+            bonus: 7
+        }
     };
 
     window.fn.validateAllInputsAndCall = function(confirmMsg, failMsg, callback, ...args) {
@@ -46,7 +55,7 @@ document.addEventListener('init', function(event) {
         let result = true;
         for (let i = 0; i < inputs.length; i++) {
             const input = inputs[i];
-            if (!approve.value(input.value, rules).approved) {
+            if (!approve.value(input.value, input_rules).approved) {
             result = false;
             break;
             };
@@ -55,6 +64,34 @@ document.addEventListener('init', function(event) {
         window.fn.handleBoolDescisionDlgs(result, confirmMsg, failMsg, callback, ...args)
     };
 
+    window.fn.handleBoolDescisionDlgs = function(result, confirmMsg, failMsg, callback, ...args){
+        if(result){
+            ons.notification.confirm(confirmMsg)
+        .then(function(answer) {
+            if(answer>0){
+                callback(...args);    
+            };
+         });
+        }else{
+            ons.notification.alert(failMsg);
+        };
+    };
+
+    window.fn.validatePasswords = function(id) {
+        let result = false;
+        const dialog = document.getElementById(id);
+        const pwInput = document.getElementById(id + '-input');
+        const confirmPwInput = document.getElementById(id + '-confirm-input');
+      
+        if(dialog){
+          result = (pwInput.value === confirmPwInput.value);
+          console.log(approve.value(pwInput.value, password_rules))
+        };
+      
+        return result
+    };
+
+    //utils
     window.fn.download = function(content, mimeType, filename){
         const a = document.createElement('a') // Create "a" element
         const blob = new Blob([content], {type: mimeType}) // Create a blob (file-like object)

@@ -8,7 +8,7 @@
           </span>
         </p>
         <p>
-          <ons-button onclick="window.fn.hideDialog('loading-dialog')">Close</ons-button>
+          <ons-button onclick="window.dlg.hide('loading-dialog')">Close</ons-button>
         </p>
       </div>
     </ons-dialog>
@@ -30,10 +30,10 @@
         <div style="text-align: center; padding: 10px;">
           <p id="password-dialog-text">ENTER YOUR PASSWORD</p>
           <p>
-            <ons-input id="password-dialog-input" class="card-content" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
+            <ons-input id="password-dialog-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="PASSWORD" float title="Password"></ons-input>
           </p>
           <p>
-            <ons-input id="password-dialog-confirm-input" class="card-content" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
+            <ons-input id="password-dialog-confirm-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="CONFIRM PASSWORD" float title="Confirm Password"></ons-input>
           </p>
           <p>
             <ons-button id="password-dialog-button" class="can-callback">  ENTER  </ons-button>
