@@ -64,7 +64,18 @@ const new_node = async () => {
  
 };
 
-const save_keystore = async () => {
+const save_keystore = async ( keystore, password ) => {
+    if(window.fn.validatePasswords('password-dialog')){
+        let encrypted = await encryptJsonObject (keystore, password);
+        window.fn.download(JSON.stringify(encrypted), 'text/plain', 'AXIEL_KEYSTORE.json');
+        window.fn.hideDialog('password-dialog');
+    }else{
+        window.fn.showDialog('fail-dialog');
+    };
+
+};
+
+const create_keystore = async () => {
 
     let keystore = {
         'name': document.querySelector('#node-name').value,
@@ -75,12 +86,7 @@ const save_keystore = async () => {
         'node_data': window.fn.establish_data
     };
 
-    let encrypted = await encryptJsonObject (keystore, 'test12345');
-    console.log(encrypted)
-
-    let decrypted = await decryptJsonObject(encrypted, 'test12345');
-    console.log(decrypted)
-
+    window.fn.showDialog('password-dialog', save_keystore, keystore);
 };
 
 const establish = async () => {
@@ -147,7 +153,7 @@ document.addEventListener('init', function(event) {
         });
 
         document.querySelector('#btn-key-store-file').onclick = function () {
-            save_keystore()
+            create_keystore()
         };
         
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;

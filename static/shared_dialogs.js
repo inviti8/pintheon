@@ -1,4 +1,4 @@
-window.fn.showDialog = function(id) {
+window.fn.showDialog = function(id, callback, ...args) {
     let dialog = document.getElementById(id);
 
     if (dialog) {
@@ -6,6 +6,11 @@ window.fn.showDialog = function(id) {
     } else {
       ons.createElement(id+'.html', { append: true })
         .then(function(dialog) {
+          if(callback){
+            dialog.querySelector('.can-callback').onclick = function () {
+              callback(...args);
+            };
+          };
             dialog.show();
           });
       }
@@ -19,6 +24,19 @@ window.fn.hideDialog = function(id) {
     .hide();
   };
 };
+
+window.fn.handleBoolDescisionDlgs = function(result, confirmMsg, failMsg, callback, ...args){
+  if(result){
+      ons.notification.confirm(confirmMsg)
+  .then(function(answer) {
+      if(answer>0){
+          callback(...args);    
+      };
+   });
+  }else{
+      ons.notification.alert(failMsg);
+  };
+}; 
 
 window.fn.validatePasswords = function(id) {
   let result = false;

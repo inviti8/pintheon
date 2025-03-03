@@ -55,19 +55,14 @@ document.addEventListener('init', function(event) {
         window.fn.handleBoolDescisionDlgs(result, confirmMsg, failMsg, callback, ...args)
     };
 
-    //Dialog Utilities
-    window.fn.handleBoolDescisionDlgs = function(result, confirmMsg, failMsg, callback, ...args){
-        if(result){
-            ons.notification.confirm(confirmMsg)
-        .then(function(answer) {
-            if(answer>0){
-                callback(...args);    
-            };
-         });
-        }else{
-            ons.notification.alert(failMsg);
-        };
-    };  
+    window.fn.download = function(content, mimeType, filename){
+        const a = document.createElement('a') // Create "a" element
+        const blob = new Blob([content], {type: mimeType}) // Create a blob (file-like object)
+        const url = URL.createObjectURL(blob) // Create an object URL from blob
+        a.setAttribute('href', url) // Set "a" element link
+        a.setAttribute('download', filename) // Set download filename
+        a.click() // Start downloading
+    };
     
 });
 
