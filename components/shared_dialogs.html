@@ -25,18 +25,47 @@
     </ons-dialog>
   </template>
 
-  <template id="password-dialog.html">
-    <ons-dialog id="password-dialog" cancelable>
+  <template id="new-password-dialog.html">
+    <ons-dialog id="new-password-dialog" cancelable>
         <div style="text-align: center; padding: 10px;">
-          <p id="password-dialog-text">ENTER YOUR PASSWORD</p>
+          <p id="new-password-dialog-text">ENTER YOUR PASSWORD</p>
           <p>
-            <ons-input id="password-dialog-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="PASSWORD" float title="Password"></ons-input>
+            <ons-input id="new-password-dialog-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
           </p>
           <p>
-            <ons-input id="password-dialog-confirm-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="CONFIRM PASSWORD" float title="Confirm Password"></ons-input>
+            <ons-input id="new-password-dialog-confirm-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="CONFIRM PASSWORD" float></ons-input>
           </p>
           <p>
-            <ons-button id="password-dialog-button" class="can-callback">  ENTER  </ons-button>
+            <ons-button id="new-password-dialog-button" class="can-callback">  ENTER  </ons-button>
+          </p>
+        </div>
+    </ons-dialog>
+  </template>
+
+  <template id="load-encrypted-file-dialog.html">
+    <ons-dialog id="load-encrypted-file-dialog" cancelable>
+        <div style="text-align: center; padding: 10px;">
+          <p id="load-encrypted-file-dialog-text">ENTER YOUR PASSWORD</p>
+          <p>
+            <ons-input id="load-encrypted-file-dialog-pw-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
+          </p>
+          <p>
+            <ons-button id="load-encrypted-file-dialog-button" class="can-callback">  ENTER  
+              <input type="file" id="load-encrypted-file-dialog-input" class="file-input" name="load-file-dialog-upload" style="display: none;">
+            </ons-button>
+          </p>
+        </div>
+    </ons-dialog>
+  </template>
+
+  <template id="load-file-dialog.html">
+    <ons-dialog id="load-file-dialog" cancelable>
+        <div style="text-align: center; padding: 10px;">
+          <p id="load-file-dialog-text">LOAD KEYSTORE</p>
+          <p>
+            <ons-button id="load-file-dialog-button" class="can-callback">  ENTER  
+              <input type="file" id="load-file-dialog-input" class="file-input" name="load-file-dialog-upload" style="display: none;">
+            </ons-button>
           </p>
         </div>
     </ons-dialog>

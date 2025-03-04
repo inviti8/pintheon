@@ -100,6 +100,25 @@ document.addEventListener('init', function(event) {
         a.setAttribute('download', filename) // Set download filename
         a.click() // Start downloading
     };
+
+    window.fn.saveEncryptedFileObject = async ( encObj, dlgName, fileName) => {
+        if(window.fn.validatePasswords(dlgName)){
+            const password = document.querySelector('#'+dlgName+'-input').value;
+            const encrypted = await encryptJsonObject (encObj, password);
+            window.fn.download(JSON.stringify(encrypted), 'text/plain', fileName+'.json');
+            window.dlg.hide(dlgName);
+        }else{
+            window.dlg.show('fail-dialog');
+        };
+    };
+    
+    window.fn.createEncryptedFileObject = async (dlgName, fileName, jsonObj) => {
+        window.dlg.show(dlgName, window.fn.saveEncryptedFileObject, jsonObj, dlgName, fileName);
+    };
+
+    window.fn.loadJSONFileObject = async (dlgName, callback, encrypted=false) => {
+        window.dlg.showInputDlg(dlgName, callback, encrypted);
+    };
     
 });
 
