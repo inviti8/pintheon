@@ -116,9 +116,49 @@ document.addEventListener('init', function(event) {
         window.dlg.show(dlgName, window.fn.saveEncryptedJSONFile, jsonObj, dlgName, fileName);
     };
 
-    window.fn.loadJSONFileObject = async (dlgName, callback, encrypted=false) => {
-        window.dlg.showInputDlg(dlgName, callback, encrypted);
+    window.fn.loadJSONFileObject = async (dlgName, callback, encrypted=false, pruneKeys=[]) => {
+        window.dlg.showLoadJsonDlg(dlgName, callback, encrypted, pruneKeys);
     };
-    
+
+    window.fn.pruneJsonKeys = (obj, keys) => {
+        const clone = structuredClone(obj);
+        Object.keys(clone).forEach((key) => {
+          if (keys.includes(key)) {
+            delete clone[key];
+          } else {
+            if (typeof clone[key] === 'object') {
+                window.fn.pruneJsonKeys(clone[key], keys);
+            }
+          }
+        });
+        return clone;
+    };
+
+    window.fn.store = (key, obj, type='session') => {
+        if(type  === 'local') {
+            localStorage.setItem(key, JSON.stringify(obj));
+         } else {
+            sessionStorage.setItem(key, JSON.stringify(obj));
+        };
+    };
+
+    window.fn.getStored = (key, obj, type='session') => {
+        let result;
+        if(type  === 'local') {
+            result = JSON.parse(localStorage.getItem(key));
+         } else {
+            result = JSON.parse(sessionStorage.getItem(key));
+        };
+
+        return result
+    };
+
+    window.fn.removeStored = (key, obj, type='session') => {
+        if(type  === 'local') {
+            localStorage.removeItem(key);
+         } else {
+            sessionStorage.removeItem(key);
+        };
+    };
 });
 

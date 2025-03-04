@@ -28,6 +28,7 @@
   <script src="{{ url_for('static', filename='cryptographic.js') }}"></script>
   <script type="module">
     window.constants = {};
+    window.constants.KEYSTORE = 'AXIEL_KEYSTORE';
     window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
     window.constants.CLIENT_SESSION_KEYS = await generateClientKeys();
     window.constants.SERVER_PUBLIC_KEY = await importServerPub("{{session_pub}}");

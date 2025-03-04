@@ -20,7 +20,7 @@ window.dlg.show = function(id, callback, ...args) {
     return dialog;
 };
 
-window.dlg.showInputDlg = function(id, callback, encrypted=false) {
+window.dlg.showLoadJsonDlg = function(id, callback, encrypted=false, pruneKeys=[]) {
   let dialog = document.getElementById(id);
 
   if (dialog) {
@@ -43,10 +43,12 @@ window.dlg.showInputDlg = function(id, callback, encrypted=false) {
 
               const lines = file.split(/\r\n|\n/);
               text = lines.join('\n');
+              let obj = JSON.parse(text);
+              obj = window.fn.pruneJsonKeys(obj, pruneKeys);
 
               if(encrypted){
                 const pw = dialog.querySelector('.pw-input');
-                let obj = JSON.parse(text);
+                
                 obj = decryptJsonObject(obj, pw.value);
 
                 if(callback){
@@ -56,7 +58,7 @@ window.dlg.showInputDlg = function(id, callback, encrypted=false) {
               }else{
 
                 if(callback){
-                  callback(text);
+                  callback(obj);
                 };
 
               };
