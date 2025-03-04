@@ -75,7 +75,7 @@ const create_keystore = async () => {
         'node_data': window.fn.establish_data
     };
 
-    await window.fn.createEncryptedFileObject('new-password-dialog', 'AXIEL_KEYSTORE', keystore);
+    await window.fn.createEncryptedJSONFile('new-password-dialog', 'AXIEL_KEYSTORE', keystore);
 };
 
 const on_keystore_loaded = async (obj) => {

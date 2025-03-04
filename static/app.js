@@ -101,7 +101,7 @@ document.addEventListener('init', function(event) {
         a.click() // Start downloading
     };
 
-    window.fn.saveEncryptedFileObject = async ( encObj, dlgName, fileName) => {
+    window.fn.saveEncryptedJSONFile = async ( encObj, dlgName, fileName) => {
         if(window.fn.validatePasswords(dlgName)){
             const password = document.querySelector('#'+dlgName+'-input').value;
             const encrypted = await encryptJsonObject (encObj, password);
@@ -112,8 +112,8 @@ document.addEventListener('init', function(event) {
         };
     };
     
-    window.fn.createEncryptedFileObject = async (dlgName, fileName, jsonObj) => {
-        window.dlg.show(dlgName, window.fn.saveEncryptedFileObject, jsonObj, dlgName, fileName);
+    window.fn.createEncryptedJSONFile = async (dlgName, fileName, jsonObj) => {
+        window.dlg.show(dlgName, window.fn.saveEncryptedJSONFile, jsonObj, dlgName, fileName);
     };
 
     window.fn.loadJSONFileObject = async (dlgName, callback, encrypted=false) => {
