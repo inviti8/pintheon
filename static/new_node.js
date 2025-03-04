@@ -75,16 +75,18 @@ const create_keystore = async () => {
         'node_data': window.fn.establish_data
     };
 
-    await window.fn.createEncryptedJSONFile('new-password-dialog', window.constants.KEYSTORE, keystore);
+    await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore );
 };
 
 const on_keystore_loaded = async (obj) => {
     const keystore = await obj;
     window.fn.store(window.constants.KEYSTORE, keystore);
+
+    console.log(window.fn.getStored(window.constants.KEYSTORE))
 };
 
 const load_keystore = async () => {
-    await window.fn.loadJSONFileObject('load-encrypted-file-dialog', on_keystore_loaded, true);
+    await window.fn.loadJSONFileObject(on_keystore_loaded, true, ['node_data']);
 };
 
 const establish = async () => {

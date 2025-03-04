@@ -34,7 +34,10 @@ window.dlg.showLoadJsonDlg = function(id, callback, encrypted=false, pruneKeys=[
           let files = input.files;
           let text;
        
-          if (files.length == 0) return;
+          if (files.length == 0){
+            window.dlg.hide(id);
+            return;
+          };
           const file = files[0];
           let reader = new FileReader();
        

@@ -112,11 +112,14 @@ document.addEventListener('init', function(event) {
         };
     };
     
-    window.fn.createEncryptedJSONFile = async (dlgName, fileName, jsonObj) => {
+    window.fn.createEncryptedJSONFile = async (fileName, jsonObj, dlgName='new-password-dialog') => {
         window.dlg.show(dlgName, window.fn.saveEncryptedJSONFile, jsonObj, dlgName, fileName);
     };
 
-    window.fn.loadJSONFileObject = async (dlgName, callback, encrypted=false, pruneKeys=[]) => {
+    window.fn.loadJSONFileObject = async (callback, encrypted=false, pruneKeys=[], dlgName='load-file-dialog') => {
+        if(encrypted && dlgName === 'load-file-dialog'){
+            dlgName='load-encrypted-file-dialog';
+        };
         window.dlg.showLoadJsonDlg(dlgName, callback, encrypted, pruneKeys);
     };
 
