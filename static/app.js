@@ -77,7 +77,7 @@ document.addEventListener('init', function(event) {
         };
     };
 
-    window.fn.validatePasswords = function(id) {
+    window.fn.validateNewPassword = function(id) {
         let result = false;
         const dialog = document.getElementById(id);
         const pwInput = document.getElementById(id + '-input');
@@ -86,6 +86,19 @@ document.addEventListener('init', function(event) {
         if(dialog){
           result = (pwInput.value === confirmPwInput.value);
           console.log(approve.value(pwInput.value, password_rules))
+        };
+      
+        return result
+    };
+
+    window.fn.validatePassword = function(id) {
+        let result = false;
+        const dialog = document.getElementById(id);
+        const pwInput = document.getElementById(id + '-input');
+      
+        if(dialog){
+            result = true;
+            console.log(approve.value(pwInput.value, password_rules))
         };
       
         return result
@@ -102,7 +115,7 @@ document.addEventListener('init', function(event) {
     };
 
     window.fn.saveEncryptedJSONFile = async ( encObj, dlgName, fileName) => {
-        if(window.fn.validatePasswords(dlgName)){
+        if(window.fn.validateNewPassword(dlgName)){
             const password = document.querySelector('#'+dlgName+'-input').value;
             const encrypted = await encryptJsonObject (encObj, password);
             window.fn.download(JSON.stringify(encrypted), 'text/plain', fileName+'.json');
@@ -120,7 +133,29 @@ document.addEventListener('init', function(event) {
         if(encrypted && dlgName === 'load-file-dialog'){
             dlgName='load-encrypted-file-dialog';
         };
-        window.dlg.showLoadJsonDlg(dlgName, callback, encrypted, pruneKeys);
+        window.dlg.showLoadJsonFileDlg(dlgName, callback, encrypted, pruneKeys);
+    };
+
+    window.fn.getStoredEncryptedJSONObject = async ( key, callback, dlgName='load-encrypted-file-dialog' ) => {
+        if(window.fn.validatePassword(dlgName)){
+            const password = document.querySelector('.pw-input').value;
+            let obj = await window.fn.getStored(key);
+            try{
+                obj = await decryptJsonObject(obj, password);
+                callback(obj);
+                window.dlg.hide(dlgName);
+            }catch(err){
+                window.dlg.show('fail-dialog');
+            };
+
+            
+        }else{
+            window.dlg.show('fail-dialog');
+        };
+    };
+
+    window.fn.loadStoredEncryptedJSONObject = async (key, callback, dlgName='load-encrypted-file-dialog') => {
+        window.dlg.show(dlgName, window.fn.getStoredEncryptedJSONObject, key, callback, dlgName);
     };
 
     window.fn.pruneJsonKeys = (obj, keys) => {
@@ -145,7 +180,7 @@ document.addEventListener('init', function(event) {
         };
     };
 
-    window.fn.getStored = (key, obj, type='session') => {
+    window.fn.getStored = (key, type='session') => {
         let result;
         if(type  === 'local') {
             result = JSON.parse(localStorage.getItem(key));
@@ -156,7 +191,7 @@ document.addEventListener('init', function(event) {
         return result
     };
 
-    window.fn.removeStored = (key, obj, type='session') => {
+    window.fn.removeStored = (key, type='session') => {
         if(type  === 'local') {
             localStorage.removeItem(key);
          } else {

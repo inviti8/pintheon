@@ -1,5 +1,57 @@
 window.dlg = {};
 
+const _jsonFileLoaderInputChangeCallback = function(id, input, encrypted, pruneKeys, callback){
+
+  input.addEventListener('change', () => {
+    let files = input.files;
+    let text;
+ 
+    if (files.length == 0){
+      window.dlg.hide(id);
+      return;
+    };
+    const file = files[0];
+    let reader = new FileReader();
+ 
+    reader.onload = (e) => {
+        const file = e.target.result;
+
+        const lines = file.split(/\r\n|\n/);
+        text = lines.join('\n');
+        let obj = JSON.parse(text);
+        obj = window.fn.pruneJsonKeys(obj, pruneKeys);
+
+        if(encrypted){
+          const pw = dialog.querySelector('.pw-input');
+
+          try{
+            obj = decryptJsonObject(obj, pw.value);
+
+            if(callback){
+              callback(obj);
+            };
+          }catch(err){
+            window.dlg.show('fail-dialog');
+          };
+
+        }else{
+
+          if(callback){
+            callback(obj);
+          };
+
+        };
+
+        window.dlg.hide(id);
+ 
+    };
+ 
+    reader.onerror = (e) => alert(e.target.error.name);
+    reader.readAsText(file);
+  });
+
+};
+
 window.dlg.show = function(id, callback, ...args) {
     let dialog = document.getElementById(id);
 
@@ -20,7 +72,7 @@ window.dlg.show = function(id, callback, ...args) {
     return dialog;
 };
 
-window.dlg.showLoadJsonDlg = function(id, callback, encrypted=false, pruneKeys=[]) {
+window.dlg.showLoadJsonFileDlg = function(id, callback, encrypted=false, pruneKeys=[]) {
   let dialog = document.getElementById(id);
 
   if (dialog) {
@@ -30,49 +82,7 @@ window.dlg.showLoadJsonDlg = function(id, callback, encrypted=false, pruneKeys=[
       .then(function(dialog) {
         const input = document.querySelector('#'+id+'-input');
 
-        input.addEventListener('change', () => {
-          let files = input.files;
-          let text;
-       
-          if (files.length == 0){
-            window.dlg.hide(id);
-            return;
-          };
-          const file = files[0];
-          let reader = new FileReader();
-       
-          reader.onload = (e) => {
-              const file = e.target.result;
-
-              const lines = file.split(/\r\n|\n/);
-              text = lines.join('\n');
-              let obj = JSON.parse(text);
-              obj = window.fn.pruneJsonKeys(obj, pruneKeys);
-
-              if(encrypted){
-                const pw = dialog.querySelector('.pw-input');
-                
-                obj = decryptJsonObject(obj, pw.value);
-
-                if(callback){
-                  callback(obj);
-                };
-
-              }else{
-
-                if(callback){
-                  callback(obj);
-                };
-
-              };
-
-              window.dlg.hide(id);
-       
-          };
-       
-          reader.onerror = (e) => alert(e.target.error.name);
-          reader.readAsText(file);
-        });
+        _jsonFileLoaderInputChangeCallback(id, input, encrypted, pruneKeys, callback);
 
         if(callback){
           dialog.querySelector('.can-callback').onclick = function () {

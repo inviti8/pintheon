@@ -78,15 +78,22 @@ const create_keystore = async () => {
     await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore );
 };
 
+const on_session_keystore_loaded = async (obj) => {
+    console.log('********************')
+    console.log(obj)
+    console.log('********************')
+
+};
+
 const on_keystore_loaded = async (obj) => {
     const keystore = await obj;
     window.fn.store(window.constants.KEYSTORE, keystore);
-
-    console.log(window.fn.getStored(window.constants.KEYSTORE))
+    console.log(window.fn.getStored(window.constants.KEYSTORE));
+    await window.fn.loadStoredEncryptedJSONObject(window.constants.KEYSTORE, on_session_keystore_loaded);
 };
 
 const load_keystore = async () => {
-    await window.fn.loadJSONFileObject(on_keystore_loaded, true, ['node_data']);
+    await window.fn.loadJSONFileObject(on_keystore_loaded, false, ['node_data']);
 };
 
 const establish = async () => {
