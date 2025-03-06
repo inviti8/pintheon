@@ -64,33 +64,6 @@ const generateClientKeys = async (extractable=true) => {
     }
 };
 
-const loadKeypairFromJSON = async (unencryptedKeyStoreJSON) => {
-    try {
-        // Parse the JSON string into an object
-        const unencryptedKeyStore = JSON.parse(unencryptedKeyStoreJSON);
-        
-        // Convert the base64 encoded strings back to ArrayBuffers for key generation
-        const privateKeyArrayBuffer = Uint8Array.from(atob(unencryptedKeyStore.privateKey), c => c.charCodeAt(0));
-        const publicKeyArrayBuffer = Uint8Array.from(atob(unencryptedKeyStore.publicKey), c => c.charCodeAt(0));
-        
-        // Convert the ArrayBuffers to CryptoKeys for key generation
-        const privateKey = await window.crypto.subtle.importKey('raw', privateKeyArrayBuffer, {name: 'ECDH', namedCurve: 'P-256'}, false, ['deriveKey', 'deriveBits']);
-        const publicKey = await window.crypto.subtle.importKey('raw', publicKeyArrayBuffer, {name: 'ECDH', namedCurve: 'P-256'}, true, ['deriveKey', 'deriveBits']);
-        
-        return { privateKey, publicKey };
-    } catch (err) {
-        console.error("Error in generating keys: ", err);
-        throw err;   // Re-throw the error so it can be caught where this function is called.
-    }
-};
-
-const hashKey = async function(key){
-    const encoder = new TextEncoder();  // Used to convert key string to UTF-8 ArrayBuffer
-    const data = encoder.encode(key);  // Convert the key string into an ArrayBuffer
-    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);  // Hash the key with SHA-256 algorithm
-    return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');  // Convert hash to hexadecimal string
-}
-
 function padKey(key) {
     const textEncoder = new TextEncoder();
     let keyBytes = textEncoder.encode(key);
@@ -191,76 +164,6 @@ const  decryptJsonObject = async function(obj, password) {
     return ob
 }
 
-function convertBinaryToPem(binaryData, label) {
-    var base64Cert = ab_to_b64(binaryData)
-    var pemCert = "-----BEGIN " + label + "-----\r\n"
-    var nextIndex = 0
-    var lineLength
-    while (nextIndex < base64Cert.length) {
-      if (nextIndex + 64 <= base64Cert.length) {
-        pemCert += base64Cert.substring(nextIndex, nextIndex+64) + "\r\n"
-      } else {
-        pemCert += base64Cert.substring(nextIndex) + "\r\n"
-      }
-      nextIndex += 64
-    }
-    pemCert += "-----END " + label + "-----\r\n"
-    return pemCert
-}
-
-function convertPemToBinary(pem) {
-    var lines = pem.split('\n')
-    var encoded = ''
-    for(var i = 0;i < lines.length;i++){
-      if (lines[i].trim().length > 0 &&
-          lines[i].indexOf('-BEGIN PRIVATE KEY-') < 0 &&
-          lines[i].indexOf('-BEGIN PUBLIC KEY-') < 0 &&
-          lines[i].indexOf('-END PRIVATE KEY-') < 0 &&
-          lines[i].indexOf('-END PUBLIC KEY-') < 0) {
-        encoded += lines[i].trim()
-      }
-    }
-    return b64_to_ab(encoded)
-}
-
-const importPublicKey = async (b64key) => {
-    try {
-        const bin = atob(b64key);
-        const binaryDer = str2ab(bin);
-        const pubKey = await window.crypto.subtle.importKey(
-            "spki", 
-            binaryDer, 
-            { name: "ECDH", namedCurve: "P-256" },
-            true, // extractable
-            ["deriveKey"] // usages
-        );
-        
-        return pubKey;
-    } catch(err) {
-       console.error("Error in importing public key: ", err);
-       throw err;  
-    }
-};
-
-const importPrivateKey = async (b64key) => {
-    try {
-        const bin = atob(b64key);
-        const binaryDer = str2ab(bin);
-        const privKey = await window.crypto.subtle.importKey(
-            "pkcs8", 
-            binaryDer, 
-            { name: "ECDH", namedCurve: "P-256" },
-            true, // extractable
-            ["deriveBits"] // usages
-        );
-        
-        return privKey;
-    } catch(err) {
-       console.error("Error in importing private key: ", err);
-       throw err;  
-    }
-};
-
 const exportPublicKey = async (keys) => {
     try {
         const spki = await window.crypto.subtle.exportKey('spki', keys.publicKey);
@@ -308,7 +211,7 @@ const importJWKCryptoPrivateKey = async (jwk) => {
             ["deriveKey", "deriveBits"],
         );
      } catch (err) {
-       console.error("Error in importing jwk key: ", err);
+       console.error("Error in importing jwk private key: ", err);
        throw err;  
     }
 };
@@ -326,7 +229,7 @@ const importJWKCryptoPublicKey = async (jwk) => {
             [],
         );
      } catch (err) {
-       console.error("Error in importing jwk key: ", err);
+       console.error("Error in importing jwk public key: ", err);
        throw err;  
     }
 };
@@ -342,17 +245,7 @@ const importJWKCryptoKeyPair = async (jwkPriv, jwkPub) => {
     }
 };
 
-function exportPemKeys(keys) {
-    return new Promise(function(resolve) {
-      exportPublicKey(keys).then(function(pubKey) {
-        exportPrivateKey(keys).then(function(privKey) {
-          resolve({publicKey: pubKey, privateKey: privKey})
-        })
-      })
-    })
-}
-
-async function getCryptoKey(password) {
+const getCryptoKey = async (password) => {
     const encoder = new TextEncoder();
     const keyMaterial = encoder.encode(password);
     return crypto.subtle.importKey(
@@ -364,7 +257,7 @@ async function getCryptoKey(password) {
     );
 }
 
-async function deriveKey(password, salt) {
+const deriveKey = async (password, salt) => {
     const keyMaterial = await getCryptoKey(password);
     return crypto.subtle.deriveKey(
         {
@@ -380,41 +273,7 @@ async function deriveKey(password, salt) {
     );
 };
 
-
-async function generateEncryptedText(text, password) {
-    const encoder = new TextEncoder();
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await deriveKey(password, salt);
-
-    const encrypted = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: iv },
-        key,
-        encoder.encode(text)
-    );
-
-    return {
-        cipherText: btoa(String.fromCharCode(...new Uint8Array(encrypted))), // Use btoa instead of ab2hex for JavaScript base64 encoding
-        iv: btoa(String.fromCharCode(...new Uint8Array(iv))),  // Use btoa instead of ab2hex for JavaScript base64 encoding
-        salt: btoa(String.fromCharCode(...new Uint8Array(salt)))  // Use btoa instead of ab2hex for JavaScript base64 encoding
-    };
-};
-
-async function generateDecryptedText(encryptedData, password) {
-    const { cipherText, iv, salt } = encryptedData;
-    const key = await deriveKey(password, b2ab(salt));
-
-    const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: b2ab(iv) },
-        key,
-        b2ab(cipherText)
-     );
-
-    const decoder = new TextDecoder();
-    return decoder.decode(decrypted);
-}
-
-async function generateSharedEncryptedText(txt, serverPub, clientPriv) {
+const generateSharedEncryptedText = async (txt, serverPub, clientPriv) => {
     const secret = await generateSharedSecret(serverPub, clientPriv);
     const cipherTxt = await encryptAES(txt, secret);
 
@@ -518,29 +377,6 @@ const generateSessionToken = async (serverPub, clientPriv) => {
 
         let token = window.MacaroonsBuilder.create(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION");
 
-        return token;
-    } catch (err) {
-        console.error("Error in generating session token: ", err);
-        throw err;  // Re-throw the error so it can be caught where this function is called.
-    }
-};
-
-const generateToken = async (location, secret, identifier, firstPartCaveats, thirdPartyCaveat=undefined, caveatKey=undefined) => {
-    try {
-
-      let token;
-
-      if(thirdPartyCaveat!=undefined){
-        token = new MacaroonsBuilder(location, secret, identifier)
-        .add_first_party_caveat(firstPartCaveats.map(caveat => `${caveat}`)).join()
-        .add_third_party_caveat(thirdPartyCaveat, caveatKey, identifier).join()
-        .getMacaroon();
-      }else{
-        token = new MacaroonsBuilder(location, secret, identifier)
-        .add_first_party_caveat(firstPartCaveats.map(caveat => `${caveat}`)).join()
-        .getMacaroon();
-      };
-      
         return token;
     } catch (err) {
         console.error("Error in generating session token: ", err);
