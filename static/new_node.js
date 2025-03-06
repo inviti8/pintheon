@@ -1,11 +1,13 @@
 const { KeyPair, get_languages } = wasm_bindgen;
 window.fn.generator_keys;
 window.fn.establish_data;
+let p;
 
 // load wasm wallet and generate wallet seed right away
 async function init() {
     await wasm_bindgen();
     window.fn.generator_keys = await generateClientKeys(true);
+    p = await exportKey(window.fn.generator_keys.publicKey);
 };
 
 init();
@@ -70,8 +72,8 @@ const create_keystore = async () => {
         'name': document.querySelector('#node-name').value,
         'descriptor': document.querySelector('#node-descriptor').value,
         'meta_data': document.querySelector('#node-meta-data').value,
-        'generator_pub': await exportPublicKey(window.fn.generator_keys),
-        'generator_priv': await exportPrivateKey(window.fn.generator_keys),
+        'generator_priv': await exportJWKCryptoKey(window.fn.generator_keys.privateKey),
+        'generator_pub': await exportJWKCryptoKey(window.fn.generator_keys.publicKey),
         'node_data': window.fn.establish_data
     };
 
@@ -82,6 +84,11 @@ const on_session_keystore_loaded = async (obj) => {
     console.log('********************')
     console.log(obj)
     console.log('********************')
+    let keys = await importJWKCryptoKeyPair(obj['generator_priv'], obj['generator_pub'])
+    console.log(keys)
+    console.log(keys.publicKey)
+    let pb = await exportKey(keys.publicKey)
+    console.log(pb)
 
 };
 
@@ -160,7 +167,17 @@ document.addEventListener('init', function(event) {
         });
 
         document.querySelector('#btn-key-store-file').onclick = function () {
-            //create_keystore()
+            console.log('************************')
+            console.log(window.fn.generator_keys)
+            console.log(window.fn.generator_keys.publicKey)
+            console.log(p)
+            console.log('************************')
+            create_keystore()
+            //load_keystore()
+        };
+
+        document.querySelector('#btn-load-key-store-file').onclick = function () {
+
             load_keystore()
         };
         

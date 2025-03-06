@@ -13,6 +13,19 @@ const ab_to_b64 = function(arrayBuffer){
     return btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
 };
 
+function str2ab(str) {
+    const buf = new ArrayBuffer(str.length);
+    const bufView = new Uint8Array(buf);
+    for (let i = 0, strLen = str.length; i < strLen; i++) {
+      bufView[i] = str.charCodeAt(i);
+    }
+    return buf;
+}
+
+function ab2str(buf) {
+    return String.fromCharCode.apply(null, new Uint8Array(buf));
+}
+
 function ab2hex(buffer) {
     return [...new Uint8Array(buffer)]
         .map(byte => byte.toString(16).padStart(2, '0'))
@@ -32,7 +45,7 @@ const removeNullBytes = function(str){
     return str.split("").filter(char => char.codePointAt(0)).join("")
 };
 
-const generateClientKeys = async (extractable=false) => {
+const generateClientKeys = async (extractable=true) => {
     try {
 
         const keys = await window.crypto.subtle.generateKey(
@@ -200,33 +213,134 @@ function convertPemToBinary(pem) {
     var encoded = ''
     for(var i = 0;i < lines.length;i++){
       if (lines[i].trim().length > 0 &&
-          lines[i].indexOf('-BEGIN RSA PRIVATE KEY-') < 0 &&
-          lines[i].indexOf('-BEGIN RSA PUBLIC KEY-') < 0 &&
-          lines[i].indexOf('-END RSA PRIVATE KEY-') < 0 &&
-          lines[i].indexOf('-END RSA PUBLIC KEY-') < 0) {
+          lines[i].indexOf('-BEGIN PRIVATE KEY-') < 0 &&
+          lines[i].indexOf('-BEGIN PUBLIC KEY-') < 0 &&
+          lines[i].indexOf('-END PRIVATE KEY-') < 0 &&
+          lines[i].indexOf('-END PUBLIC KEY-') < 0) {
         encoded += lines[i].trim()
       }
     }
     return b64_to_ab(encoded)
 }
 
-function exportPublicKey(keys) {
-    return new Promise(function(resolve) {
-      window.crypto.subtle.exportKey('spki', keys.publicKey).
-      then(function(spki) {
-        resolve(convertBinaryToPem(spki, "PUBLIC KEY"))
-      })
-    })
-  }
+const importPublicKey = async (b64key) => {
+    try {
+        const bin = atob(b64key);
+        const binaryDer = str2ab(bin);
+        const pubKey = await window.crypto.subtle.importKey(
+            "spki", 
+            binaryDer, 
+            { name: "ECDH", namedCurve: "P-256" },
+            true, // extractable
+            ["deriveKey"] // usages
+        );
+        
+        return pubKey;
+    } catch(err) {
+       console.error("Error in importing public key: ", err);
+       throw err;  
+    }
+};
 
-function exportPrivateKey(keys) {
-    return new Promise(function(resolve) {
-      var expK = window.crypto.subtle.exportKey('pkcs8', keys.privateKey)
-      expK.then(function(pkcs8) {
-        resolve(convertBinaryToPem(pkcs8, "PRIVATE KEY"))
-      })
-    })
-  }
+const importPrivateKey = async (b64key) => {
+    try {
+        const bin = atob(b64key);
+        const binaryDer = str2ab(bin);
+        const privKey = await window.crypto.subtle.importKey(
+            "pkcs8", 
+            binaryDer, 
+            { name: "ECDH", namedCurve: "P-256" },
+            true, // extractable
+            ["deriveBits"] // usages
+        );
+        
+        return privKey;
+    } catch(err) {
+       console.error("Error in importing private key: ", err);
+       throw err;  
+    }
+};
+
+const exportPublicKey = async (keys) => {
+    try {
+        const spki = await window.crypto.subtle.exportKey('spki', keys.publicKey);
+        const exportedAsString = ab2str(spki);
+        
+        return btoa(exportedAsString);
+     } catch (err) {
+       console.error("Error in exporting public key: ", err);
+       throw err;  
+    }
+};
+
+const exportPrivateKey = async (keys) => {
+    try {
+        const pkcs8 = await window.crypto.subtle.exportKey('pkcs8', keys.privateKey);
+        const exportedAsString = ab2str(pkcs8);
+        
+        return btoa(exportedAsString);
+     } catch (err) {
+       console.error("Error in exporting private key: ", err);
+       throw err;  
+    }
+};
+
+
+const exportJWKCryptoKey = async (key) => {
+    try {
+        return  await window.crypto.subtle.exportKey("jwk", key);
+     } catch (err) {
+       console.error("Error in exporting jwk key: ", err);
+       throw err;  
+    }
+};
+
+const importJWKCryptoPrivateKey = async (jwk) => {
+    try {
+        return  await window.crypto.subtle.importKey(
+            "jwk",
+            jwk,
+            {
+              name: "ECDH",
+              namedCurve: "P-256",
+            },
+            true,
+            ["deriveKey", "deriveBits"],
+        );
+     } catch (err) {
+       console.error("Error in importing jwk key: ", err);
+       throw err;  
+    }
+};
+
+const importJWKCryptoPublicKey = async (jwk) => {
+    try {
+        return  await window.crypto.subtle.importKey(
+            "jwk",
+            jwk,
+            {
+              name: "ECDH",
+              namedCurve: "P-256",
+            },
+            true,
+            [],
+        );
+     } catch (err) {
+       console.error("Error in importing jwk key: ", err);
+       throw err;  
+    }
+};
+
+const importJWKCryptoKeyPair = async (jwkPriv, jwkPub) => {
+    try {
+        const priv = await importJWKCryptoPrivateKey(jwkPriv);
+        const pub = await importJWKCryptoPublicKey(jwkPub);
+        return { privateKey: priv, publicKey: pub }
+     } catch (err) {
+       console.error("Error in importing jwk keys: ", err);
+       throw err;  
+    }
+};
 
 function exportPemKeys(keys) {
     return new Promise(function(resolve) {
@@ -300,53 +414,12 @@ async function generateDecryptedText(encryptedData, password) {
     return decoder.decode(decrypted);
 }
 
-const generateSharedEncryptedText = async (txt, serverPub, clientPriv) => {
+async function generateSharedEncryptedText(txt, serverPub, clientPriv) {
     const secret = await generateSharedSecret(serverPub, clientPriv);
     const cipherTxt = await encryptAES(txt, secret);
 
     return cipherTxt
 };
-
-const generateEncryptedClientKeyStoreJSON = async (keys, password) => {
-    try {
-        const exportedPrivateKey = await window.crypto.subtle.exportKey('raw', keys.privateKey);
-        const exportedPublicKey = await window.crypto.subtle.exportKey('raw', keys.publicKey);
-
-        // Convert the ArrayBuffers to base64 strings for JSON
-        const privateKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(exportedPrivateKey)));
-        const publicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(exportedPublicKey)));
-        
-        // Encrypt the keys with the generated key and the salt
-        const encryptedPrivateKey = generateEncryptedText(password, privateKeyBase64);
-        const encryptedPublicKey = generateEncryptedText(password, publicKeyBase64);
-        
-        // Create the keystore in JSON format with encrypted keys
-        const keyStoreJSON = {
-            privateKey: encryptedPrivateKey,
-            publicKey: encryptedPublicKey
-        };
-
-        return keyStoreJSON;
-    } catch (err) {
-        console.error("Error in generating keys: ", err);
-        throw err;   // Re-throw the error so it can be caught where this function is called.
-    }
-};
-
-const decryptClientKeyStoreJSON = async (password, encryptedKeyStoreJSON) => {
-    try {
-        // Parse the JSON string into an object
-        const encryptedKeyStore = JSON.parse(encryptedKeyStoreJSON);
-        
-        return {
-            privateKey: generateDecryptedText(encryptedKeyStore.privateKey, password),
-            publicKey: generateDecryptedText(encryptedKeyStore.publicKey, password),
-        };
-    } catch (err) {
-        console.error("Error in generating keys: ", err);
-        throw err;  // Re-throw the error so it can be caught where this function is called.
-    }
-}
 
 const exportKey = async (key, format='spki') => {
     try {
