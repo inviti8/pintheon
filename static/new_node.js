@@ -1,13 +1,12 @@
 const { KeyPair, get_languages } = wasm_bindgen;
+const xelis_wallet = { 'address': undefined, 'priv': undefined, 'seed': undefined };
 window.fn.generator_keys;
 window.fn.establish_data;
-let p;
 
 // load wasm wallet and generate wallet seed right away
 async function init() {
     await wasm_bindgen();
     window.fn.generator_keys = await generateClientKeys(true);
-    p = await exportKey(window.fn.generator_keys.publicKey);
 };
 
 init();
@@ -18,12 +17,12 @@ const generate_xelis_wallet = function () {
     const language_idx = 0;
   
     const key_pair = new KeyPair(mainnet);
-    const addr = key_pair.address();
-    const private_key = key_pair.secret();
-    const seed = key_pair.seed(language_idx);
+    xelis_wallet.address = key_pair.address();
+    xelis_wallet.priv = key_pair.secret();
+    xelis_wallet.seed = key_pair.seed(language_idx);
 
 
-    return seed
+    return xelis_wallet
 };
 
 const new_node = async () => {
@@ -77,18 +76,18 @@ const create_keystore = async () => {
         'node_data': window.fn.establish_data
     };
 
-    await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore );
+    const created = await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore );
+
+    if(created){
+        window.rndr.showELem('btn-establish');
+    };
 };
 
 const on_session_keystore_loaded = async (obj) => {
-    console.log('********************')
-    console.log(obj)
-    console.log('********************')
     let keys = await importJWKCryptoKeyPair(obj['generator_priv'], obj['generator_pub'])
     console.log(keys)
     console.log(keys.publicKey)
     let pb = await exportKey(keys.publicKey)
-    console.log(pb)
 
 };
 
@@ -148,7 +147,7 @@ document.addEventListener('init', function(event) {
     if (page.id === 'new_node') {
 
         document.querySelector('#generate-xelis-seed').onclick = function () {
-            let seed = generate_xelis_wallet();
+            let seed = generate_xelis_wallet().seed;
             document.querySelector('#xelis-seed-text').value = seed.splice(0, (seed.length+1)).join(" ");
         };
         document.querySelector('#establish-button').onclick = function () {
@@ -167,19 +166,12 @@ document.addEventListener('init', function(event) {
         });
 
         document.querySelector('#btn-key-store-file').onclick = function () {
-            console.log('************************')
-            console.log(window.fn.generator_keys)
-            console.log(window.fn.generator_keys.publicKey)
-            console.log(p)
-            console.log('************************')
-            create_keystore()
-            //load_keystore()
+            create_keystore();
         };
 
-        document.querySelector('#btn-load-key-store-file').onclick = function () {
-
-            load_keystore()
-        };
+        // document.querySelector('#btn-load-key-store-file').onclick = function () {
+        //     load_keystore()
+        // };
         
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
         window.rndr.nodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');

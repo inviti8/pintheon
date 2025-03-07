@@ -37,6 +37,14 @@ document.addEventListener('init', function(event) {
 
     };
 
+    window.rndr.showELem = function(id){
+        document.getElementById(id).classList.remove('hidden');
+    };
+
+    window.rndr.hideElem = function(id){
+        document.getElementById(id).classList.add('hidden');
+    };
+
     //Validation Methods
     let input_rules = {
         required: true
@@ -115,14 +123,18 @@ document.addEventListener('init', function(event) {
     };
 
     window.fn.saveEncryptedJSONFile = async ( encObj, dlgName, fileName) => {
+        let result = false;
         if(window.fn.validateNewPassword(dlgName)){
             const password = document.querySelector('#'+dlgName+'-input').value;
             const encrypted = await encryptJsonObject (encObj, password);
             window.fn.download(JSON.stringify(encrypted), 'text/plain', fileName+'.json');
             window.dlg.hide(dlgName);
+            result = true;
         }else{
             window.dlg.show('fail-dialog');
         };
+
+        return result
     };
     
     window.fn.createEncryptedJSONFile = async (fileName, jsonObj, dlgName='new-password-dialog') => {
@@ -147,7 +159,6 @@ document.addEventListener('init', function(event) {
             }catch(err){
                 window.dlg.show('fail-dialog');
             };
-
             
         }else{
             window.dlg.show('fail-dialog');
@@ -156,6 +167,19 @@ document.addEventListener('init', function(event) {
 
     window.fn.loadStoredEncryptedJSONObject = async (key, callback, dlgName='load-encrypted-file-dialog') => {
         window.dlg.show(dlgName, window.fn.getStoredEncryptedJSONObject, key, callback, dlgName);
+    };
+
+    window.fn.onKeyStoreLoadedSaveIt = async (obj) => {
+        const keystore = await obj;
+        window.fn.store(window.constants.KEYSTORE, keystore);
+    };
+
+    window.fn.loadKeyStoreFromStorage = async (callback) => {
+        await window.fn.loadStoredEncryptedJSONObject(window.constants.KEYSTORE, callback);
+    };
+
+    window.fn.saveKeyStoreToStorage = async (pruneKeys=[]) => {
+        await window.fn.loadJSONFileObject(window.fn.onKeyStoreLoadedSaveIt, false, pruneKeys);
     };
 
     window.fn.pruneJsonKeys = (obj, keys) => {

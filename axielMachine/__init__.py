@@ -72,6 +72,7 @@ class AxielMachine(object):
 
         self._client_node_pub = None
         self._client_session_pub = None
+        self._client_generator_pub = None
         self._seed_cipher = None
 
         self._dirs = PlatformDirs('AXIEL', 'XRO Network', ensure_exists=True)
@@ -104,8 +105,14 @@ class AxielMachine(object):
     def set_client_node_pub(self, client_pub):
         self._client_node_pub = client_pub
 
+    def get_client_node_pub(self):
+        return self._client_node_pub
+
     def set_client_session_pub(self, client_pub):
         self._client_session_pub = client_pub
+
+    def get_client_session_pub(self):
+        return self._client_session_pub
     
     def set_seed_cipher(self, seedCipher):
         self._seed_cipher = seedCipher
@@ -113,28 +120,27 @@ class AxielMachine(object):
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
     
-    def verify_request(self, b64_pub, client_launch_token):
+    def verify_request(self, b64_pub, client_token):
         result = False
 
-        client_token = Macaroon.deserialize(client_launch_token)
-        token = Macaroon(
+        client_mac = Macaroon.deserialize(client_token)
+        mac = Macaroon(
             location=client_token.location,
             identifier='AXIEL_SESSION',
             key=self.generate_shared_session_secret(b64_pub)
         )
         
-
-        if token.signature == client_token.signature:
+        if mac.signature == client_mac.signature:
             result = True
         
         return result
     
     def verify_launch(self, client_launch_token):
         result = False
-        server_token = Macaroon.deserialize(self.launch_token)
-        client_token = Macaroon.deserialize(client_launch_token)
+        server_mac = Macaroon.deserialize(self.launch_token)
+        client_mac = Macaroon.deserialize(client_launch_token)
 
-        if server_token.signature == client_token.signature:
+        if server_mac.signature == client_mac.signature:
             result = True
         
         return result

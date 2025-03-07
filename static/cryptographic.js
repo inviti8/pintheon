@@ -20,11 +20,11 @@ function str2ab(str) {
       bufView[i] = str.charCodeAt(i);
     }
     return buf;
-}
+};
 
 function ab2str(buf) {
     return String.fromCharCode.apply(null, new Uint8Array(buf));
-}
+};
 
 function ab2hex(buffer) {
     return [...new Uint8Array(buffer)]
@@ -39,7 +39,7 @@ function b2ab(b64) {
         ab[i] = str.charCodeAt(i);
     }
     return ab;
-}
+};
 
 const removeNullBytes = function(str){
     return str.split("").filter(char => char.codePointAt(0)).join("")
@@ -75,7 +75,7 @@ function padKey(key) {
          keyBytes = new Uint8Array([...keyBytes, ...padding]);
      }
     return keyBytes;
-}
+};
 
 const encryptAES = async function(data, key) {
     const textEncoder = new TextEncoder();
@@ -87,7 +87,7 @@ const encryptAES = async function(data, key) {
     }else if (keyBytes.length < 32) {
          let padding = new Uint8Array(32 - keyBytes.length);
          keyBytes = new Uint8Array([...keyBytes, ...padding]);
-     }
+    };
 
     // Generate a random IV (16 bytes)
     const iv = crypto.getRandomValues(new Uint8Array(16));
@@ -110,7 +110,7 @@ const encryptAES = async function(data, key) {
     } catch(e) { console.error("Failed to import key"); throw e; }
 
 
-}
+};
 
 const decryptAES = async function(data, key) {
     const byteArray = Uint8Array.from(atob(data), c => c.charCodeAt(0)); 
@@ -133,7 +133,7 @@ const decryptAES = async function(data, key) {
         }
      return removeNullBytes(result);
     }); 
-}
+};
 
 const  encryptJsonObject = async function(obj, password) {
     let ob = structuredClone(obj);
@@ -147,7 +147,7 @@ const  encryptJsonObject = async function(obj, password) {
     }
 
     return ob
-}
+};
 
 const  decryptJsonObject = async function(obj, password) {
     let ob = structuredClone(obj);
@@ -162,7 +162,7 @@ const  decryptJsonObject = async function(obj, password) {
     }
 
     return ob
-}
+};
 
 const exportPublicKey = async (keys) => {
     try {
@@ -255,7 +255,7 @@ const getCryptoKey = async (password) => {
         false,
         ['deriveKey']
     );
-}
+};
 
 const deriveKey = async (password, salt) => {
     const keyMaterial = await getCryptoKey(password);
@@ -372,7 +372,7 @@ const generateLaunchToken = async (launchKey) => {
     }
 };
 
-const generateSessionToken = async (serverPub, clientPriv) => {
+const generateAuthToken = async (serverPub, clientPriv) => {
     try {
 
         let token = window.MacaroonsBuilder.create(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION");

@@ -94,7 +94,7 @@ def new_node():
 
 @app.route('/establish', methods=['POST'])
 def establishing():
-   required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']
+   required = ['token', 'client_pub']
    data = request.get_json()
    print(data)
 
@@ -108,11 +108,7 @@ def establishing():
         raise Unauthorized()  # Unauthorized
 
    else:
-        AXIEL.new_node()
-        AXIEL.set_client_session_pub(data['client_pub'])
-        AXIEL.set_seed_cipher(data['seed_cipher'])
-        AXIEL.set_client_node_pub(data['generator_pub'])
-        AXIEL.establish()
+        AXIEL.established()
         
         return AXIEL.establish_data(), 200
 

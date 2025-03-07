@@ -21,6 +21,9 @@ header {
   align-items: center;
   width:100%;
 }
+.hidden {
+  display: none;
+}
 .card-container{
   display: flex; 
   justify-content: 

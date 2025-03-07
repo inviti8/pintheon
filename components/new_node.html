@@ -71,11 +71,11 @@
               <input style="display: none" name="Select File" type="file" id="key-store-file" webkitdirectory>
             </ons-button>
           </p>
-          <p>
+          <!-- <p>
             <ons-button id="btn-load-key-store-file" modifier="large"></ons-icon>LOAD KEYSTORE <ons-icon icon="upload"></ons-icon></ons-button>
-          </p>
+          </p> -->
           <p style="text-align: center;">
-            <ons-button modifier="large" onclick="window.dlg.show('loading-dialog')" style="display: none">ESTABLISH</ons-button>
+            <ons-button id="btn-establish" class="hidden" modifier="large" onclick="window.dlg.show('loading-dialog')">ESTABLISH</ons-button>
           </p>
           
         </ons-col>
