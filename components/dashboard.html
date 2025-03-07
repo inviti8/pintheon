@@ -1,0 +1,38 @@
+<ons-navigator swipeable id="Nav" page="authorize.html"></ons-navigator>
+
+<template id="authorize.html">
+    <ons-page id="authorize">
+      <div class="card-container">
+        <ons-card>
+          <ons-col width="100%">
+          <div class="centered-content">
+            <div class="title" style="text-align: center;">
+              NEW AXIEL NODE
+            </div>
+            <div class="content">
+              <div style="text-align: center;">
+              <ons-button id="authorize-button" modifier="large outline" onclick="">ESTABLISH</ons-button>
+              <ons-button id="debug-button" style="margin: 20px;" onclick="window.fn.pushPage('dashboard')" >DEBUG</ons-button>
+              </div>
+            </div>
+          </div>
+        </ons-col>
+        </ons-card>
+      </div>
+    </ons-page>
+  </template>
+
+  <template id="dashboard.html">
+    <ons-page id="dashboard">
+      <ons-toolbar>
+        <div class="left"><ons-back-button>BACK</ons-back-button></div>
+        <div class="center"></div>
+      </ons-toolbar>
+      <div class="card-container">
+      <ons-col width="33.33%"></ons-col>
+      <ons-col width="33.33%">
+      </ons-col>
+      <ons-col width="33.33%"></ons-col>
+    </div>
+    </ons-page>
+  </template>

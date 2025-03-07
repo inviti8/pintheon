@@ -112,6 +112,35 @@ document.addEventListener('init', function(event) {
         return result
     };
 
+    window.fn.call = async (body, endpoint, callback, method='POST') => {
+        window.dlg.show('loading-dialog');
+    
+        let requestBody = JSON.stringify(body);
+    
+        fetch(endpoint, {
+            method: method,
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: requestBody
+          })
+          .then(response => {
+            console.log(response)
+            if (response.status === 200) {
+                return response.json();
+            } else {
+                window.dlg.hide('loading-dialog');
+                window.dlg.show('fail-dialog');
+                throw new Error('Request failed with status ' + response.status);
+            }
+          })
+          .then(data => {
+            window.dlg.hide('loading-dialog');
+            callback(data);
+          });
+     
+    };
+
     //utils
     window.fn.download = function(content, mimeType, filename){
         const a = document.createElement('a') // Create "a" element
@@ -123,18 +152,14 @@ document.addEventListener('init', function(event) {
     };
 
     window.fn.saveEncryptedJSONFile = async ( encObj, dlgName, fileName) => {
-        let result = false;
         if(window.fn.validateNewPassword(dlgName)){
             const password = document.querySelector('#'+dlgName+'-input').value;
             const encrypted = await encryptJsonObject (encObj, password);
             window.fn.download(JSON.stringify(encrypted), 'text/plain', fileName+'.json');
             window.dlg.hide(dlgName);
-            result = true;
         }else{
             window.dlg.show('fail-dialog');
         };
-
-        return result
     };
     
     window.fn.createEncryptedJSONFile = async (fileName, jsonObj, dlgName='new-password-dialog') => {

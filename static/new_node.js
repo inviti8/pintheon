@@ -26,43 +26,25 @@ const generate_xelis_wallet = function () {
 };
 
 const new_node = async () => {
-    window.dlg.show('loading-dialog');
 
-    let requestBody = JSON.stringify({
+    const body = {
         'token': window.constants.SESSION_TOKEN.serialize(),
         'client_pub': window.constants.CLIENT_PUBLIC_KEY,
         'launch_token': await generateLaunchToken(document.querySelector('#launch-key').value),
         'seed_cipher': await generateSharedEncryptedText(document.querySelector('#xelis-seed-text').value, window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey),
         'generator_pub': await exportKey(window.fn.generator_keys.publicKey),
-      });
+    };
 
-    fetch('/new_node', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: requestBody
-      })
-      .then(response => {
-        console.log(response)
-        if (response.status === 200) {
-            return response.json();
-        } else {
-            window.dlg.hide('loading-dialog');
-            window.dlg.show('fail-dialog');
-            throw new Error('Request failed with status ' + response.status);
-        }
-      })
-      .then(data => {
-        window.dlg.hide('loading-dialog');
-        window.fn.establish_data = data;
-        // document.querySelector('#xelis-seed-text').value ="";
-        // document.querySelector('#launch-key').value="";
-        window.fn.pushPage('establish')
-        console.log("establish : ",data);
-          
-      });
- 
+    window.fn.call(body, '/new_node', establishing);
+
+};
+
+const establishing = (data) => {
+    window.fn.establish_data = data;
+    // document.querySelector('#xelis-seed-text').value ="";
+    // document.querySelector('#launch-key').value="";
+    window.fn.pushPage('establish')
+    console.log("establish : ",data);
 };
 
 const create_keystore = async () => {
@@ -78,67 +60,30 @@ const create_keystore = async () => {
 
     const created = await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore );
 
-    if(created){
-        window.rndr.showELem('btn-establish');
-    };
-};
-
-const on_session_keystore_loaded = async (obj) => {
-    let keys = await importJWKCryptoKeyPair(obj['generator_priv'], obj['generator_pub'])
-    console.log(keys)
-    console.log(keys.publicKey)
-    let pb = await exportKey(keys.publicKey)
-
-};
-
-const on_keystore_loaded = async (obj) => {
-    const keystore = await obj;
-    window.fn.store(window.constants.KEYSTORE, keystore);
-    console.log(window.fn.getStored(window.constants.KEYSTORE));
-    await window.fn.loadStoredEncryptedJSONObject(window.constants.KEYSTORE, on_session_keystore_loaded);
-};
-
-const load_keystore = async () => {
-    await window.fn.loadJSONFileObject(on_keystore_loaded, false, ['node_data']);
+    window.rndr.showELem('btn-establish');
 };
 
 const establish = async () => {
-    window.dlg.show('loading-dialog');
 
-    let requestBody = JSON.stringify({
+    const body = {
         'token': window.constants.SESSION_TOKEN.serialize(),
+        'client_pub': window.constants.CLIENT_PUBLIC_KEY,
         'name': document.querySelector('#node-name').value,
         'descriptor': document.querySelector('#node-descriptor').value,
         'meta_data': document.querySelector('#node-meta-data').value
-      });
+    };
 
-    fetch('/establish', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: requestBody
-      })
-      .then(response => {
-        console.log(response)
-        if (response.status === 200) {
-            return response.json();
-        } else {
-            window.dlg.hide('loading-dialog');
-            window.dlg.show('fail-dialog');
-            throw new Error('Request failed with status ' + response.status);
-        }
-      })
-      .then(data => {
-        window.dlg.hide('loading-dialog');
-        document.querySelector('#xelis-seed-text').value ="";
-        document.querySelector('#launch-key').value="";
-        window.fn.pushPage('establish')
-        console.log("establish : ",data);
-          
-      });
- 
+    window.fn.call(body, '/establish', established);
 };
+
+const established = (data) => {
+    document.querySelector('#xelis-seed-text').value ="";
+    document.querySelector('#launch-key').value="";
+    window.fn.pushPage('establish')
+    console.log("establish : ",data);
+};
+
+
 
 document.addEventListener('init', function(event) {
     let page = event.target;
@@ -151,7 +96,6 @@ document.addEventListener('init', function(event) {
             document.querySelector('#xelis-seed-text').value = seed.splice(0, (seed.length+1)).join(" ");
         };
         document.querySelector('#establish-button').onclick = function () {
-            //console.log(document.querySelector('#launch-key').value)
             window.fn.validateAllInputsAndCall(
                 'Establish new Node?',
                  'All fields are required.',
@@ -159,14 +103,18 @@ document.addEventListener('init', function(event) {
                 );
         };
     } else if (page.id === 'establish') {
-        inputs.forEach(function(inp) {
-            document.querySelector('#btn-'+inp).onclick = function () {
-                document.querySelector('#'+inp).click();
-            };
-        });
+        // inputs.forEach(function(inp) {
+        //     document.querySelector('#btn-'+inp).onclick = function () {
+        //         document.querySelector('#'+inp).click();
+        //     };
+        // });
 
         document.querySelector('#btn-key-store-file').onclick = function () {
             create_keystore();
+        };
+
+        document.querySelector('#btn-establish').onclick = function () {
+            establish();
         };
 
         // document.querySelector('#btn-load-key-store-file').onclick = function () {

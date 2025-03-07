@@ -64,7 +64,6 @@ def home():
    session_pub = AXIEL.new_session()
    print(session_pub)
    return render_template(template, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_pub=session_pub)
-   #return jsonify(message='||AXIEL||')
 
 @app.route('/new_node', methods=['POST'])
 def new_node():
@@ -94,7 +93,7 @@ def new_node():
 
 @app.route('/establish', methods=['POST'])
 def establishing():
-   required = ['token', 'client_pub']
+   required = ['token', 'client_pub', 'name', 'descriptor', 'meta_data']
    data = request.get_json()
    print(data)
 
@@ -108,6 +107,7 @@ def establishing():
         raise Unauthorized()  # Unauthorized
 
    else:
+        AXIEL.set_node_data(data['name'], data['descriptor'], data['meta_data'])
         AXIEL.established()
         
         return AXIEL.establish_data(), 200

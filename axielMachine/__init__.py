@@ -38,6 +38,7 @@ class AxielMachine(object):
         self.logo_url = None
         self.node_name = None
         self.node_descriptor = None
+        self.node_meta_data = None
 
         #-------DB--------
         self.db_path = db_path
@@ -117,6 +118,11 @@ class AxielMachine(object):
     def set_seed_cipher(self, seedCipher):
         self._seed_cipher = seedCipher
 
+    def set_node_data(self, name, descriptor, metadata):
+        self.node_name = name
+        self.node_descriptor = descriptor
+        self.node_meta_data = metadata
+
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
     
@@ -125,7 +131,7 @@ class AxielMachine(object):
 
         client_mac = Macaroon.deserialize(client_token)
         mac = Macaroon(
-            location=client_token.location,
+            location=client_mac.location,
             identifier='AXIEL_SESSION',
             key=self.generate_shared_session_secret(b64_pub)
         )
@@ -250,6 +256,7 @@ class AxielMachine(object):
     @property
     def on_established(self):
         print('established!!')
+        self.view_components = 'dashboard'
         self._update_state_data()
         return True
 
