@@ -24,6 +24,19 @@ header {
 .hidden {
   display: none;
 }
+.center-vertical {
+  position: relative; 
+  top: 50%; 
+  transform: translateY(-50%);
+}
+.center-horizontal {
+  margin: auto;
+}
+.center-both {
+  display: flex;
+  justify-content: center; /* align horizontal */
+  align-items: center; /* align vertical */
+}
 .card-container{
   display: flex; 
   justify-content: 

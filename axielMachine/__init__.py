@@ -32,6 +32,7 @@ class AxielMachine(object):
         self.uid = str(uuid.uuid4())
         self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSB7MtcrDXWZNrLHqD5rVyOduvQKQ7EF2GaOEwW5phJUbAo'
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
+        self.session_active = False
         self.root_token = None
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
@@ -110,6 +111,7 @@ class AxielMachine(object):
         return self._client_node_pub
 
     def set_client_session_pub(self, client_pub):
+        self.session_active = True
         self._client_session_pub = client_pub
 
     def get_client_session_pub(self):
@@ -125,6 +127,10 @@ class AxielMachine(object):
 
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
+    
+    def end_session(self):
+        self.session_active = False
+        self._client_session_pub = None
     
     def verify_request(self, b64_pub, client_token):
         result = False

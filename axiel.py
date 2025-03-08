@@ -65,6 +65,26 @@ def home():
    print(session_pub)
    return render_template(template, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_pub=session_pub)
 
+@app.route('/end_session', methods=['POST'])
+def end_session():
+   required = ['token', 'client_pub']
+   data = request.get_json()
+   print(data)
+
+   if not _payload_valid(required, data):
+        abort(400)  # Bad Request
+
+   elif not AXIEL.session_active:  # Session must be active
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+        raise Unauthorized()  # Unauthorized
+
+   else:
+        AXIEL.end_session()
+        
+        return AXIEL.establish_data(), 200
+
 @app.route('/new_node', methods=['POST'])
 def new_node():
    required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']

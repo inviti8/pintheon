@@ -58,7 +58,7 @@ const create_keystore = async () => {
         'node_data': window.fn.establish_data
     };
 
-    const created = await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore );
+    await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore );
 
     window.rndr.showELem('btn-establish');
 };
@@ -79,15 +79,29 @@ const establish = async () => {
 const established = (data) => {
     document.querySelector('#xelis-seed-text').value ="";
     document.querySelector('#launch-key').value="";
-    window.fn.pushPage('establish')
     console.log("establish : ",data);
+    end_session();
+};
+
+const end_session = async () => {
+
+    const body = {
+        'token': window.constants.SESSION_TOKEN.serialize(),
+        'client_pub': window.constants.CLIENT_PUBLIC_KEY
+    };
+
+    window.fn.call(body, '/end_session', complete);
+};
+
+const complete = (data) => {
+    location.reload();
 };
 
 
 
 document.addEventListener('init', function(event) {
     let page = event.target;
-    let inputs = ['logo-file', 'key-store-file'];
+    // let inputs = ['logo-file', 'key-store-file'];
 
     if (page.id === 'new_node') {
 

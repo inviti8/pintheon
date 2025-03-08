@@ -4,19 +4,16 @@
     <ons-page id="authorize">
       <div class="card-container">
         <ons-card>
-          <ons-col width="100%">
-          <div class="centered-content">
-            <div class="title" style="text-align: center;">
-              NEW AXIEL NODE
-            </div>
-            <div class="content">
-              <div style="text-align: center;">
-              <ons-button id="authorize-button" modifier="large outline" onclick="">ESTABLISH</ons-button>
-              <ons-button id="debug-button" style="margin: 20px;" onclick="window.fn.pushPage('dashboard')" >DEBUG</ons-button>
-              </div>
-            </div>
-          </div>
-        </ons-col>
+          <ons-list class="card-content" modifier="noborder">
+            <ons-list-item modifier="nodivider"></ons-list-item>
+            <ons-list-item modifier="nodivider"></ons-list-item>
+            <ons-list-item style="text-align: center;" modifier="nodivider">
+                <ons-button id="authorize-button" class="center-both" modifier="large outline" onclick="">AUTHENTICATE</ons-button>
+                <ons-button id="debug-button" style="margin: 20px;" onclick="window.fn.pushPage('dashboard')" >DEBUG</ons-button>
+            </ons-list-item>
+            <ons-list-item modifier="nodivider"></ons-list-item>
+            <ons-list-item modifier="nodivider"></ons-list-item>
+          </ons-list>
         </ons-card>
       </div>
     </ons-page>
@@ -24,15 +21,123 @@
 
   <template id="dashboard.html">
     <ons-page id="dashboard">
-      <ons-toolbar>
-        <div class="left"><ons-back-button>BACK</ons-back-button></div>
+      
+      <div>
+      
+      <ons-toolbar modifier="default">
+        <div class="left">
+          <ons-back-button modifier="default">Close</ons-back-button>
+        </div>
         <div class="center"></div>
+        <div class="right">
+          <ons-toolbar-button onclick="fn.open()" modifier="default">
+            <ons-icon icon="md-menu"></ons-icon>
+          </ons-toolbar-button>
+        </div>
       </ons-toolbar>
-      <div class="card-container">
-      <ons-col width="33.33%"></ons-col>
-      <ons-col width="33.33%">
-      </ons-col>
-      <ons-col width="33.33%"></ons-col>
-    </div>
+  
+      <div style="text-align: center; background-color: rgba(255, 255, 255, 0.5); margin-top:20px">
+          <br />
+            <div class="expanded_article">
+              <br />
+              <ons-col width="80%">
+                <ons-card class="right">
+                  <header>
+                    <ons-switch id="dashboard-online-switch" disabled class="right"></ons-switch>
+                    <span><ons-button onclick="window.updateDashboard()" modifier="quiet"><ons-icon icon="fa-refresh"></ons-button></span>
+                    <H2>STATS</H2>
+                  </header>
+                  <div class="content">
+                    <div style="width:100%;">
+                      <ons-list class="stat-ul" style="width:30%; height:200px;">
+                        <ons-list-item modifier="nodivider" style="width:100%;" >
+                          <ons-lazy-repeat id="node-data-card-header"></ons-lazy-repeat>
+                        </ons-list-item>
+                        <ons-list-item>
+                          <ons-col width="50%">
+                            <ons-button id="btn-logo-file"></ons-icon>UPDATE LOGO <ons-icon icon="upload"></ons-icon>
+                              <input style="display: none" name="Select Logo" type="file" id="logo-file" accept=".png">
+                            </ons-button>
+                          </ons-col>
+                        </ons-list-item>
+                      </ons-list>
+                      <ons-list class="stat-ul" style="width:45%; height:200px;">
+                        <ons-list-header>NODE INFO</ons-list-header>
+                        <ons-list-item modifier="nodivider" style="width:100%;" >
+                            <div style="margin: 20px auto;">
+                              <header>
+                                <pre><span>ID:   </span></pre>
+                                <span ><ons-input class="dash-input" id="multiaddress" modifier="large" placeholder="Multiaddress" float></ons-input></span>
+                              </header>
+                              <header>
+                                <pre><span>GATEWAY:   </span></pre>
+                                <span><ons-input class="dash-input" id="gateway-url" modifier="large" placeholder="gateway.com" float></ons-input></span>
+                                <span><ons-button onclick="window.updateGateway()" modifier="quiet"><ons-icon icon="fa-cloud-arrow-up"></ons-button></span>
+                              </header>
+                            </div>
+                        </ons-list-item>
+                      </ons-list>
+                      <ons-list class="stat-ul" style="width:20%; height:200px;">
+                        <ons-list-header>NETWORK TRAFFIC</ons-list-header>
+                        <ons-list-item modifier="nodivider" style="width:100%;" >
+                            <div style="margin: 20px auto; width:100%;">
+                              <ons-progress-bar id="bar-kbs-incoming" style="width:100%;" value="20" secondary-value="50">
+                                <header>
+                                  <h3 id="kbs-incoming">100 </h3>
+                                  <span><pre> Kb/s incoming</pre></span>
+                                </header>
+                              </ons-progress-bar>
+                              <ons-progress-bar id="bar-kbs-outgoing" style="width:100%;" value="20" secondary-value="50">
+                                <header>
+                                  <h3  id="kbs-outgoing">100 </h3>
+                                  <span><pre> Kb/s outgoing</pre></span>
+                                </header>
+                              </ons-progress-bar>
+                            </div>
+                        </ons-list-item>
+                      </ons-list>
+                    </div>  
+                  </div>
+              </ons-card>
+              </ons-col>
+              <ons-row>
+              <ons-col width="50%">
+                <ons-card modifier="default">
+                  <H2>PEERING</H2>
+                  <div class="content">
+                  <div class="content_top">
+                    <p>
+                      <ons-input class="dash-input" id="add-multiaddress" modifier="large" placeholder="Multiaddress" float></ons-input>
+                      <ons-button modifier="quiet" onclick="fn.bootstrapPeer('-1')"><ons-icon icon="fa-plus"></ons-button>
+                    </p>
+                  </div>
+                  <ons-list>
+                    <ons-list-header>Peer List</ons-list-header>
+                    <ons-lazy-repeat id="peer-list"></ons-lazy-repeat>
+                  </ons-list>
+                  </div>
+              </ons-card>
+             </ons-col>
+             <ons-col width="50%">
+                <ons-card modifier="default">
+                  <H2>FILES</H2>
+                  <div class="content"><ons-button modifier="large" id="upload-button" onclick="fn.showDialog('upload-file-dialog')">UPLOAD</ons-button></div>
+                  <div class="content">
+                    <div class="content_top">
+                      <p>
+                          <ons-search-input id="file-search" class="dash-input"  placeholder="Search" onchange="fn.filterItems(this.value)"></ons-search-input>
+                      </p> 
+                    </div>  
+                    <ons-list  id="file-list-main">
+                      <ons-list-header>File List</ons-list-header>
+                      <ons-lazy-repeat id="file-list"></ons-lazy-repeat>
+                    </ons-list>
+                  </div>
+              </ons-card>
+             </ons-col>
+           </ons-row>
+            </div>
+        </div>
+      </div>
     </ons-page>
   </template>
