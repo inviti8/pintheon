@@ -14,8 +14,8 @@ document.addEventListener('init', function(event) {
     });
 
     //Shared Rendering methods
-    window.rndr.nodeCardHeader = function(logo, name, descriptor, qty=1){
-        const elem = 'node-data-card-header';
+
+    window.rndr.RENDER_ELEM = function(elem, callback, ...args){
         let list = document.querySelector('#'+elem);
 
         list.delegate = {
@@ -24,17 +24,26 @@ document.addEventListener('init', function(event) {
               var clone = document.importNode(template.content, true);
     
               // Update the clone
-              clone.querySelector('#'+elem+'-logo').setAttribute('src', logo);
-              clone.querySelector('#'+elem+'-name').textContent = name;
-              clone.querySelector('#'+elem+'-descriptor').textContent = descriptor;
+              callback(clone, elem, ...args);
     
               return clone.firstElementChild; // Ensure that the returned value is a proper DOM element
             },
             countItems: function() {
-              return qty;
+              return 1;
             }
         };
 
+    };
+
+    window.rndr.nodeCardHeader = function(logo, name, descriptor){
+
+        let _updateElem = function(clone, elem, logo, name, descriptor){
+            clone.querySelector('#'+elem+'-logo').setAttribute('src', logo);
+            clone.querySelector('#'+elem+'-name').textContent = name;
+            clone.querySelector('#'+elem+'-descriptor').textContent = descriptor;
+        }
+
+        window.rndr.RENDER_ELEM('node-data-card-header', _updateElem, logo, name, descriptor);
     };
 
     window.rndr.showELem = function(id){

@@ -29,11 +29,6 @@
           <ons-back-button modifier="default">Close</ons-back-button>
         </div>
         <div class="center"></div>
-        <div class="right">
-          <ons-toolbar-button onclick="fn.open()" modifier="default">
-            <ons-icon icon="md-menu"></ons-icon>
-          </ons-toolbar-button>
-        </div>
       </ons-toolbar>
   
       <div style="text-align: center; background-color: rgba(255, 255, 255, 0.5); margin-top:20px">
@@ -50,6 +45,7 @@
                   <div class="content">
                     <div style="width:100%;">
                       <ons-list class="stat-ul" style="width:30%; height:200px;">
+                        <ons-list-header>GENERATOR</ons-list-header>
                         <ons-list-item modifier="nodivider" style="width:100%;" >
                           <ons-lazy-repeat id="node-data-card-header"></ons-lazy-repeat>
                         </ons-list-item>
@@ -61,56 +57,25 @@
                           </ons-col>
                         </ons-list-item>
                       </ons-list>
-                      <ons-list class="stat-ul" style="width:45%; height:200px;">
-                        <ons-list-header>NODE INFO</ons-list-header>
-                        <ons-list-item modifier="nodivider" style="width:100%;" >
-                            <div style="margin: 20px auto;">
-                              <header>
-                                <pre><span>ID:   </span></pre>
-                                <span ><ons-input class="dash-input" id="multiaddress" modifier="large" placeholder="Multiaddress" float></ons-input></span>
-                              </header>
-                              <header>
-                                <pre><span>GATEWAY:   </span></pre>
-                                <span><ons-input class="dash-input" id="gateway-url" modifier="large" placeholder="gateway.com" float></ons-input></span>
-                                <span><ons-button onclick="window.updateGateway()" modifier="quiet"><ons-icon icon="fa-cloud-arrow-up"></ons-button></span>
-                              </header>
-                            </div>
-                        </ons-list-item>
-                      </ons-list>
-                      <ons-list class="stat-ul" style="width:20%; height:200px;">
-                        <ons-list-header>NETWORK TRAFFIC</ons-list-header>
-                        <ons-list-item modifier="nodivider" style="width:100%;" >
-                            <div style="margin: 20px auto; width:100%;">
-                              <ons-progress-bar id="bar-kbs-incoming" style="width:100%;" value="20" secondary-value="50">
-                                <header>
-                                  <h3 id="kbs-incoming">100 </h3>
-                                  <span><pre> Kb/s incoming</pre></span>
-                                </header>
-                              </ons-progress-bar>
-                              <ons-progress-bar id="bar-kbs-outgoing" style="width:100%;" value="20" secondary-value="50">
-                                <header>
-                                  <h3  id="kbs-outgoing">100 </h3>
-                                  <span><pre> Kb/s outgoing</pre></span>
-                                </header>
-                              </ons-progress-bar>
-                            </div>
-                        </ons-list-item>
-                      </ons-list>
+                      <ons-lazy-repeat id="node-info"></ons-lazy-repeat>
+                      <ons-lazy-repeat id="network-traffic"></ons-lazy-repeat>
                     </div>  
                   </div>
-              </ons-card>
+                </ons-card>
               </ons-col>
               <ons-row>
               <ons-col width="50%">
                 <ons-card modifier="default">
-                  <H2>PEERING</H2>
+                  <H2>ACCESS TOKENS</H2>
                   <div class="content">
-                  <div class="content_top">
+                    <ons-button modifier="large" id="upload-button" onclick="fn.showDialog('upload-file-dialog')">ADD ACCESS TOKEN</ons-button>
+                    <br>
+                  <!-- <div class="content_top">
                     <p>
                       <ons-input class="dash-input" id="add-multiaddress" modifier="large" placeholder="Multiaddress" float></ons-input>
                       <ons-button modifier="quiet" onclick="fn.bootstrapPeer('-1')"><ons-icon icon="fa-plus"></ons-button>
                     </p>
-                  </div>
+                  </div> -->
                   <ons-list>
                     <ons-list-header>Peer List</ons-list-header>
                     <ons-lazy-repeat id="peer-list"></ons-lazy-repeat>
@@ -140,4 +105,45 @@
         </div>
       </div>
     </ons-page>
+  </template>
+
+  <template id="node-info-template">
+    <ons-list class="stat-ul" style="width:45%; height:200px;">
+      <ons-list-header>NODE INFO</ons-list-header>
+      <ons-list-item modifier="nodivider" style="width:100%;" >
+          <div style="margin: 20px auto;">
+            <header>
+              <pre><span>ID:   </span></pre>
+              <span ><ons-input class="dash-input" id="node-info-multiaddress" modifier="large" placeholder="Multiaddress" float></ons-input></span>
+            </header>
+            <header>
+              <pre><span>GATEWAY:   </span></pre>
+              <span><ons-input class="dash-input" id="node-info-gateway-url" modifier="large" placeholder="gateway.com" float></ons-input></span>
+              <span><ons-button onclick="window.updateGateway()" modifier="quiet"><ons-icon icon="fa-cloud-arrow-up"></ons-button></span>
+            </header>
+          </div>
+      </ons-list-item>
+    </ons-list>
+  </template>
+
+  <template id="network-traffic-template">
+    <ons-list class="stat-ul" style="width:20%; height:200px;">
+      <ons-list-header>NETWORK TRAFFIC</ons-list-header>
+      <ons-list-item modifier="nodivider" style="width:100%;" >
+          <div style="margin: 20px auto; width:100%;">
+            <ons-progress-bar id="bar-kbs-incoming" style="width:100%;" value="20" secondary-value="50">
+              <header>
+                <h3 id="network-traffic-kbs-incoming">100 </h3>
+                <span><pre> Kb/s incoming</pre></span>
+              </header>
+            </ons-progress-bar>
+            <ons-progress-bar id="bar-kbs-outgoing" style="width:100%;" value="20" secondary-value="50">
+              <header>
+                <h3  id="network-traffic-kbs-outgoing">100 </h3>
+                <span><pre> Kb/s outgoing</pre></span>
+              </header>
+            </ons-progress-bar>
+          </div>
+      </ons-list-item>
+    </ons-list>
   </template>
