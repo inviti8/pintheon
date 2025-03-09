@@ -19,7 +19,7 @@ const on_authorized = (data) => {
 document.addEventListener('init', function(event) {
     let page = event.target;
 
-    //Element render methods:
+    //Element rendering methods:
     window.rndr.nodeInfo = function(multiaddress, url){
 
         let _updateElem = function(clone, elem, multiaddress, url){
@@ -40,12 +40,14 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('network-traffic', _updateElem, incoming, outgoing);
     };
 
+
+
     if (page.id === 'authorize') {
 
         document.querySelector('#authorize-button').onclick = function () {
 
         };
-        
+
     } else if (page.id === 'dashboard') {
 
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;

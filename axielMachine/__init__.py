@@ -20,6 +20,7 @@ from Crypto.Util.Padding import pad, unpad
 from pymacaroons import Macaroon, Verifier
 import hashlib
 import hashlib, binascii
+import datetime
 from platformdirs import *
 
 
@@ -33,6 +34,8 @@ class AxielMachine(object):
         self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSB7MtcrDXWZNrLHqD5rVyOduvQKQ7EF2GaOEwW5phJUbAo'
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
         self.session_active = False
+        self.session_started = None
+        self.session_hours = 1
         self.root_token = None
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
@@ -128,9 +131,24 @@ class AxielMachine(object):
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
     
-    def end_session(self):
-        self.session_active = False
-        self._client_session_pub = None
+    def check_time(caveat):
+        if not caveat.startswith('time < '):
+            return False
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc)
+            when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%dT%H:%M')
+            return now < when
+        except:
+            return False
+            
+    
+    def token_expired(self, client_token, b64_pub):
+        v = Verifier()
+        client_mac = Macaroon.deserialize(client_token)
+        v.satisfy_general(self.check_time)
+
+        return v.verify(client_mac, self.generate_shared_session_secret(b64_pub))
+
     
     def verify_request(self, b64_pub, client_token):
         result = False
@@ -172,7 +190,13 @@ class AxielMachine(object):
         keypair = self._new_keypair()
         self.session_priv = keypair['priv']
         self.session_pub = keypair['pub']
+        self.session_started = datetime.datetime.now(datetime.timezone.utc)
         return self.session_pub
+    
+    def end_session(self):
+        self.session_active = False
+        self._client_session_pub = None
+        self.session_started = None
     
     def new_node(self):
         keypair = self._new_keypair()

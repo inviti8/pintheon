@@ -112,7 +112,7 @@ def new_node():
 
 
 @app.route('/establish', methods=['POST'])
-def establishing():
+def establish():
    required = ['token', 'client_pub', 'name', 'descriptor', 'meta_data']
    data = request.get_json()
    print(data)
@@ -131,6 +131,26 @@ def establishing():
         AXIEL.established()
         
         return AXIEL.establish_data(), 200
+   
+
+@app.route('/authorize', methods=['POST'])
+def authorize():
+   required = ['token', 'client_pub', 'name']
+   data = request.get_json()
+   print(data)
+
+   if not _payload_valid(required, data):
+        abort(400)  # Bad Request
+
+   elif AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+        raise Unauthorized()  # Unauthorized
+
+   else:
+        
+        return jsonify({'authorized': True}), 200
 
 
 

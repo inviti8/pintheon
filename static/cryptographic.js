@@ -376,6 +376,7 @@ const generateAuthToken = async (serverPub, clientPriv) => {
     try {
 
         let token = window.MacaroonsBuilder.create(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION");
+        token.add_first_party_caveat("time < " + Math.floor(new Date().getTime() / 1000 + 60 * 60));
 
         return token;
     } catch (err) {
