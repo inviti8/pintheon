@@ -375,8 +375,37 @@ const generateLaunchToken = async (launchKey) => {
 const generateAuthToken = async (serverPub, clientPriv) => {
     try {
 
-        let token = window.MacaroonsBuilder.create(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION");
-        token.add_first_party_caveat("time < " + Math.floor(new Date().getTime() / 1000 + 60 * 60));
+        let token = new window.MacaroonsBuilder(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION")
+        .getMacaroon();
+        // .add_first_party_caveat("time < " + Math.floor(new Date().getTime() / 1000 + 60 * 60))
+
+        return token;
+    } catch (err) {
+        console.error("Error in generating session token: ", err);
+        throw err;  // Re-throw the error so it can be caught where this function is called.
+    }
+};
+
+const generateNonceAuthToken = async (serverPub, clientPriv, identifier, nonce) => {
+    try {
+
+        let token = new window.MacaroonsBuilder(window.location.href, await generateSharedSecret(serverPub, clientPriv), identifier)
+        .add_first_party_caveat("nonce == " +nonce)
+        .getMacaroon();
+
+        return token;
+    } catch (err) {
+        console.error("Error in generating session token: ", err);
+        throw err;  // Re-throw the error so it can be caught where this function is called.
+    }
+};
+
+const generateTimestampedAuthToken = async (serverPub, clientPriv, time) => {
+    try {
+
+        let token = new window.MacaroonsBuilder(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION")
+        .add_first_party_caveat("time < " +time)
+        .getMacaroon();
 
         return token;
     } catch (err) {

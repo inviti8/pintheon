@@ -22,7 +22,7 @@ const _jsonFileLoaderInputChangeCallback = function(id, input, encrypted, pruneK
         obj = window.fn.pruneJsonKeys(obj, pruneKeys);
 
         if(encrypted){
-          const pw = dialog.querySelector('.pw-input');
+          const pw = document.getElementById(id).querySelector('.pw-input');
 
           try{
             obj = decryptJsonObject(obj, pw.value);

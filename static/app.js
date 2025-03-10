@@ -183,6 +183,8 @@ document.addEventListener('init', function(event) {
     };
 
     window.fn.getStoredEncryptedJSONObject = async ( key, callback, dlgName='load-encrypted-file-dialog' ) => {
+        console.log('GETS HERE!!!!')
+        console.log(key)
         if(window.fn.validatePassword(dlgName)){
             const password = document.querySelector('.pw-input').value;
             let obj = await window.fn.getStored(key);

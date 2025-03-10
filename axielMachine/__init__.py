@@ -35,6 +35,7 @@ class AxielMachine(object):
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
         self.session_active = False
         self.session_started = None
+        self.session_nonce = None
         self.session_hours = 1
         self.root_token = None
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
@@ -131,24 +132,27 @@ class AxielMachine(object):
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
     
-    def check_time(caveat):
+    def check_time(self, caveat):
         if not caveat.startswith('time < '):
             return False
         try:
             now = datetime.datetime.now(datetime.timezone.utc)
-            when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%dT%H:%M')
-            return now < when
+            when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%dT%H:%M:%S.%f%z')
+            if when != datetime.datetime.strptime(self.session_started):
+                return False
+            else:
+                return now < when
         except:
+            print('EXCEPTION!!!')
             return False
-            
-    
-    def token_expired(self, client_token, b64_pub):
+                
+    def token_expired(self, b64_pub, client_token):
         v = Verifier()
         client_mac = Macaroon.deserialize(client_token)
         v.satisfy_general(self.check_time)
+        print(client_mac.inspect())
 
         return v.verify(client_mac, self.generate_shared_session_secret(b64_pub))
-
     
     def verify_request(self, b64_pub, client_token):
         result = False
@@ -159,6 +163,8 @@ class AxielMachine(object):
             identifier='AXIEL_SESSION',
             key=self.generate_shared_session_secret(b64_pub)
         )
+
+        mac.add_first_party_caveat('time < '+ str(self.session_started))
         
         if mac.signature == client_mac.signature:
             result = True
@@ -171,6 +177,18 @@ class AxielMachine(object):
         client_mac = Macaroon.deserialize(client_launch_token)
 
         if server_mac.signature == client_mac.signature:
+            result = True
+        
+        return result
+    
+    def verify_generator(self, client_generator_pub, client_root_token):
+        result = False
+        server_mac = Macaroon.deserialize(self.root_token)
+        client_mac = Macaroon.deserialize(client_root_token)
+
+        server_mac.add_first_party_caveat('nonce == '+self.session_nonce)
+
+        if client_generator_pub == self._client_node_pub and server_mac.signature == client_mac.signature:
             result = True
         
         return result
@@ -191,12 +209,14 @@ class AxielMachine(object):
         self.session_priv = keypair['priv']
         self.session_pub = keypair['pub']
         self.session_started = datetime.datetime.now(datetime.timezone.utc)
+        self.session_nonce = str(uuid.uuid4())
         return self.session_pub
     
     def end_session(self):
         self.session_active = False
         self._client_session_pub = None
         self.session_started = None
+        self.session_nonce = None
     
     def new_node(self):
         keypair = self._new_keypair()
@@ -243,13 +263,6 @@ class AxielMachine(object):
     def establish_data(self):
         return {'node_id': self.uid, 'node_pub': self.node_pub, 'root_token': self.root_token, 'master_key': self.master_key}
     
-    def verify_generator(self, clientDischargeToken):
-        v = Verifier()
-        root = Macaroon.deserialize(self.root_token)
-        discharge = Macaroon.deserialize(clientDischargeToken)
-        discharged = discharge.prepare_for_request(discharge)
-        return v.verify(root, self.generate_shared_node_secret(), [discharged])
-    
     def _create_shared_secret(self, b64_pub, server_priv):
         pem_string = self.pem_format(b64_pub)
         pub_key = serialization.load_pem_public_key(pem_string.encode('utf-8'), default_backend())
@@ -259,7 +272,7 @@ class AxielMachine(object):
     def _create_root_token(self):
         self.root_token = Macaroon(
             location='',
-            identifier='AXIEL_ROOT_TOKEN',
+            identifier='AXIEL_GENERATOR',
             key=self.generate_shared_node_secret()
         ).serialize()
 

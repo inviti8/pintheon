@@ -1,18 +1,31 @@
 
-const authorize = async () => {
+const load_encrypted_keystore = async () => {
+    //window.constants.KEYSTORE
+    await window.fn.loadJSONFileObject( authorize, true, ['node_data'] );
+    //await window.fn.saveKeyStoreToStorage( ['node_data'] );
+    //await window.fn.loadKeyStoreFromStorage(authorize);
+};
+
+const authorize = async (prms) => {
+    
+    const keystore = await prms;
+    console.log(keystore)
+    window.fn.generator_keys = await importJWKCryptoKeyPair(keystore['generator_priv'], keystore['generator_pub']);
+    const authToken = await generateNonceAuthToken(window.constants.SERVER_GENERATOR_PUBLIC_KEY, window.fn.generator_keys.privateKey, 'AXIEL_GENERATOR', window.constants.session_nonce);
 
     const body = {
         'token': window.constants.SESSION_TOKEN.serialize(),
         'client_pub': window.constants.CLIENT_PUBLIC_KEY,
-        'launch_token': await generateLaunchToken(document.querySelector('#launch-key').value),
-        'seed_cipher': await generateSharedEncryptedText(document.querySelector('#xelis-seed-text').value, window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey),
+        'auth_token': authToken.serialize(),
         'generator_pub': await exportKey(window.fn.generator_keys.publicKey),
-      };
+    };
 
     window.fn.call(body, '/authorize', on_authorized);
 };
 
 const on_authorized = (data) => {
+
+    console.log(data)
 
 };
 
@@ -45,7 +58,7 @@ document.addEventListener('init', function(event) {
     if (page.id === 'authorize') {
 
         document.querySelector('#authorize-button').onclick = function () {
-
+            load_encrypted_keystore();
         };
 
     } else if (page.id === 'dashboard') {
