@@ -28,7 +28,7 @@
   <script src="{{ url_for('static', filename='cryptographic.js') }}"></script>
   <script type="module">
     window.constants = {};
-    window.constants.session_start = '{{session_data.time}}';
+    window.constants.session_end = '{{session_data.time}}';
     window.constants.session_nonce = '{{session_data.nonce}}';
     window.constants.KEYSTORE = 'AXIEL_KEYSTORE';
     window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
@@ -36,7 +36,7 @@
     window.constants.SERVER_PUBLIC_KEY = await importServerPub("{{session_data.pub}}");
     // window.constants.SERVER_GENERATOR_PUBLIC_KEY = await importServerPub("{{session_data.generator_pub}}");
     window.constants.CLIENT_PUBLIC_KEY = await exportKey(window.constants.CLIENT_SESSION_KEYS.publicKey);
-    window.constants.SESSION_TOKEN = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey, window.constants.session_start);
+    window.constants.SESSION_TOKEN = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey, window.constants.session_end);
     if("{{session_data.generator_pub}}"!="None"){
       window.constants.SERVER_GENERATOR_PUBLIC_KEY = await importServerPub("{{session_data.generator_pub}}");
       console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
@@ -47,8 +47,8 @@
 
     console.log(window.constants.SESSION_TOKEN)
     console.log(window.constants.SESSION_TOKEN.inspect());
-    console.log(window.constants.session_start)
-    // let x = await timestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey, window.constants.session_start);
+    console.log(window.constants.session_end)
+    // let x = await timestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey, window.constants.session_end);
 
     // console.log(x)
 

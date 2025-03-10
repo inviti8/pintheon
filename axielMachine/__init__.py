@@ -21,6 +21,7 @@ from pymacaroons import Macaroon, Verifier
 import hashlib
 import hashlib, binascii
 import datetime
+from datetime import timedelta
 from platformdirs import *
 
 
@@ -35,6 +36,7 @@ class AxielMachine(object):
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
         self.session_active = False
         self.session_started = None
+        self.session_ends = None
         self.session_nonce = None
         self.session_hours = 1
         self.root_token = None
@@ -136,14 +138,14 @@ class AxielMachine(object):
         if not caveat.startswith('time < '):
             return False
         try:
-            now = datetime.datetime.now(datetime.timezone.utc)
-            when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%dT%H:%M:%S.%f%z')
-            if when != datetime.datetime.strptime(self.session_started):
+            now = datetime.datetime.now()
+            when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%d %H:%M:%S.%f')
+
+            if str(when) != str(self.session_ends):
                 return False
             else:
                 return now < when
         except:
-            print('EXCEPTION!!!')
             return False
                 
     def token_expired(self, b64_pub, client_token):
@@ -164,7 +166,7 @@ class AxielMachine(object):
             key=self.generate_shared_session_secret(b64_pub)
         )
 
-        mac.add_first_party_caveat('time < '+ str(self.session_started))
+        mac.add_first_party_caveat('time < '+ str(self.session_ends))
         
         if mac.signature == client_mac.signature:
             result = True
@@ -208,7 +210,8 @@ class AxielMachine(object):
         keypair = self._new_keypair()
         self.session_priv = keypair['priv']
         self.session_pub = keypair['pub']
-        self.session_started = datetime.datetime.now(datetime.timezone.utc)
+        self.session_started = datetime.datetime.now()
+        self.session_ends = self.session_started + timedelta(hours=self.session_hours)
         self.session_nonce = str(uuid.uuid4())
         return self.session_pub
     
@@ -216,6 +219,7 @@ class AxielMachine(object):
         self.session_active = False
         self._client_session_pub = None
         self.session_started = None
+        self.session_ends = None
         self.session_nonce = None
     
     def new_node(self):

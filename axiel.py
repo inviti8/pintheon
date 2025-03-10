@@ -39,6 +39,9 @@ def _payload_valid(fields, data):
 
    return result
 
+def _auth(client_pub, token):
+    return (AXIEL.token_expired(client_pub, token) or not AXIEL.verify_request(client_pub, token) or not AXIEL.verify_generator(client_pub, token))
+
 ##ERROR HEANDLING
 class Forbidden(HTTPException):
     code = 403
@@ -68,6 +71,12 @@ def handle_forbidden(e):
     # handle forbidden action here
     _on_failure_error()
     return 'Permission Denied', 403
+
+@app.errorhandler(500)
+def unauthorized_access(e):
+    # handle server error here
+    _on_failure_error()
+    return 'Server Error', 500
  
 @app.route('/')
 def home():
@@ -92,7 +101,7 @@ def home():
    shared_dialogs_js=_load_js(AXIEL.shared_dialogs)
    client_tokens= _load_js('macaroons_js_bundle')
    
-   session_data = { 'pub': AXIEL.new_session(), 'generator_pub': AXIEL.node_pub, 'time': AXIEL.session_started, 'nonce': AXIEL.session_nonce }
+   session_data = { 'pub': AXIEL.new_session(), 'generator_pub': AXIEL.node_pub, 'time': AXIEL.session_ends, 'nonce': AXIEL.session_nonce }
    return render_template(template, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
 
 @app.route('/end_session', methods=['POST'])
@@ -175,13 +184,10 @@ def authorize():
    elif AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_request(data['client_pub'], data['token']) or not AXIEL.verify_generator(data['generator_pub'], data['auth_token']):  # client must send valid tokens
+   elif _auth(data['client_pub'], data['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
 
    else:
-        print('token expired')
-        print(AXIEL.token_expired(data['client_pub'], data['token']))
-        
         return jsonify({'authorized': True}), 200
 
 

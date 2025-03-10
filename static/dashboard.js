@@ -1,9 +1,6 @@
 
 const load_encrypted_keystore = async () => {
-    //window.constants.KEYSTORE
     await window.fn.loadJSONFileObject( authorize, true, ['node_data'] );
-    //await window.fn.saveKeyStoreToStorage( ['node_data'] );
-    //await window.fn.loadKeyStoreFromStorage(authorize);
 };
 
 const authorize = async (prms) => {
@@ -23,10 +20,12 @@ const authorize = async (prms) => {
     window.fn.call(body, '/authorize', on_authorized);
 };
 
-const on_authorized = (data) => {
+const on_authorized = (session) => {
 
-    console.log(data)
-
+    if(session.authorized){
+        window.fn.pushPage('dashboard');
+    };
+    
 };
 
 document.addEventListener('init', function(event) {
