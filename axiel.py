@@ -90,17 +90,22 @@ def home():
    print(m.serialize())
    print(AXIEL.state)
    print('-----------------------------------')
+   pub = AXIEL.session_pub
+   if not AXIEL.logged_in:
+       pub = AXIEL.new_session()
+       
    AXIEL.logo_url = url_for('static', filename='hvym_logo.png')
    template = AXIEL.view_template
    components=_load_components(AXIEL.view_components)
+   page = AXIEL.active_page
    js=_load_js(AXIEL.view_components)
    logo=AXIEL.logo_url
    shared_dialogs=_load_components(AXIEL.shared_dialogs)
    shared_dialogs_js=_load_js(AXIEL.shared_dialogs)
    client_tokens= _load_js('macaroons_js_bundle')
    
-   session_data = { 'pub': AXIEL.new_session(), 'generator_pub': AXIEL.node_pub, 'time': AXIEL.session_ends, 'nonce': AXIEL.session_nonce }
-   return render_template(template, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
+   session_data = { 'pub': pub, 'generator_pub': AXIEL.node_pub, 'time': AXIEL.session_ends, 'nonce': AXIEL.session_nonce }
+   return render_template(template, page=page, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
 
 @app.route('/end_session', methods=['POST'])
 def end_session():
@@ -174,7 +179,6 @@ def establish():
 def authorize():
    required = ['token', 'client_pub', 'auth_token', 'generator_pub']
    data = request.get_json()
-   print(data)
 
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
@@ -192,17 +196,21 @@ def authorize():
 
 @app.route('/authorized', methods=['POST'])
 def authorized():
-   required = ['auth_token', 'client_pub']
+   required = ['token', 'auth_token', 'client_pub']
    data = request.get_json()
    print(data)
+#    print("AXIEL.token_not_expired(data['client_pub'], data['token'])")
+#    print(AXIEL.token_not_expired(data['client_pub'], data['token']))
+   print("AXIEL.verify_authorization(data['client_pub'], data['auth_token'])")
+   print(AXIEL.verify_authorization(data['client_pub'], data['auth_token']))
 
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+   elif not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.token_not_expired(data['client_pub'], data['auth_token']) or not AXIEL.verify_authorization(data['auth_token']):  # client must send valid tokens
+   elif not AXIEL.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
         return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': AXIEL.session_ends, 'authorized': True}), 200

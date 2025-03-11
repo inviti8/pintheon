@@ -4,6 +4,12 @@ window.rndr = {};
 // This file is for shared application wide for ui related js methods
 document.addEventListener('init', function(event) {
 
+    let nav = document.querySelector('#Nav');
+
+    if(nav){
+        nav.setAttribute('page', window.constants.active_page);
+    };
+
     const buttonClasses = ['scale-on-hover', 'lighten-on-over'];
     const buttons = document.querySelectorAll('ons-button');
 

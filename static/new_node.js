@@ -5,6 +5,8 @@ window.fn.establish_data;
 
 // load wasm wallet and generate wallet seed right away
 async function init() {
+    localStorage.removeItem('AXIEL_SESSION');
+    localStorage.removeItem('AXIEL_NODE');
     await wasm_bindgen();
     window.fn.generator_keys = await generateClientKeys(true);
 };
@@ -75,8 +77,17 @@ const establish = async () => {
 };
 
 const established = (data) => {
-    document.querySelector('#xelis-seed-text').value ="";
-    document.querySelector('#launch-key').value="";
+    const seedTxt = document.querySelector('#xelis-seed-text');
+    const launchKey = document.querySelector('#launch-key');
+    
+    if(seedTxt){
+        document.querySelector('#xelis-seed-text').value ="";
+    };
+
+    if(launchKey){
+        document.querySelector('#launch-key').value="";
+    };
+    
     console.log("establish : ",data);
     end_session();
 };

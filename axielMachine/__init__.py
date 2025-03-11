@@ -41,6 +41,7 @@ class AxielMachine(object):
         self.session_hours = 1
         self.auth_nonce = None
         self.auth_token = None
+        self.logged_in = False
         self.root_token = None
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
@@ -68,6 +69,7 @@ class AxielMachine(object):
         #-------VIEWS--------
         self.view_template = 'index.html'
         self.view_components = 'new_node'
+        self.active_page = 'new_node'
         self.shared_dialogs = 'shared_dialogs'
 
         #-------KEYS--------
@@ -143,16 +145,15 @@ class AxielMachine(object):
             now = datetime.datetime.now()
             when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%d %H:%M:%S.%f')
 
-            if str(when) != str(self.session_ends):
-                return False
-            else:
-                return now < when
+            return now < when
+        
         except:
             return False
                 
     def token_not_expired(self, b64_pub, client_token):
         v = Verifier()
         client_mac = Macaroon.deserialize(client_token)
+        client_mac.inspect()
         v.satisfy_general(self.check_time)
 
         return v.verify(client_mac, self.generate_shared_session_secret(b64_pub))
@@ -196,14 +197,14 @@ class AxielMachine(object):
         
         return result
     
-    def verify_authorization(self, client_token):
+    def verify_authorization(self, b64_pub, client_token):
         result = False
 
         client_mac = Macaroon.deserialize(client_token)
         mac = Macaroon(
             location=client_mac.location,
-            identifier='AXIEL_AUTH',
-            key=self.generate_shared_session_secret(self._client_session_pub)
+            identifier=client_mac.identifier,
+            key=self.generate_shared_session_secret(b64_pub)
         )
         mac.add_first_party_caveat('nonce == '+self.auth_nonce)
         mac.add_first_party_caveat('time < '+ str(self.session_ends))
@@ -225,6 +226,7 @@ class AxielMachine(object):
         return key_bytes
     
     def new_session(self):
+        print('NEW SESSION CALLED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         keypair = self._new_keypair()
         self.session_priv = keypair['priv']
         self.session_pub = keypair['pub']
@@ -235,6 +237,7 @@ class AxielMachine(object):
     
     def end_session(self):
         self.session_active = False
+        self.logged_in = False
         self._client_session_pub = None
         self.session_started = None
         self.session_ends = None
@@ -243,10 +246,16 @@ class AxielMachine(object):
     def authorized(self):
         self.auth_nonce = str(uuid.uuid4())
         self.auth_token = self._create_auth_token()
+        self.logged_in = True
+        self.session_active = True
+        self.active_page = 'dashboard'
 
     def deauthorized(self):
         self.auth_nonce = None
         self.auth_token = None
+        self.logged_in = False
+        self.session_active = False
+        self.active_page = 'authorize'
     
     def new_node(self):
         keypair = self._new_keypair()
@@ -330,12 +339,15 @@ class AxielMachine(object):
         self._save_wallet_config()
         self._create_root_token()
         self._update_state_data()
+        self.active_page = 'establish'
+        self.logged_in = True
         return True
         
     @property
     def on_established(self):
         print('established!!')
         self.view_components = 'dashboard'
+        self.active_page = 'authorize'
         self._update_state_data()
         return True
 

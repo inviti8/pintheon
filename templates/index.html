@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/approvejs/3.1.2/approve.min.js"></script>
 </head>
 <body>
+  <ons-navigator swipeable id="Nav" page="{{page}}.html"></ons-navigator>
 
   {{ components | safe }}
   {{ shared_dialogs | safe }}
@@ -34,7 +35,6 @@
     window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
     window.constants.CLIENT_SESSION_KEYS = await generateClientKeys();
     window.constants.SERVER_PUBLIC_KEY = await importServerPub("{{session_data.pub}}");
-    // window.constants.SERVER_GENERATOR_PUBLIC_KEY = await importServerPub("{{session_data.generator_pub}}");
     window.constants.CLIENT_PUBLIC_KEY = await exportKey(window.constants.CLIENT_SESSION_KEYS.publicKey);
     window.constants.SESSION_TOKEN = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey, window.constants.session_end);
     if("{{session_data.generator_pub}}"!="None"){
