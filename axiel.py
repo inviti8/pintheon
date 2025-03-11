@@ -125,7 +125,7 @@ def end_session():
    else:
         AXIEL.end_session()
         
-        return AXIEL.establish_data(), 200
+        return jsonify({'authorized': False}), 200
 
 @app.route('/new_node', methods=['POST'])
 def new_node():
@@ -210,6 +210,28 @@ def authorized():
         raise Unauthorized()  # Unauthorized
    else:
         return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': str(AXIEL.session_ends), 'authorized': True}), 200
+   
+
+@app.route('/deauthorize', methods=['POST'])
+def deauthorize():
+   required = ['token', 'client_pub']
+   data = request.get_json()
+   print(data)
+
+   if not _payload_valid(required, data):
+        abort(400)  # Bad Request
+
+   elif not AXIEL.session_active:  # Session must be active
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+        raise Unauthorized()  # Unauthorized
+
+   else:
+        AXIEL.deauthorized()
+        AXIEL.end_session()
+        
+        return jsonify({'authorized': False}), 200
 
 
 

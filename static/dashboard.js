@@ -1,31 +1,37 @@
 window.dash = {};
-window.dash.data;
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'AXIEL', 'descriptor': 'XRO Network', 'session_token':undefined, 'auth_token':undefined };
 window.dash.SESSION_KEYS = 'AXIEL_SESSION';
 window.dash.NODE = 'AXIEL_NODE';
 window.dash.AUTHORIZED = false;
+window.dash.USING_STORED_SESSION = false;
 
 window.dash.CLIENT_PUBLIC_KEY;
 window.dash.session_keys;
 window.dash.node_data;
 
+function _updateDashData(data){
+    Object.keys(data).forEach((k, i) => {
+        window.dash.data[k] = data[k];
+    });
+};
+
 
 async function init() {
-
-    window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'AXIEL', 'descriptor': 'XRO Network' };
 
     let sess_keys = JSON.parse(localStorage.getItem(window.dash.SESSION_KEYS));
     let node = JSON.parse(localStorage.getItem(window.dash.NODE));
 
     if(sess_keys && node){
+        window.dash.USING_STORED_SESSION = true
         window.dash.session_keys = await importJWKCryptoKeyPair(sess_keys['privateKey'], sess_keys['publicKey']);
         window.dash.node_data = node;
         window.dash.CLIENT_PUBLIC_KEY = await exportKey(window.dash.session_keys.publicKey);
-        const sessToken = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, node.expires );
-        const authToken = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'AXIEL_AUTH', node.nonce, node.expires );
+        window.dash.data.session_token = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, node.expires );
+        window.dash.data.auth_token = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'AXIEL_AUTH', node.nonce, node.expires );
 
         const body = {
-            'token': sessToken.serialize(),
-            'auth_token': authToken.serialize(),
+            'token': window.dash.data.session_token.serialize(),
+            'auth_token': window.dash.data.auth_token.serialize(),
             'client_pub': window.dash.CLIENT_PUBLIC_KEY
         };
 
@@ -50,7 +56,7 @@ async function init() {
           })
           .then(data => {
             window.dlg.hide('loading-dialog');
-            window.dash.data = data;
+            _updateDashData(data)
             window.rndr.dashboard();
           });
     
@@ -88,12 +94,37 @@ const on_authorized = async (node) => {
         session_jwk = {'privateKey': await exportJWKCryptoKey(window.constants.CLIENT_SESSION_KEYS.privateKey), 'publicKey': await exportJWKCryptoKey(window.constants.CLIENT_SESSION_KEYS.publicKey)};
         window.fn.store(window.dash.SESSION_KEYS, session_jwk, 'local');
         window.fn.store(window.dash.NODE, node, 'local');
-        window.dash.data = node;
+        _updateDashData(node);
 
         window.fn.pushPage('dashboard', node);
         console.log(node)
     };
     
+};
+
+const deauthorize = async () => {
+
+    let sessToken = window.constants.SESSION_TOKEN;
+    let pub = window.constants.CLIENT_PUBLIC_KEY;
+
+    if(window.dash.USING_STORED_SESSION ){
+        sessToken = window.dash.data.session_token;
+        pub = window.dash.CLIENT_PUBLIC_KEY;
+    };
+
+    const body = {
+        'token': sessToken.serialize(),
+        'client_pub': pub
+    };
+
+    window.fn.call(body, '/deauthorize', complete);
+
+};
+
+const complete = () => {
+    localStorage.removeItem(window.dash.SESSION_KEYS);
+    localStorage.removeItem(window.dash.NODE);
+    location.reload();
 };
 
 document.addEventListener('init', function(event) {
@@ -138,6 +169,10 @@ document.addEventListener('init', function(event) {
         };
 
     } else if (page.id === 'dashboard') {
+
+        document.querySelector('#deauthorize-button').onclick = function () {
+            deauthorize();
+        };
 
         window.rndr.dashboard();
 

@@ -102,7 +102,7 @@ const end_session = async () => {
     window.fn.call(body, '/end_session', complete);
 };
 
-const complete = (data) => {
+const complete = () => {
     location.reload();
 };
 
