@@ -1,5 +1,35 @@
 window.dash = {};
-window.dash.node;
+window.dash.SESSION_KEYS = 'AXIEL_SESSION';
+window.dash.NODE = 'AXIEL_NODE';
+window.dash.AUTHORIZED = false;
+
+window.dash.CLIENT_PUBLIC_KEY;
+window.dash.session_keys;
+window.dash.node_data;
+
+
+async function init() {
+
+    let sess_keys = JSON.parse(localStorage.getItem(window.dash.SESSION_KEYS));
+    let node = JSON.parse(localStorage.getItem(window.dash.NODE));
+
+    if(sess_keys && node){
+        window.dash.session_keys = await importJWKCryptoKeyPair(sess_keys['privateKey'], sess_keys['publicKey']);
+        window.dash.node_data = node;
+        window.dash.CLIENT_PUBLIC_KEY = await exportKey(sess_keys['publicKey']);
+        const authToken = await generateNonceAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'AXIEL_AUTH', node.nonce, node.expires);
+
+        const body = {
+            'auth_token': authToken.serialize(),
+            'client_pub': window.dash.CLIENT_PUBLIC_KEY
+        };
+    
+        window.fn.call(body, '/authorized', on_authorized)
+    };
+    
+};
+
+init();
 
 const load_encrypted_keystore = async () => {
     await window.fn.loadJSONFileObject( authorize, true, ['node_data'] );
@@ -22,11 +52,15 @@ const authorize = async (prms) => {
     window.fn.call(body, '/authorize', on_authorized);
 };
 
-const on_authorized = (node) => {
+const on_authorized = async (node) => {
 
     if(node.authorized){
+
+        session_jwk = {'privateKey': await exportJWKCryptoKey(window.constants.CLIENT_SESSION_KEYS.privateKey), 'publicKey': await exportJWKCryptoKey(window.constants.CLIENT_SESSION_KEYS.publicKey)};
+        window.fn.store(window.dash.SESSION_KEYS, session_jwk, 'local');
+        window.fn.store(window.dash.NODE, node, 'local');
+
         window.fn.pushPage('dashboard', node);
-        window.dash.node = node;
         console.log(node)
     };
     

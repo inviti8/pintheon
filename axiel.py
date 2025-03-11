@@ -186,7 +186,26 @@ def authorize():
         raise Unauthorized()  # Unauthorized
    else:
         AXIEL.set_client_session_pub(data['client_pub'])
-        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'authorized': True}), 200
+        AXIEL.authorized()
+        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': AXIEL.session_ends, 'authorized': True}), 200
+   
+
+@app.route('/authorized', methods=['POST'])
+def authorized():
+   required = ['auth_token', 'client_pub']
+   data = request.get_json()
+   print(data)
+
+   if not _payload_valid(required, data):
+        abort(400)  # Bad Request
+
+   elif AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.token_not_expired(data['client_pub'], data['auth_token']) or not AXIEL.verify_authorization(data['auth_token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': AXIEL.session_ends, 'authorized': True}), 200
 
 
 

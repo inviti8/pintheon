@@ -413,3 +413,18 @@ const generateTimestampedAuthToken = async (serverPub, clientPriv, time) => {
         throw err;  // Re-throw the error so it can be caught where this function is called.
     }
 };
+
+const generateNonceTimestampAuthToken = async (serverPub, clientPriv, identifier, nonce, time) => {
+    try {
+
+        let token = new window.MacaroonsBuilder(window.location.href, await generateSharedSecret(serverPub, clientPriv), identifier)
+        .add_first_party_caveat("nonce == " +nonce)
+        .add_first_party_caveat("time < " +time)
+        .getMacaroon();
+
+        return token;
+    } catch (err) {
+        console.error("Error in generating session token: ", err);
+        throw err;  // Re-throw the error so it can be caught where this function is called.
+    }
+};

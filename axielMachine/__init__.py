@@ -39,6 +39,8 @@ class AxielMachine(object):
         self.session_ends = None
         self.session_nonce = None
         self.session_hours = 1
+        self.auth_nonce = None
+        self.auth_token = None
         self.root_token = None
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
@@ -194,6 +196,23 @@ class AxielMachine(object):
         
         return result
     
+    def verify_authorization(self, client_token):
+        result = False
+
+        client_mac = Macaroon.deserialize(client_token)
+        mac = Macaroon(
+            location=client_mac.location,
+            identifier='AXIEL_AUTH',
+            key=self.generate_shared_session_secret(self._client_session_pub)
+        )
+        mac.add_first_party_caveat('nonce == '+self.auth_nonce)
+        mac.add_first_party_caveat('time < '+ str(self.session_ends))
+        
+        if mac.signature == client_mac.signature:
+            result = True
+        
+        return result
+    
     def hash_key(self, key):
         return hashlib.sha256(key.encode('utf-8')).hexdigest()
     
@@ -220,6 +239,14 @@ class AxielMachine(object):
         self.session_started = None
         self.session_ends = None
         self.session_nonce = None
+
+    def authorized(self):
+        self.auth_nonce = str(uuid.uuid4())
+        self.auth_token = self._create_auth_token()
+
+    def deauthorized(self):
+        self.auth_nonce = None
+        self.auth_token = None
     
     def new_node(self):
         keypair = self._new_keypair()
@@ -279,10 +306,16 @@ class AxielMachine(object):
             key=self.generate_shared_node_secret()
         ).serialize()
 
-    def _create_generator_token(self):
-        server_token = Macaroon.deserialize(self.root_token)
-        server_token.add_third_party_caveat('', self.root_token, 'AXIEL_GENERATOR_TOKEN')
-        return server_token
+    def _create_auth_token(self):
+        mac = Macaroon(
+            location='',
+            identifier='AXIEL_AUTH',
+            key=self.generate_shared_session_secret(self._client_session_pub)
+        )
+        mac.add_first_party_caveat('nonce == '+self.auth_nonce)
+        mac.add_first_party_caveat('time < '+ str(self.session_ends))
+
+        self.auth_token  = mac.serialize()
 
     @property
     def do_initialize(self):
