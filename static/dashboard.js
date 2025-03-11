@@ -20,8 +20,8 @@ async function init() {
         window.dash.session_keys = await importJWKCryptoKeyPair(sess_keys['privateKey'], sess_keys['publicKey']);
         window.dash.node_data = node;
         window.dash.CLIENT_PUBLIC_KEY = await exportKey(window.dash.session_keys.publicKey);
-        const sessToken = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, node.expires);
-        const authToken = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'AXIEL_AUTH', node.nonce, node.expires);
+        const sessToken = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, node.expires );
+        const authToken = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'AXIEL_AUTH', node.nonce, node.expires );
 
         const body = {
             'token': sessToken.serialize(),
@@ -51,7 +51,7 @@ async function init() {
           .then(data => {
             window.dlg.hide('loading-dialog');
             window.dash.data = data;
-            //on_authorized(data);
+            window.rndr.dashboard();
           });
     
     };
@@ -122,7 +122,8 @@ document.addEventListener('init', function(event) {
 
     window.rndr.dashboard = function(){
 
-        window.rndr.nodeCardHeader(window.dash.data['logo'], window.dash.data['name'], window.dash.data['descriptor']);
+        document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
+        window.rndr.nodeCardHeader(window.dash.data['logo'], window.dash.data.name, window.dash.data.descriptor);
         window.rndr.nodeInfo('test1234556789','test.com');
         window.rndr.networkTraffic('100', '99');
 
@@ -138,16 +139,11 @@ document.addEventListener('init', function(event) {
 
     } else if (page.id === 'dashboard') {
 
-        page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
         window.rndr.dashboard();
-        
 
     };
 });
 
-window.fn.pushPage = function(page, node_data, callback, ...args) {
+window.fn.pushPage = function(page, node_data) {
     document.querySelector('#Nav').pushPage(page+'.html', {data: {title: '|| AXIEL ||', node: node_data}});
-    if(callback){
-        callback(...args);
-    }
 };

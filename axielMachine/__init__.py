@@ -139,16 +139,18 @@ class AxielMachine(object):
         return ''.join('{:02x}'.format(c) for c in b)
     
     def check_time(self, caveat):
+        result = True
         if not caveat.startswith('time < '):
-            return False
-        try:
-            now = datetime.datetime.now()
-            when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%d %H:%M:%S.%f')
+            try:
+                now = datetime.datetime.now()
+                when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%d %H:%M:%S.%f')
 
-            return now < when
+                result = now < when
+            
+            except:
+                result = False
         
-        except:
-            return False
+        return result
                 
     def token_not_expired(self, b64_pub, client_token):
         v = Verifier()
@@ -201,6 +203,7 @@ class AxielMachine(object):
         result = False
 
         client_mac = Macaroon.deserialize(client_token)
+
         mac = Macaroon(
             location=client_mac.location,
             identifier=client_mac.identifier,
@@ -208,7 +211,7 @@ class AxielMachine(object):
         )
         mac.add_first_party_caveat('nonce == '+self.auth_nonce)
         mac.add_first_party_caveat('time < '+ str(self.session_ends))
-        
+
         if mac.signature == client_mac.signature:
             result = True
         

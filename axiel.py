@@ -191,7 +191,7 @@ def authorize():
    else:
         AXIEL.set_client_session_pub(data['client_pub'])
         AXIEL.authorized()
-        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': AXIEL.session_ends, 'authorized': True}), 200
+        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': str(AXIEL.session_ends), 'authorized': True}), 200
    
 
 @app.route('/authorized', methods=['POST'])
@@ -199,21 +199,17 @@ def authorized():
    required = ['token', 'auth_token', 'client_pub']
    data = request.get_json()
    print(data)
-#    print("AXIEL.token_not_expired(data['client_pub'], data['token'])")
-#    print(AXIEL.token_not_expired(data['client_pub'], data['token']))
-   print("AXIEL.verify_authorization(data['client_pub'], data['auth_token'])")
-   print(AXIEL.verify_authorization(data['client_pub'], data['auth_token']))
 
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+   elif not AXIEL.token_not_expired(data['client_pub'], data['token']) and not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
         abort(Forbidden())  # Forbidden
     
    elif not AXIEL.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': AXIEL.session_ends, 'authorized': True}), 200
+        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': str(AXIEL.session_ends), 'authorized': True}), 200
 
 
 
