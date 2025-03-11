@@ -39,9 +39,6 @@ def _payload_valid(fields, data):
 
    return result
 
-def _auth(client_pub, token):
-    return (AXIEL.token_expired(client_pub, token) or not AXIEL.verify_request(client_pub, token) or not AXIEL.verify_generator(client_pub, token))
-
 ##ERROR HEANDLING
 class Forbidden(HTTPException):
     code = 403
@@ -93,6 +90,7 @@ def home():
    print(m.serialize())
    print(AXIEL.state)
    print('-----------------------------------')
+   AXIEL.logo_url = url_for('static', filename='hvym_logo.png')
    template = AXIEL.view_template
    components=_load_components(AXIEL.view_components)
    js=_load_js(AXIEL.view_components)
@@ -184,11 +182,11 @@ def authorize():
    elif AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
         abort(Forbidden())  # Forbidden
     
-   elif _auth(data['client_pub'], data['token']):  # client must send valid tokens
+   elif not AXIEL.token_not_expired(data['client_pub'], data['token']) or not AXIEL.verify_request(data['client_pub'], data['token']) or not AXIEL.verify_generator(data['generator_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
-
    else:
-        return jsonify({'authorized': True}), 200
+        AXIEL.set_client_session_pub(data['client_pub'])
+        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'authorized': True}), 200
 
 
 

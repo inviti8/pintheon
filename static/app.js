@@ -18,19 +18,27 @@ document.addEventListener('init', function(event) {
     window.rndr.RENDER_ELEM = function(elem, callback, ...args){
         let list = document.querySelector('#'+elem);
 
-        list.delegate = {
-            createItemContent: function(i) {
-              var template = document.getElementById(elem+'-template');
-              var clone = document.importNode(template.content, true);
+        try {
+
+            list.delegate = {
+                createItemContent: function(i) {
+                  var template = document.getElementById(elem+'-template');
+                  var clone = document.importNode(template.content, true);
+        
+                  // Update the clone
+                  callback(clone, elem, ...args);
+        
+                  return clone.firstElementChild; // Ensure that the returned value is a proper DOM element
+                },
+                countItems: function() {
+                  return 1;
+                }
+            };
     
-              // Update the clone
-              callback(clone, elem, ...args);
-    
-              return clone.firstElementChild; // Ensure that the returned value is a proper DOM element
-            },
-            countItems: function() {
-              return 1;
-            }
+            list.refresh();
+
+        }catch (err) {
+            throw err;
         };
 
     };
@@ -160,19 +168,22 @@ document.addEventListener('init', function(event) {
         a.click() // Start downloading
     };
 
-    window.fn.saveEncryptedJSONFile = async ( encObj, dlgName, fileName) => {
+    window.fn.saveEncryptedJSONFile = async ( encObj, dlgName, fileName, onCompleted, ...args) => {
         if(window.fn.validateNewPassword(dlgName)){
             const password = document.querySelector('#'+dlgName+'-input').value;
             const encrypted = await encryptJsonObject (encObj, password);
             window.fn.download(JSON.stringify(encrypted), 'text/plain', fileName+'.json');
             window.dlg.hide(dlgName);
+            if(onCompleted){
+                onCompleted(...args);
+            }
         }else{
             window.dlg.show('fail-dialog');
         };
     };
     
-    window.fn.createEncryptedJSONFile = async (fileName, jsonObj, dlgName='new-password-dialog') => {
-        window.dlg.show(dlgName, window.fn.saveEncryptedJSONFile, jsonObj, dlgName, fileName);
+    window.fn.createEncryptedJSONFile = async (fileName, jsonObj, onCompleted, dlgName='new-password-dialog', ...args) => {
+        window.dlg.show(dlgName, window.fn.saveEncryptedJSONFile, jsonObj, dlgName, fileName, onCompleted, ...args);
     };
 
     window.fn.loadJSONFileObject = async (callback, encrypted=false, pruneKeys=[], dlgName='load-file-dialog') => {
@@ -183,8 +194,6 @@ document.addEventListener('init', function(event) {
     };
 
     window.fn.getStoredEncryptedJSONObject = async ( key, callback, dlgName='load-encrypted-file-dialog' ) => {
-        console.log('GETS HERE!!!!')
-        console.log(key)
         if(window.fn.validatePassword(dlgName)){
             const password = document.querySelector('.pw-input').value;
             let obj = await window.fn.getStored(key);

@@ -148,11 +148,10 @@ class AxielMachine(object):
         except:
             return False
                 
-    def token_expired(self, b64_pub, client_token):
+    def token_not_expired(self, b64_pub, client_token):
         v = Verifier()
         client_mac = Macaroon.deserialize(client_token)
         v.satisfy_general(self.check_time)
-        print(client_mac.inspect())
 
         return v.verify(client_mac, self.generate_shared_session_secret(b64_pub))
     

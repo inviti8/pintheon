@@ -1,3 +1,5 @@
+window.dash = {};
+window.dash.node;
 
 const load_encrypted_keystore = async () => {
     await window.fn.loadJSONFileObject( authorize, true, ['node_data'] );
@@ -20,10 +22,12 @@ const authorize = async (prms) => {
     window.fn.call(body, '/authorize', on_authorized);
 };
 
-const on_authorized = (session) => {
+const on_authorized = (node) => {
 
-    if(session.authorized){
-        window.fn.pushPage('dashboard');
+    if(node.authorized){
+        window.fn.pushPage('dashboard', node);
+        window.dash.node = node;
+        console.log(node)
     };
     
 };
@@ -63,13 +67,16 @@ document.addEventListener('init', function(event) {
     } else if (page.id === 'dashboard') {
 
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
-        window.rndr.nodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');
+        window.rndr.nodeCardHeader(page.data.node['logo'], page.data.node['name'], page.data.node['descriptor']);
         window.rndr.nodeInfo('test1234556789','test.com');
         window.rndr.networkTraffic('100', '99');
 
     };
 });
 
-window.fn.pushPage = function(page) {
-    document.querySelector('#Nav').pushPage(page+'.html', {data: {title: '|| AXIEL ||', logo: window.constants.LOGO}});
+window.fn.pushPage = function(page, node_data, callback, ...args) {
+    document.querySelector('#Nav').pushPage(page+'.html', {data: {title: '|| AXIEL ||', node: node_data}});
+    if(callback){
+        callback(...args);
+    }
 };

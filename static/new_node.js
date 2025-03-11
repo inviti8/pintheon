@@ -58,9 +58,7 @@ const create_keystore = async () => {
         'node_data': window.fn.establish_data
     };
 
-    await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore );
-
-    window.rndr.showELem('btn-establish');
+    await window.fn.createEncryptedJSONFile( window.constants.KEYSTORE, keystore, establish );
 };
 
 const establish = async () => {
