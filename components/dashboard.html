@@ -109,6 +109,21 @@
     </ons-page>
   </template>
 
+  <template id="upload-file-dialog.html">
+    <ons-dialog id="upload-file-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <p>UPLOAD FILE</p>
+        <p>Select a file to upload:</p>
+        <p>
+          <input type="file" id="file-input">
+        </p>
+        <p>
+          <ons-button id="upload-button" onclick="fn.uploadFile()">UPLOAD</ons-button>
+        </p>
+      </div>
+    </ons-dialog>
+  </template>
+
   <template id="node-info-template">
     <ons-list class="stat-ul" style="width:45%; height:200px;">
       <ons-list-header>NODE INFO</ons-list-header>
@@ -148,4 +163,42 @@
           </div>
       </ons-list-item>
     </ons-list>
+  </template>
+  
+
+  <template id="file-list-item-template">
+    <ons-list-item expandable>
+      <p class="truncate"></p>
+      <div class="expandable-content">
+        <ons-list modifier="default">
+          <ons-list-item> Size: <span class="file-size"></span></ons-list-item>
+          <ons-list-item>
+            <div class="left identifier">
+              <a class="file_url" href=""></a>
+            </div>
+            <div class="right">
+              <ons-button modifier="quiet" onclick="" id="file-remove">
+                <ons-icon icon="fa-remove"></ons-icon>
+              </ons-button>
+              <ons-button modifier="quiet" onclick="" id="copy-file-url">
+                <ons-icon icon="fa-link"></ons-icon>
+              </ons-button>
+            </div>
+          </ons-list-item>
+        </ons-list>
+      </div>
+    </ons-list-item>
+  </template>
+  
+  <template id="peer-list-item-template">
+    <ons-list-item>
+      <div class="left identifier">
+        <ons-input class="dash-input" modifier="large" placeholder="Multiaddress" float disabled></ons-input>
+      </div>
+      <div class="right">
+        <ons-button modifier="quiet">
+          <ons-icon icon="fa-remove"></ons-icon>
+        </ons-button>
+      </div>
+    </ons-list-item>
   </template>

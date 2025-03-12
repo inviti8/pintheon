@@ -149,6 +149,32 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('network-traffic', _updateElem, incoming, outgoing);
     };
 
+    window.rndr.fileListItem = function(fileList){
+
+        let _updateElem = function(clone, fileList){
+            clone.querySelector('.truncate').textContent = fileList[i]['Name'];
+            clone.querySelector('.file-size').textContent = fileList[i]['Size'];
+            var fileUrl = 'http://' + link + '/ipfs/' + fileList[i]['CID'];
+            clone.querySelector('.file_url').href = fileUrl;
+            clone.querySelector('.file_url').textContent = fileList[i]['CID'];
+            clone.querySelector('#file-remove').setAttribute('onclick', 'fn.removeFile("' + fileList[i]['CID'] + '")');
+            clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
+        }
+
+        window.rndr.RENDER_ELEM('file-list-item', fileList, _updateElem, fileList);
+    };
+
+    window.rndr.peerListItem = function(peerList){
+
+        let _updateElem = function(clone, peerList){
+            clone.querySelector('ons-input').setAttribute('id', 'remove-multiaddress-' + i);
+            clone.querySelector('ons-input').setAttribute('value', peerList[i]);
+            clone.querySelector('ons-button').setAttribute('onclick', 'fn.bootstrapPeer("' + i + '")');
+        }
+
+        window.rndr.RENDER_LIST('file-list-item', peerList, _updateElem, peerList);
+    };
+
     window.rndr.dashboard = function(){
 
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;

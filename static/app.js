@@ -49,6 +49,34 @@ document.addEventListener('init', function(event) {
 
     };
 
+    window.rndr.RENDER_LIST = function(elem, itemList, callback, ...args){
+        let list = document.querySelector('#'+elem);
+
+        try {
+
+            list.delegate = {
+                createItemContent: function(i) {
+                  var template = document.getElementById(elem+'-template');
+                  var clone = document.importNode(template.content, true);
+        
+                  // Update the clone
+                  callback(clone, elem, ...args);
+        
+                  return clone.firstElementChild; // Ensure that the returned value is a proper DOM element
+                },
+                countItems: function() {
+                  return itemList.length;
+                }
+            };
+    
+            list.refresh();
+
+        }catch (err) {
+            throw err;
+        };
+
+    };
+
     window.rndr.nodeCardHeader = function(logo, name, descriptor){
 
         let _updateElem = function(clone, elem, logo, name, descriptor){
