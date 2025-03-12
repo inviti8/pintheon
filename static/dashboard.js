@@ -9,12 +9,13 @@ window.dash.CLIENT_PUBLIC_KEY;
 window.dash.session_keys;
 window.dash.node_data;
 
+
+
 function _updateDashData(data){
     Object.keys(data).forEach((k, i) => {
         window.dash.data[k] = data[k];
     });
 };
-
 
 async function init() {
 
@@ -73,7 +74,6 @@ const load_encrypted_keystore = async () => {
 const authorize = async (prms) => {
     
     const keystore = await prms;
-    console.log(keystore)
     window.fn.generator_keys = await importJWKCryptoKeyPair(keystore['generator_priv'], keystore['generator_pub']);
     const authToken = await generateNonceAuthToken(window.constants.SERVER_GENERATOR_PUBLIC_KEY, window.fn.generator_keys.privateKey, 'AXIEL_GENERATOR', window.constants.session_nonce);
 
@@ -97,7 +97,6 @@ const on_authorized = async (node) => {
         _updateDashData(node);
 
         window.fn.pushPage('dashboard', node);
-        console.log(node)
     };
     
 };
@@ -117,11 +116,10 @@ const deauthorize = async () => {
         'client_pub': pub
     };
 
-    window.fn.call(body, '/deauthorize', complete);
-
+    window.fn.call(body, '/deauthorize', logged_out);
 };
 
-const complete = () => {
+const logged_out = () => {
     localStorage.removeItem(window.dash.SESSION_KEYS);
     localStorage.removeItem(window.dash.NODE);
     location.reload();
@@ -180,5 +178,5 @@ document.addEventListener('init', function(event) {
 });
 
 window.fn.pushPage = function(page, node_data) {
-    document.querySelector('#Nav').pushPage(page+'.html', {data: {title: '|| AXIEL ||', node: node_data}});
+    document.querySelector('#Nav').pushPage(page+'.html');
 };
