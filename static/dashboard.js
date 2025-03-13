@@ -180,7 +180,7 @@ document.addEventListener('init', function(event) {
 
     window.rndr.fileListItem = function(fileList){
 
-        let _updateElem = function(clone, fileList){
+        let _updateElem = function(clone, i, fileList){
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
             clone.querySelector('.file-size').textContent = fileList[i]['Size'];
             var fileUrl = 'http://' + link + '/ipfs/' + fileList[i]['CID'];
@@ -195,7 +195,7 @@ document.addEventListener('init', function(event) {
 
     window.rndr.peerListItem = function(peerList){
 
-        let _updateElem = function(clone, peerList){
+        let _updateElem = function(clone, i, peerList){
             clone.querySelector('ons-input').setAttribute('id', 'remove-multiaddress-' + i);
             clone.querySelector('ons-input').setAttribute('value', peerList[i]);
             clone.querySelector('ons-button').setAttribute('onclick', 'fn.bootstrapPeer("' + i + '")');
