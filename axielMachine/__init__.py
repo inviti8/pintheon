@@ -6,11 +6,12 @@ import uuid
 import json
 import base64
 from base64 import b64encode, b64decode
+from flask import jsonify
 import requests
 import subprocess
 from transitions import Machine, State
 from cryptography.fernet import Fernet, InvalidToken
-from tinydb import TinyDB
+from tinydb import TinyDB, Query
 import tinydb_encrypted_jsonstorage as tae
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -56,6 +57,8 @@ class AxielMachine(object):
         self.state_data = None
         self.xelis_config = None
         self.node_data = None
+        self.file_book = None
+        self.file_book = None
 
         #-------XELIS--------
         self.wallet_path = wallet_path
@@ -229,7 +232,6 @@ class AxielMachine(object):
         return key_bytes
     
     def new_session(self):
-        print('NEW SESSION CALLED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         keypair = self._new_keypair()
         self.session_priv = keypair['priv']
         self.session_pub = keypair['pub']
@@ -385,6 +387,7 @@ class AxielMachine(object):
         self._open_db()
         self.logo_url = logo_url
         self.node_name = name
+        self.node_descriptor = descriptor
         data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
         
         self._update_table_doc(self.node_data, data)
@@ -408,6 +411,8 @@ class AxielMachine(object):
         self.state_data = self.db.table('state_data')
         self.node_data = self.db.table('node_data')
         self.xelis_config = self.db.table('xelis_config')
+        self.file_book= self.db.table('file_book')
+        self.peer_book= self.db.table('peer_book')
 
     def _xelis_wallet_rpc_auth(username, password):
         auth = f"{username}:{password}"
@@ -471,7 +476,100 @@ class AxielMachine(object):
     def _open_wallet(self):
         print('open wallet')
 
-    def _add_file_to_ipfs(self, file_name, file_data):
+    def get_stats(self, stat_type):
+        url = f'{self.ipfs_endpoint}/stats/{stat_type}?'
+        response = requests.post(url);
+
+        #return requests.post(url)
+        # print('stat res : ',response.json())
+        # print(response.text)
+        if response.status_code == 200:
+                return response
+        else:
+                return jsonify({'error': 'stats not available.'}), 400
+        
+    def get_peer_id(self):
+        url = f'{self.ipfs_endpoint}/config?arg=Identity.PeerID'
+        response = requests.post(url);
+
+        #return requests.post(url)
+        # print(response)
+        # print(response.text)
+        if response.status_code == 200:
+                return response
+        else:
+                return jsonify({'error': 'stats not available.'}), 400
+        
+    def pin_cid_to_ipfs(self, cid):
+        # print('pin_cid_to_ipfs')
+        pin_url = f'{self.ipfs_endpoint}/v0/pin/add?arg={cid}'
+        # print(pin_url)
+
+        response = requests.post(pin_url)
+
+        if response.status_code == 200:
+                pin_data = response.json()
+                # print(pin_data)
+                return pin_data['Pins'][0]
+                # Handle successful pinning response if necessary
+        else:
+                # Handle pinning failure if necessary
+                print(response.text)
+                return None
+        
+    def remove_file_from_ipfs(self, cid):
+        print('remove_file_from_ipfs')
+        url = f'{self.ipfs_endpoint}/v0/pin/rm?arg={cid}&recursive=true'
+        print(url)
+        response = requests.post(url)
+
+        print(response.text)
+
+        if response.status_code == 200:
+                url = f'{self.ipfs_endpoint}/v0/repo/gc'
+                data = response.json()
+                print(data)
+                response = requests.post(url)
+                if response.status_code == 200:
+                    print(response)
+                    print(response.text)
+                    ipfs_data = response.text
+                    print(ipfs_data)
+                    self._open_db()
+                    File = Query()
+                    self.file_book.remove(File.CID == cid)
+                    all_file_info = self.file_book.all()
+                    self.db.close()
+
+                    return all_file_info
+                else:
+                     return None
+        else:
+             return None
+        
+    def get_file_list(self):
+        url = f'{self.ipfs_endpoint}/v0/files/ls'
+        response = requests.post(url);
+
+        #return requests.post(url)
+        print(response)
+        print(response.text)
+        if response.status_code == 200:
+                return response
+        else:
+                return jsonify({'error': 'stats not available.'}), 400
+        
+        
+    def get_peer_list(self):
+        url = f'{self.ipfs_endpoint}/v0/bootstrap/list'
+        response = requests.post(url);
+
+        if response.status_code == 200:
+                return response
+        else:
+                return jsonify({'error': 'stats not available.'}), 400
+
+    def add_file_to_ipfs(self, file_name, file_data):
         url = f'{self.ipfs_endpoint}/api/v0/add'
 
         files = {
@@ -506,6 +604,14 @@ class AxielMachine(object):
         if response.status_code == 200:
             ipfs_data = response.json()
             # print('ipfs res : ',ipfs_data)
-            # cid = pin_cid_to_ipfs(ipfs_data['Hash'])
+            cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
+            if cid != None:
+                file_info = {'Name':ipfs_data['Name'], 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
+                self._open_db()
+                self._update_table_doc(self.file_book, file_info)
+                all_file_info = self.file_book.all()
+                self.db.close()
+
+                return all_file_info
         else:
             return None

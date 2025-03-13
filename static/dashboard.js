@@ -125,6 +125,59 @@ const logged_out = () => {
     location.reload();
 };
 
+const update_logo_dlg = async () => {
+    window.dlg.showLoadFileDlg('upload-logo-file-dialog', update_logo, false, [], 'FILE');
+};
+
+const update_logo = async (file) => {
+    let sessToken = window.constants.SESSION_TOKEN;
+    let pub = window.constants.CLIENT_PUBLIC_KEY;
+
+    if(window.dash.USING_STORED_SESSION ){
+        sessToken = window.dash.data.session_token;
+        pub = window.dash.CLIENT_PUBLIC_KEY;
+    };
+
+    if(file){
+
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            const formData = new FormData();
+            formData.append('token', sessToken.serialize());
+            formData.append('client_pub', pub);
+            formData.append('file', file);
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                  return response.json();
+                } else {
+                  throw new Error('File upload failed');
+                }
+            })
+            .then(data => {
+                console.log('Server response:', data);
+            })
+            .catch(error => {
+                console.error('Error uploading file:', error);
+            });
+
+        };
+
+        reader.readAsArrayBuffer(file);
+    };
+};
+
+const upload_complete = (data) => {
+
+    console.log(data)
+
+};
+
+
 document.addEventListener('init', function(event) {
     let page = event.target;
 
@@ -196,6 +249,10 @@ document.addEventListener('init', function(event) {
 
         document.querySelector('#deauthorize-button').onclick = function () {
             deauthorize();
+        };
+
+        document.querySelector('#update-logo-button').onclick = function () {
+            update_logo_dlg();
         };
 
         window.rndr.dashboard();

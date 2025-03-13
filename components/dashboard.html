@@ -53,7 +53,7 @@
                         </ons-list-item>
                         <ons-list-item>
                           <ons-col width="50%">
-                            <ons-button id="btn-logo-file"></ons-icon>UPDATE LOGO <ons-icon icon="upload"></ons-icon>
+                            <ons-button id="update-logo-button"></ons-icon>UPDATE LOGO <ons-icon icon="upload"></ons-icon>
                               <input style="display: none" name="Select Logo" type="file" id="logo-file" accept=".png">
                             </ons-button>
                           </ons-col>
@@ -109,16 +109,29 @@
     </ons-page>
   </template>
 
+  <template id="upload-logo-file-dialog.html">
+    <ons-dialog id="upload-logo-file-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <p>UPDATE LOGO IMAGE</p>
+        <p>Select a file to upload:</p>
+        <p>
+          <ons-button id="upload-logo-file-dialog-button" class="can-callback">UPLOAD
+            <input type="file" id="upload-logo-file-dialog-input" style="display: none;">
+          </ons-button>
+        </p>
+      </div>
+    </ons-dialog>
+  </template>
+
   <template id="upload-file-dialog.html">
     <ons-dialog id="upload-file-dialog" cancelable>
       <div style="text-align: center; padding: 10px;">
         <p>UPLOAD FILE</p>
         <p>Select a file to upload:</p>
         <p>
-          <input type="file" id="file-input">
-        </p>
-        <p>
-          <ons-button id="upload-button" onclick="fn.uploadFile()">UPLOAD</ons-button>
+          <ons-button id="upload-file-dialog-button" class="can-callback">UPLOAD
+            <input type="file" id="upload-file-dialog-input" style="display: none;">
+          </ons-button>
         </p>
       </div>
     </ons-dialog>

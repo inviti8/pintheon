@@ -52,6 +52,25 @@ const _jsonFileLoaderInputChangeCallback = function(id, input, encrypted, pruneK
 
 };
 
+const _fileLoaderInputChangeCallback = function(id, input, callback){
+
+  input.addEventListener('change', () => {
+    let files = input.files;
+ 
+    if (files.length == 0){
+      window.dlg.hide(id);
+      return;
+    };
+    const file = files[0];
+
+    if(file){
+      callback(file);
+    };
+
+  });
+
+};
+
 window.dlg.show = function(id, callback, ...args) {
     let dialog = document.getElementById(id);
 
@@ -72,7 +91,7 @@ window.dlg.show = function(id, callback, ...args) {
     return dialog;
 };
 
-window.dlg.showLoadJsonFileDlg = function(id, callback, encrypted=false, pruneKeys=[]) {
+window.dlg.showLoadFileDlg = function(id, callback, encrypted=false, pruneKeys=[], fileType='JSON') {
   let dialog = document.getElementById(id);
 
   if (dialog) {
@@ -82,7 +101,11 @@ window.dlg.showLoadJsonFileDlg = function(id, callback, encrypted=false, pruneKe
       .then(function(dialog) {
         const input = document.querySelector('#'+id+'-input');
 
-        _jsonFileLoaderInputChangeCallback(id, input, encrypted, pruneKeys, callback);
+        if(fileType==='JSON'){
+          _jsonFileLoaderInputChangeCallback(id, input, encrypted, pruneKeys, callback);
+        } else if(fileType==='FILE'){
+          _fileLoaderInputChangeCallback(id, input, callback);
+        };
 
         if(callback){
           dialog.querySelector('.can-callback').onclick = function () {

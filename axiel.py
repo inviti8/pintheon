@@ -17,7 +17,6 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 WALLET_PATH = xelis_wallet_dirs.user_data_dir
-IPFS_API = "http://127.0.0.1:5001/api/v0"
 
 AXIEL = AxielMachine(STATIC_PATH, DB_PATH, WALLET_PATH)
 AXIEL.initialize()
@@ -41,146 +40,6 @@ def _payload_valid(fields, data):
          break
 
    return result
-
-##IPFS METHODS##
-def get_stats(stat_type):
-        url = f'{IPFS_API}/stats/{stat_type}?'
-        response = requests.post(url);
-
-        #return requests.post(url)
-        # print('stat res : ',response.json())
-        # print(response.text)
-        if response.status_code == 200:
-                return response
-        else:
-                return jsonify({'error': 'stats not available.'}), 400 
-        
-def get_peer_id():
-        url = f'{IPFS_API}/config?arg=Identity.PeerID'
-        response = requests.post(url);
-
-        #return requests.post(url)
-        # print(response)
-        # print(response.text)
-        if response.status_code == 200:
-                return response
-        else:
-                return jsonify({'error': 'stats not available.'}), 400
-        
-def add_file_to_ipfs(file_name,file_type, file_data,moniker,account):
-    url = f'{IPFS_API}/v0/add'
-
-    files = {
-        'file': (
-            file_name,  # Set a dummy filename for directory parts
-            file_data,
-            'application/x-directory' if isinstance(file_data, dict) else 'application/octet-stream'
-        )
-    }
-
-    params = {
-        'quiet': 'false',
-        'quieter': 'false',
-        'silent': 'false',
-        'progress': 'false',
-        'trickle': 'false',
-        'only-hash': 'false',
-        'wrap-with-directory': 'false',
-        'chunker': 'size-262144',
-        'raw-leaves': 'false',
-        'nocopy': 'false',
-        'fscache': 'false',
-        'cid-version': '0',
-        'hash': 'sha2-256',
-        'inline': 'false',
-        'inline-limit': '32',
-        'pin': 'true'
-    }
-
-    response = requests.post(url, files=files, params=params)
-
-    if response.status_code == 200:
-        ipfs_data = response.json()
-        # print('ipfs res : ',ipfs_data)
-        cid = pin_cid_to_ipfs(ipfs_data['Hash'])
-     #    if cid != None:
-     #            file_data = {'Name':ipfs_data['Name'], 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
-     #            file_book.insert(file_data)
-     #            cel_data={'Name':ipfs_data['Name'], 'Hash':ipfs_data['Hash'],'Type':file_type,'Link':('http://localhost:8080/ipfs/'+ipfs_data['Hash']),'Moniker':moniker,'Account':account }
-     #            upload_data_to_celestia(cel_data)
-     #            return file_book.all()
-     #    else:
-     #            return None
-    else:
-        return None
-    
-    
-def pin_cid_to_ipfs(cid):
-        # print('pin_cid_to_ipfs')
-        pin_url = f'{IPFS_API}/v0/pin/add?arg={cid}'
-        # print(pin_url)
-
-        response = requests.post(pin_url)
-
-        if response.status_code == 200:
-                pin_data = response.json()
-                # print(pin_data)
-                return pin_data['Pins'][0]
-                # Handle successful pinning response if necessary
-        else:
-                # Handle pinning failure if necessary
-                print(response.text)
-                return None
-        
-        
-def remove_file_from_ipfs(cid):
-        print('remove_file_from_ipfs')
-        url = f'{IPFS_API}/v0/pin/rm?arg={cid}&recursive=true'
-        print(url)
-        response = requests.post(url)
-
-        print(response.text)
-
-        if response.status_code == 200:
-                url = f'{IPFS_API}/v0/repo/gc'
-                data = response.json()
-                print(data)
-                response = requests.post(url)
-                if response.status_code == 200:
-                        print(response)
-                        print(response.text)
-                        ipfs_data = response.text
-                        print(ipfs_data)
-                        File = Query()
-                        #file_book.remove(File.CID == cid)
-                        #return file_book.all()
-                else:
-                        return None
-        else:
-                return None
-        
-
-def get_file_list():
-        url = f'{IPFS_API}/v0/files/ls'
-        response = requests.post(url);
-
-        #return requests.post(url)
-        print(response)
-        print(response.text)
-        if response.status_code == 200:
-                return response
-        else:
-                return jsonify({'error': 'stats not available.'}), 400
-        
-        
-def get_peer_list():
-        url = f'{IPFS_API}/v0/bootstrap/list'
-        response = requests.post(url);
-
-        if response.status_code == 200:
-                return response
-        else:
-                return jsonify({'error': 'stats not available.'}), 400 
 
 
 ##ERROR HEANDLING##
@@ -348,7 +207,7 @@ def authorized():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not AXIEL.token_not_expired(data['client_pub'], data['token']) and not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+   elif not AXIEL.token_not_expired(data['client_pub'], data['token']) and (not AXIEL.session_active or not AXIEL.state == 'idle'):  # AXIEL must be idle
         abort(Forbidden())  # Forbidden
     
    elif not AXIEL.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
@@ -377,6 +236,35 @@ def deauthorize():
         AXIEL.end_session()
         
         return jsonify({'authorized': False}), 200
+   
+
+@app.route('/upload', methods=['POST'])
+def upload():
+   required = ['token', 'client_pub', 'file']
+
+
+   if 'file' not in request.files:
+     return "No file uploaded", 400
+     
+   file = request.files['file']
+     
+   for field in required:
+     if field not in request.form or not request.form[field]:
+         return "Missing or empty value for field: {}".format(field), 400
+
+   if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_authorization(request.form['client_pub'], request.form['auth_token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        file_data = file.read()
+        ipfs_response = AXIEL.add_file_to_ipfs(file.filename, file.mimetype, file_data)
+
+        if ipfs_response == None:
+                return jsonify({'error': 'File not added'}), 400
+        else:
+          return jsonify({'files': ipfs_response}), 200
 
 
 

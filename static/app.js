@@ -224,7 +224,7 @@ document.addEventListener('init', function(event) {
         if(encrypted && dlgName === 'load-file-dialog'){
             dlgName='load-encrypted-file-dialog';
         };
-        window.dlg.showLoadJsonFileDlg(dlgName, callback, encrypted, pruneKeys);
+        window.dlg.showLoadFileDlg(dlgName, callback, encrypted, pruneKeys);
     };
 
     window.fn.getStoredEncryptedJSONObject = async ( key, callback, dlgName='load-encrypted-file-dialog' ) => {
