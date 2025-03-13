@@ -17,6 +17,18 @@ function _updateDashData(data){
     });
 };
 
+function _getSessionData(){
+    let token = window.constants.SESSION_TOKEN;
+    let pub = window.constants.CLIENT_PUBLIC_KEY;
+
+    if(window.dash.USING_STORED_SESSION ){
+        token = window.dash.data.session_token;
+        pub = window.dash.CLIENT_PUBLIC_KEY;
+    };
+
+    return { 'token': token, 'pub': pub }
+};
+
 async function init() {
 
     let sess_keys = JSON.parse(localStorage.getItem(window.dash.SESSION_KEYS));
@@ -103,17 +115,11 @@ const on_authorized = async (node) => {
 
 const deauthorize = async () => {
 
-    let sessToken = window.constants.SESSION_TOKEN;
-    let pub = window.constants.CLIENT_PUBLIC_KEY;
-
-    if(window.dash.USING_STORED_SESSION ){
-        sessToken = window.dash.data.session_token;
-        pub = window.dash.CLIENT_PUBLIC_KEY;
-    };
+    const session = _getSessionData();
 
     const body = {
-        'token': sessToken.serialize(),
-        'client_pub': pub
+        'token': session.token.serialize(),
+        'client_pub': session.pub
     };
 
     window.fn.call(body, '/deauthorize', logged_out);
@@ -130,48 +136,18 @@ const update_logo_dlg = async () => {
 };
 
 const update_logo = async (file) => {
-    let sessToken = window.constants.SESSION_TOKEN;
-    let pub = window.constants.CLIENT_PUBLIC_KEY;
 
-    if(window.dash.USING_STORED_SESSION ){
-        sessToken = window.dash.data.session_token;
-        pub = window.dash.CLIENT_PUBLIC_KEY;
-    };
+    const session = _getSessionData();
 
     if(file){
-
-        const reader = new FileReader();
-
-        reader.onload = function(event) {
-            const formData = new FormData();
-            formData.append('token', sessToken.serialize());
-            formData.append('client_pub', pub);
-            formData.append('file', file);
-            fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                  return response.json();
-                } else {
-                  throw new Error('File upload failed');
-                }
-            })
-            .then(data => {
-                console.log('Server response:', data);
-            })
-            .catch(error => {
-                console.error('Error uploading file:', error);
-            });
-
-        };
-
-        reader.readAsArrayBuffer(file);
+        formData.append('token', session.token.serialize());
+        formData.append('client_pub', session.pub);
+        formData.append('file', file);
+        await window.fn.uploadFile(formData, '/upload', logo_updated);
     };
 };
 
-const upload_complete = (data) => {
+const logo_updated = (data) => {
 
     console.log(data)
 

@@ -192,6 +192,38 @@ document.addEventListener('init', function(event) {
      
     };
 
+    window.fn.uploadFile = async (formData, endpoint, callback, method='POST') => {
+        window.dlg.show('loading-dialog');
+
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            fetch(endpoint, {
+                method: method,
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                  return response.json();
+                } else {
+                    window.dlg.hide('loading-dialog');
+                    window.dlg.show('fail-dialog');
+                    throw new Error('File upload failed');
+                }
+            })
+            .then(data => {
+                console.log('Server response:', data);
+                callback(data);
+            })
+            .catch(error => {
+                window.dlg.hide('loading-dialog');
+                console.error('Error uploading file:', error);
+            });
+        };
+
+        reader.readAsArrayBuffer(file);
+    }
+
     //utils
     window.fn.download = function(content, mimeType, filename){
         const a = document.createElement('a') // Create "a" element
