@@ -149,9 +149,10 @@ const update_logo = async (file) => {
     };
 };
 
-const logo_updated = (data) => {
+const logo_updated = (fileList) => {
 
-    console.log(data)
+    console.log(fileList)
+    window.rndr.fileListItems(fileList)
 
 };
 
@@ -180,7 +181,7 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('network-traffic', _updateElem, incoming, outgoing);
     };
 
-    window.rndr.fileListItem = function(fileList){
+    window.rndr.fileListItems = function(fileList){
 
         let _updateElem = function(clone, i, fileList){
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
@@ -195,7 +196,7 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('file-list-item', fileList, _updateElem, fileList);
     };
 
-    window.rndr.peerListItem = function(peerList){
+    window.rndr.peerListItems = function(peerList){
 
         let _updateElem = function(clone, i, peerList){
             clone.querySelector('ons-input').setAttribute('id', 'remove-multiaddress-' + i);

@@ -41,6 +41,28 @@ def _payload_valid(fields, data):
 
    return result
 
+def _handle_upload(required, request):
+    if 'file' not in request.files:
+        return "No file uploaded", 400
+     
+    file = request.files['file']
+     
+    for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+
+    if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+        abort(Forbidden())  # Forbidden
+    
+    elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+    else:
+        file_data = file.read()
+        ipfs_response = AXIEL.add_file_to_ipfs(file.filename, file.mimetype, file_data)
+
+        if ipfs_response == None:
+                return jsonify({'error': 'File not added'}), 400
+
 
 ##ERROR HEANDLING##
 class Forbidden(HTTPException):
@@ -240,31 +262,13 @@ def deauthorize():
 
 @app.route('/upload', methods=['POST'])
 def upload():
-   required = ['token', 'client_pub', 'file']
+   required = ['token', 'client_pub']
+   return _handle_upload(required, request)
 
-
-   if 'file' not in request.files:
-     return "No file uploaded", 400
-     
-   file = request.files['file']
-     
-   for field in required:
-     if field not in request.form or not request.form[field]:
-         return "Missing or empty value for field: {}".format(field), 400
-
-   if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        file_data = file.read()
-        ipfs_response = AXIEL.add_file_to_ipfs(file.filename, file.mimetype, file_data)
-
-        if ipfs_response == None:
-                return jsonify({'error': 'File not added'}), 400
-        else:
-          return jsonify({'files': ipfs_response}), 200
+@app.route('/upate_logo', methods=['POST'])
+def update_logo():
+   required = ['token', 'client_pub']
+   return _handle_upload(required, request)
 
 
 
