@@ -60,7 +60,7 @@ document.addEventListener('init', function(event) {
                   var clone = document.importNode(template.content, true);
         
                   // Update the clone
-                  callback(clone, i, elem, ...args);
+                  callback(clone, i, ...args);
         
                   return clone.firstElementChild; // Ensure that the returned value is a proper DOM element
                 },

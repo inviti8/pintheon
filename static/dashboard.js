@@ -193,7 +193,7 @@ document.addEventListener('init', function(event) {
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
         }
 
-        window.rndr.RENDER_LIST('file-list-item', fileList, _updateElem, fileList);
+        window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, fileList);
     };
 
     window.rndr.peerListItems = function(peerList){
@@ -204,7 +204,7 @@ document.addEventListener('init', function(event) {
             clone.querySelector('ons-button').setAttribute('onclick', 'fn.bootstrapPeer("' + i + '")');
         }
 
-        window.rndr.RENDER_LIST('file-list-item', peerList, _updateElem, peerList);
+        window.rndr.RENDER_LIST('peer-list-items', peerList, _updateElem, peerList);
     };
 
     window.rndr.dashboard = function(){
