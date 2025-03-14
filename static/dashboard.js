@@ -193,7 +193,7 @@ document.addEventListener('init', function(event) {
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
         }
 
-        window.rndr.RENDER_ELEM('file-list-item', fileList, _updateElem, fileList);
+        window.rndr.RENDER_LIST('file-list-item', fileList, _updateElem, fileList);
     };
 
     window.rndr.peerListItems = function(peerList){
