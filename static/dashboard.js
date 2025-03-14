@@ -140,10 +140,12 @@ const update_logo = async (file) => {
     const session = _getSessionData();
 
     if(file){
+        const formData = new FormData()
+
         formData.append('token', session.token.serialize());
         formData.append('client_pub', session.pub);
         formData.append('file', file);
-        await window.fn.uploadFile(formData, '/upload', logo_updated);
+        await window.fn.uploadFile(file, formData, '/upload', logo_updated);
     };
 };
 

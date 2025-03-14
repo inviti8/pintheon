@@ -569,7 +569,7 @@ class AxielMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def add_file_to_ipfs(self, file_name, file_data):
+    def add_file_to_ipfs(self, file_name, file_type, file_data):
         url = f'{self.ipfs_endpoint}/api/v0/add'
 
         files = {
@@ -606,7 +606,7 @@ class AxielMachine(object):
             # print('ipfs res : ',ipfs_data)
             cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
             if cid != None:
-                file_info = {'Name':ipfs_data['Name'], 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
+                file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
                 self._open_db()
                 self._update_table_doc(self.file_book, file_info)
                 all_file_info = self.file_book.all()

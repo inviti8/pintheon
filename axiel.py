@@ -255,7 +255,7 @@ def upload():
    if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_authorization(request.form['client_pub'], request.form['auth_token']):  # client must send valid tokens
+   elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
         file_data = file.read()

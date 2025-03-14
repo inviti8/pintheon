@@ -192,7 +192,7 @@ document.addEventListener('init', function(event) {
      
     };
 
-    window.fn.uploadFile = async (formData, endpoint, callback, method='POST') => {
+    window.fn.uploadFile = async (file, formData, endpoint, callback, method='POST') => {
         window.dlg.show('loading-dialog');
 
         const reader = new FileReader();
