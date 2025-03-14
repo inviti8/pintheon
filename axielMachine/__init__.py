@@ -68,6 +68,7 @@ class AxielMachine(object):
 
         #-------IPFS--------
         self.ipfs_daemon = ipfs_daemon
+        self.ipfs_endpoint = 'http://127.0.0.1:5001/api/v0'
 
         #-------VIEWS--------
         self.view_template = 'index.html'
@@ -502,7 +503,7 @@ class AxielMachine(object):
         
     def pin_cid_to_ipfs(self, cid):
         # print('pin_cid_to_ipfs')
-        pin_url = f'{self.ipfs_endpoint}/v0/pin/add?arg={cid}'
+        pin_url = f'{self.ipfs_endpoint}/pin/add?arg={cid}'
         # print(pin_url)
 
         response = requests.post(pin_url)
@@ -519,14 +520,14 @@ class AxielMachine(object):
         
     def remove_file_from_ipfs(self, cid):
         print('remove_file_from_ipfs')
-        url = f'{self.ipfs_endpoint}/v0/pin/rm?arg={cid}&recursive=true'
+        url = f'{self.ipfs_endpoint}/pin/rm?arg={cid}&recursive=true'
         print(url)
         response = requests.post(url)
 
         print(response.text)
 
         if response.status_code == 200:
-                url = f'{self.ipfs_endpoint}/v0/repo/gc'
+                url = f'{self.ipfs_endpoint}/repo/gc'
                 data = response.json()
                 print(data)
                 response = requests.post(url)
@@ -548,7 +549,7 @@ class AxielMachine(object):
              return None
         
     def get_file_list(self):
-        url = f'{self.ipfs_endpoint}/v0/files/ls'
+        url = f'{self.ipfs_endpoint}/files/ls'
         response = requests.post(url);
 
         #return requests.post(url)
@@ -561,7 +562,7 @@ class AxielMachine(object):
         
         
     def get_peer_list(self):
-        url = f'{self.ipfs_endpoint}/v0/bootstrap/list'
+        url = f'{self.ipfs_endpoint}/bootstrap/list'
         response = requests.post(url);
 
         if response.status_code == 200:
@@ -570,7 +571,7 @@ class AxielMachine(object):
                 return jsonify({'error': 'stats not available.'}), 400
 
     def add_file_to_ipfs(self, file_name, file_type, file_data):
-        url = f'{self.ipfs_endpoint}/api/v0/add'
+        url = f'{self.ipfs_endpoint}/add'
 
         files = {
             'file': (
