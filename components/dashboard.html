@@ -80,7 +80,7 @@
                   </div> -->
                   <ons-list>
                     <ons-list-header>Peer List</ons-list-header>
-                    <ons-lazy-repeat id="peer-list"></ons-lazy-repeat>
+                    <ons-lazy-repeat id="peer-list-items"></ons-lazy-repeat>
                   </ons-list>
                   </div>
               </ons-card>
@@ -97,7 +97,7 @@
                     </div>  
                     <ons-list  id="file-list-main">
                       <ons-list-header>File List</ons-list-header>
-                      <ons-lazy-repeat id="file-list"></ons-lazy-repeat>
+                      <ons-lazy-repeat id="file-list-items"></ons-lazy-repeat>
                     </ons-list>
                   </div>
               </ons-card>
@@ -179,7 +179,7 @@
   </template>
   
 
-  <template id="file-list-item-template">
+  <template id="file-list-items-template">
     <ons-list-item expandable>
       <p class="truncate"></p>
       <div class="expandable-content">
@@ -203,7 +203,7 @@
     </ons-list-item>
   </template>
   
-  <template id="peer-list-item-template">
+  <template id="peer-list-items-template">
     <ons-list-item>
       <div class="left identifier">
         <ons-input class="dash-input" modifier="large" placeholder="Multiaddress" float disabled></ons-input>
