@@ -184,9 +184,12 @@ document.addEventListener('init', function(event) {
     window.rndr.fileListItems = function(fileList){
 
         let _updateElem = function(clone, i, fileList){
+            let gateway_input = document.getElementById('node-info-gateway-url');
+            let link = gateway_input.getAttribute('Value');
+            var fileUrl = 'http://' + link + '/ipfs/' + fileList[i]['CID'];
+            
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
             clone.querySelector('.file-size').textContent = fileList[i]['Size'];
-            var fileUrl = 'http://' + link + '/ipfs/' + fileList[i]['CID'];
             clone.querySelector('.file_url').href = fileUrl;
             clone.querySelector('.file_url').textContent = fileList[i]['CID'];
             clone.querySelector('#file-remove').setAttribute('onclick', 'fn.removeFile("' + fileList[i]['CID'] + '")');
