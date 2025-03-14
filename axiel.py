@@ -62,6 +62,8 @@ def _handle_upload(required, request):
 
         if ipfs_response == None:
                 return jsonify({'error': 'File not added'}), 400
+        else:
+            return ipfs_response
 
 
 ##ERROR HEANDLING##
@@ -268,7 +270,10 @@ def upload():
 @app.route('/upate_logo', methods=['POST'])
 def update_logo():
    required = ['token', 'client_pub']
-   return _handle_upload(required, request)
+   response = _handle_upload(required, request)
+   if response.status_code == 200:
+       AXIEL.logo_url
+   return response
 
 
 
