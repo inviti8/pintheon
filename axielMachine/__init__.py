@@ -648,10 +648,32 @@ class AxielMachine(object):
         else:
             return None
         
-    def resolve_ipns(self,name):
+    def resolve_ipns(self, name):
         url = f'{self.ipfs_endpoint}/name/resolve?arg={name}'
         response = requests.post(url)
         if response.status_code == 200:
             return response.json()
         else:
             return None
+        
+    def get_dashboard_data(self):
+        result = {'moniker':None, 'peer-id':None, 'stats':None, 'files':None, 'peers':None}
+        stats_response = self.get_stats('bw')
+        files_list = self.file_book.all()
+        peers_response = self.get_peer_list()
+        peer_id_response = self.get_peer_id()
+
+
+        if stats_response.status_code == 200:
+                result['stats'] = stats_response.json()
+
+        if files_list != None:
+                result['files'] = files_list
+
+        if peers_response.status_code == 200:
+                result['peers'] = peers_response.json()['Peers']
+
+        if peer_id_response.status_code == 200:
+                result['peer-id'] = peer_id_response.json()['Value']
+
+        return result

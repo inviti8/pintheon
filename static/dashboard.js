@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'AXIEL', 'descriptor': 'XRO Network', 'session_token':undefined, 'auth_token':undefined };
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'AXIEL', 'descriptor': 'XRO Network', 'file_list': [], 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
 window.dash.SESSION_KEYS = 'AXIEL_SESSION';
 window.dash.NODE = 'AXIEL_NODE';
 window.dash.AUTHORIZED = false;
@@ -13,7 +13,9 @@ window.dash.node_data;
 
 function _updateDashData(data){
     Object.keys(data).forEach((k, i) => {
-        window.dash.data[k] = data[k];
+        if (k in window.dash.data){
+            window.dash.data[k] = data[k];
+        };
     });
 };
 
@@ -131,8 +133,8 @@ const logged_out = () => {
     location.reload();
 };
 
-const update_logo_dlg = async () => {
-    window.dlg.showLoadFileDlg('upload-logo-file-dialog', update_logo, false, [], 'FILE');
+const upload_file_dlg = async (callback) => {
+    window.dlg.showLoadFileDlg('upload-logo-file-dialog', callback, false, [], 'FILE');
 };
 
 const update_logo = async (file) => {
@@ -152,7 +154,32 @@ const update_logo = async (file) => {
 const logo_updated = (fileList) => {
 
     console.log(fileList)
-    window.rndr.fileListItems(fileList)
+    _updateDashData({ 'file_list': fileList });
+    window.rndr.dashboard();
+    //window.rndr.fileListItems(fileList)
+
+};
+
+const upload_file = async (file) => {
+
+    const session = _getSessionData();
+
+    if(file){
+        const formData = new FormData()
+
+        formData.append('token', session.token.serialize());
+        formData.append('client_pub', session.pub);
+        formData.append('file', file);
+        await window.fn.uploadFile(file, formData, '/upload', file_uploaded);
+    };
+};
+
+const file_uploaded = (fileList) => {
+
+    console.log(fileList)
+    _updateDashData({ 'file_list': fileList });
+    window.rndr.dashboard();
+    //window.rndr.fileListItems(fileList)
 
 };
 
@@ -182,6 +209,9 @@ document.addEventListener('init', function(event) {
     };
 
     window.rndr.fileListItems = function(fileList){
+
+        if(fileList.length===0)
+            return;
 
         let _updateElem = function(clone, i, fileList){
             let gateway_input = document.getElementById('node-info-gateway-url');
@@ -216,6 +246,7 @@ document.addEventListener('init', function(event) {
         window.rndr.nodeCardHeader(window.dash.data['logo'], window.dash.data.name, window.dash.data.descriptor);
         window.rndr.nodeInfo('test1234556789','test.com');
         window.rndr.networkTraffic('100', '99');
+        window.rndr.fileListItems(window.dash.data.file_list);
 
     };
 
@@ -234,7 +265,11 @@ document.addEventListener('init', function(event) {
         };
 
         document.querySelector('#update-logo-button').onclick = function () {
-            update_logo_dlg();
+            upload_file_dlg(update_logo);
+        };
+
+        document.querySelector('#upload-button').onclick = function () {
+            upload_file_dlg(upload_file);
         };
 
         window.rndr.dashboard();
