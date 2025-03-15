@@ -275,6 +275,48 @@ def update_logo():
        AXIEL.logo_url
    return response
 
+@app.route('/remove_file', methods=['POST'])
+def remove_file():
+   required = ['token', 'client_pub', 'cid']
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+
+   if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        ipfs_response = AXIEL.remove_file_from_ipfs(request.form['cid'])
+
+        if ipfs_response == None:
+                return jsonify({'error': 'File not removed'}), 400
+        else:
+            return ipfs_response
+        
+@app.route('/add_to_namespace', methods=['POST'])
+def add_to_namespace():
+   required = ['token', 'client_pub', 'cid']
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+
+   if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        if 'name' not in request.form:
+          ipfs_response = AXIEL.add_cid_to_ipns(request.form['cid'], request.form['name'])
+        else:
+            ipfs_response = AXIEL.add_cid_to_ipns(request.form['cid'])
+
+        if ipfs_response == None:
+                return jsonify({'error': 'File not removed'}), 400
+        else:
+            return ipfs_response
 
 
 @app.route('/data', methods=['POST'])

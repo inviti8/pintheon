@@ -24,6 +24,7 @@ import hashlib, binascii
 import datetime
 from datetime import timedelta
 from platformdirs import *
+import re
 
 
 class AxielMachine(object):
@@ -58,7 +59,8 @@ class AxielMachine(object):
         self.xelis_config = None
         self.node_data = None
         self.file_book = None
-        self.file_book = None
+        self.peer_book = None
+        self.namespaces = None
 
         #-------XELIS--------
         self.wallet_path = wallet_path
@@ -414,6 +416,7 @@ class AxielMachine(object):
         self.xelis_config = self.db.table('xelis_config')
         self.file_book= self.db.table('file_book')
         self.peer_book= self.db.table('peer_book')
+        self.namespaces= self.db.table('namespaces')
 
     def _xelis_wallet_rpc_auth(username, password):
         auth = f"{username}:{password}"
@@ -476,6 +479,17 @@ class AxielMachine(object):
 
     def _open_wallet(self):
         print('open wallet')
+
+    def _safe_ipns_key(self, key):
+        # Remove any characters that are not lowercase letters, digits or hyphens/periods
+        key = re.sub('[^a-z0-9.-]', '', key)
+        
+        # If the string starts with a period or hyphen, remove it
+        if key[0] in '-.':
+            key = key[1:]
+            
+        # Truncate the string to max allowed length (253 - 1 for '.')
+        return key[:253-1] + '.' if len(key) > 253 else key
 
     def get_stats(self, stat_type):
         url = f'{self.ipfs_endpoint}/stats/{stat_type}?'
@@ -560,7 +574,6 @@ class AxielMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
         
-        
     def get_peer_list(self):
         url = f'{self.ipfs_endpoint}/bootstrap/list'
         response = requests.post(url);
@@ -609,10 +622,36 @@ class AxielMachine(object):
             if cid != None:
                 file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
                 self._open_db()
-                self._update_table_doc(self.file_book, file_info)
+                self.file_book.insert(file_info)
                 all_file_info = self.file_book.all()
                 self.db.close()
 
                 return all_file_info
+        else:
+            return None
+        
+    def add_cid_to_ipns(self, cid, name=None):
+        url = f'{self.ipfs_endpoint}/name/publish?arg={cid}&key=self'
+        if name != None:
+            url = f'{self.ipfs_endpoint}/name/publish?arg={cid}&key={self._safe_ipns_key(name)}'
+        response = requests.post(url)
+
+        if response.status_code == 200:
+            ipns_data = response.json()
+            self._open_db()
+            self.namespaces.insert(ipns_data)
+            all_file_info = self.file_book.all()
+            self.db.close()
+
+            return all_file_info
+        
+        else:
+            return None
+        
+    def resolve_ipns(self,name):
+        url = f'{self.ipfs_endpoint}/name/resolve?arg={name}'
+        response = requests.post(url)
+        if response.status_code == 200:
+            return response.json()
         else:
             return None
