@@ -317,8 +317,27 @@ def add_to_namespace():
                 return jsonify({'error': 'File not removed'}), 400
         else:
             return ipfs_response
+        
+@app.route('/dashboard_data', methods=['POST'])
+def dashboard_data():
+   required = ['token', 'client_pub']
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
 
+   if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        ipfs_response = AXIEL.get_dashboard_data()
 
+        if ipfs_response == None:
+                return jsonify({'error': 'File not removed'}), 400
+        else:
+            return ipfs_response
+        
 @app.route('/data', methods=['POST'])
 def create_data():
    data = request.get_json()
