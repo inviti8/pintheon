@@ -1,5 +1,3 @@
-const { KeyPair, get_languages } = wasm_bindgen;
-const xelis_wallet = { 'address': undefined, 'priv': undefined, 'seed': undefined };
 window.fn.generator_keys;
 window.fn.establish_data;
 
@@ -7,7 +5,6 @@ window.fn.establish_data;
 async function init() {
     localStorage.removeItem('AXIEL_SESSION');
     localStorage.removeItem('AXIEL_NODE');
-    await wasm_bindgen();
     window.fn.generator_keys = await generateClientKeys(true);
 };
 

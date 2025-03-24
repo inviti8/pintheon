@@ -5,7 +5,7 @@ from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound, H
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 from platformdirs import *
-from axielMachine import AxielMachine
+from philosMachine import PhilosMachine
 from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 
 app = Flask(__name__)
@@ -18,8 +18,8 @@ DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 WALLET_PATH = xelis_wallet_dirs.user_data_dir
 
-AXIEL = AxielMachine(STATIC_PATH, DB_PATH, WALLET_PATH)
-AXIEL.initialize()
+PHILOS = PhilosMachine(STATIC_PATH, DB_PATH, WALLET_PATH)
+PHILOS.initialize()
 
 ##UTILITIES###
 def _load_components(comp):
@@ -51,14 +51,14 @@ def _handle_upload(required, request):
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-    if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+    if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
         abort(Forbidden())  # Forbidden
     
-    elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+    elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
     else:
         file_data = file.read()
-        ipfs_response = AXIEL.add_file_to_ipfs(file.filename, file.mimetype, file_data)
+        ipfs_response = PHILOS.add_file_to_ipfs(file.filename, file.mimetype, file_data)
 
         if ipfs_response == None:
                 return jsonify({'error': 'File not added'}), 400
@@ -76,7 +76,7 @@ class Unauthorized(HTTPException):
     description = 'Invalid Credentials'
 
 def _on_failure_error():
-    AXIEL.end_session()
+    PHILOS.end_session()
 
 @app.errorhandler(401)
 def unauthorized_access(e):
@@ -105,34 +105,34 @@ def unauthorized_access(e):
 ##ROUTES## 
 @app.route('/')
 def home():
-   hsh = AXIEL.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
-   print(AXIEL.hash_key(hsh))
+   hsh = PHILOS.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
+   print(PHILOS.hash_key(hsh))
    m = Macaroon(
             location='',
-            identifier='AXIEL_LAUNCH_TOKEN',
+            identifier='PHILOS_LAUNCH_TOKEN',
             key='bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=',
             version=MACAROON_V1
         )
    print(m.identifier)
    print('-----------------------------------')
    print(m.serialize())
-   print(AXIEL.state)
+   print(PHILOS.state)
    print('-----------------------------------')
-   pub = AXIEL.session_pub
-   if not AXIEL.logged_in:
-       pub = AXIEL.new_session()
+   pub = PHILOS.session_pub
+   if not PHILOS.logged_in:
+       pub = PHILOS.new_session()
        
-   AXIEL.logo_url = url_for('static', filename='hvym_logo.png')
-   template = AXIEL.view_template
-   components=_load_components(AXIEL.view_components)
-   page = AXIEL.active_page
-   js=_load_js(AXIEL.view_components)
-   logo=AXIEL.logo_url
-   shared_dialogs=_load_components(AXIEL.shared_dialogs)
-   shared_dialogs_js=_load_js(AXIEL.shared_dialogs)
+   PHILOS.logo_url = url_for('static', filename='hvym_logo.png')
+   template = PHILOS.view_template
+   components=_load_components(PHILOS.view_components)
+   page = PHILOS.active_page
+   js=_load_js(PHILOS.view_components)
+   logo=PHILOS.logo_url
+   shared_dialogs=_load_components(PHILOS.shared_dialogs)
+   shared_dialogs_js=_load_js(PHILOS.shared_dialogs)
    client_tokens= _load_js('macaroons_js_bundle')
    
-   session_data = { 'pub': pub, 'generator_pub': AXIEL.node_pub, 'time': AXIEL.session_ends, 'nonce': AXIEL.session_nonce }
+   session_data = { 'pub': pub, 'generator_pub': PHILOS.node_pub, 'time': PHILOS.session_ends, 'nonce': PHILOS.session_nonce }
    return render_template(template, page=page, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
 
 @app.route('/end_session', methods=['POST'])
@@ -144,14 +144,14 @@ def end_session():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not AXIEL.session_active:  # Session must be active
+   elif not PHILOS.session_active:  # Session must be active
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
         raise Unauthorized()  # Unauthorized
 
    else:
-        AXIEL.end_session()
+        PHILOS.end_session()
         
         return jsonify({'authorized': False}), 200
 
@@ -165,20 +165,20 @@ def new_node():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not AXIEL.state == 'initialized':  # AXIEL must be initialized
+   elif not PHILOS.state == 'initialized':  # PHILOS must be initialized
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_request(data['client_pub'], data['token']) or not AXIEL.verify_launch(data['launch_token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']) or not PHILOS.verify_launch(data['launch_token']):  # client must send valid launch token
         raise Unauthorized()  # Unauthorized
 
    else:
-        AXIEL.new_node()
-        AXIEL.set_client_session_pub(data['client_pub'])
-        AXIEL.set_seed_cipher(data['seed_cipher'])
-        AXIEL.set_client_node_pub(data['generator_pub'])
-        AXIEL.new()
+        PHILOS.new_node()
+        PHILOS.set_client_session_pub(data['client_pub'])
+        PHILOS.set_seed_cipher(data['seed_cipher'])
+        PHILOS.set_client_node_pub(data['generator_pub'])
+        PHILOS.new()
         
-        return AXIEL.establish_data(), 200
+        return PHILOS.establish_data(), 200
 
 
 @app.route('/establish', methods=['POST'])
@@ -190,17 +190,17 @@ def establish():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not AXIEL.state == 'establishing':  # AXIEL must be establishing
+   elif not PHILOS.state == 'establishing':  # PHILOS must be establishing
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_request(data['client_pub'], data['token']):  # client must send valid session token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):  # client must send valid session token
         raise Unauthorized()  # Unauthorized
 
    else:
-        AXIEL.set_node_data(data['name'], data['descriptor'], data['meta_data'])
-        AXIEL.established()
+        PHILOS.set_node_data(data['name'], data['descriptor'], data['meta_data'])
+        PHILOS.established()
         
-        return AXIEL.establish_data(), 200
+        return PHILOS.establish_data(), 200
    
 
 @app.route('/authorize', methods=['POST'])
@@ -211,15 +211,15 @@ def authorize():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+   elif PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.token_not_expired(data['client_pub'], data['token']) or not AXIEL.verify_request(data['client_pub'], data['token']) or not AXIEL.verify_generator(data['generator_pub'], data['auth_token']):  # client must send valid tokens
+   elif not PHILOS.token_not_expired(data['client_pub'], data['token']) or not PHILOS.verify_request(data['client_pub'], data['token']) or not PHILOS.verify_generator(data['generator_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        AXIEL.set_client_session_pub(data['client_pub'])
-        AXIEL.authorized()
-        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': str(AXIEL.session_ends), 'authorized': True}), 200
+        PHILOS.set_client_session_pub(data['client_pub'])
+        PHILOS.authorized()
+        return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'nonce': PHILOS.auth_nonce, 'expires': str(PHILOS.session_ends), 'authorized': True}), 200
    
 
 @app.route('/authorized', methods=['POST'])
@@ -231,13 +231,13 @@ def authorized():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not AXIEL.token_not_expired(data['client_pub'], data['token']) and (not AXIEL.session_active or not AXIEL.state == 'idle'):  # AXIEL must be idle
+   elif not PHILOS.token_not_expired(data['client_pub'], data['token']) and (not PHILOS.session_active or not PHILOS.state == 'idle'):  # PHILOS must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
+   elif not PHILOS.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        return jsonify({'name': AXIEL.node_name, 'descriptor': AXIEL.node_descriptor, 'logo': AXIEL.logo_url, 'nonce': AXIEL.auth_nonce, 'expires': str(AXIEL.session_ends), 'authorized': True}), 200
+        return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'nonce': PHILOS.auth_nonce, 'expires': str(PHILOS.session_ends), 'authorized': True}), 200
    
 
 @app.route('/deauthorize', methods=['POST'])
@@ -249,15 +249,15 @@ def deauthorize():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not AXIEL.session_active:  # Session must be active
+   elif not PHILOS.session_active:  # Session must be active
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
         raise Unauthorized()  # Unauthorized
 
    else:
-        AXIEL.deauthorized()
-        AXIEL.end_session()
+        PHILOS.deauthorized()
+        PHILOS.end_session()
         
         return jsonify({'authorized': False}), 200
    
@@ -272,7 +272,7 @@ def update_logo():
    required = ['token', 'client_pub']
    response = _handle_upload(required, request)
    if response.status_code == 200:
-       AXIEL.logo_url
+       PHILOS.logo_url
    return response
 
 @app.route('/remove_file', methods=['POST'])
@@ -282,13 +282,13 @@ def remove_file():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        ipfs_response = AXIEL.remove_file_from_ipfs(request.form['cid'])
+        ipfs_response = PHILOS.remove_file_from_ipfs(request.form['cid'])
 
         if ipfs_response == None:
                 return jsonify({'error': 'File not removed'}), 400
@@ -302,16 +302,16 @@ def add_to_namespace():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
         if 'name' not in request.form:
-          ipfs_response = AXIEL.add_cid_to_ipns(request.form['cid'], request.form['name'])
+          ipfs_response = PHILOS.add_cid_to_ipns(request.form['cid'], request.form['name'])
         else:
-            ipfs_response = AXIEL.add_cid_to_ipns(request.form['cid'])
+            ipfs_response = PHILOS.add_cid_to_ipns(request.form['cid'])
 
         if ipfs_response == None:
                 return jsonify({'error': 'File not removed'}), 400
@@ -325,13 +325,13 @@ def dashboard_data():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not AXIEL.session_active or not AXIEL.state == 'idle':  # AXIEL must be idle
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not AXIEL.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        ipfs_response = AXIEL.get_dashboard_data()
+        ipfs_response = PHILOS.get_dashboard_data()
 
         if ipfs_response == None:
                 return jsonify({'error': 'File not removed'}), 400

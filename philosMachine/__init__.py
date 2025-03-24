@@ -27,11 +27,11 @@ from platformdirs import *
 import re
 
 
-class AxielMachine(object):
+class PhilosMachine(object):
 
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
-    def __init__(self, static_path, db_path, wallet_path, xelis_daemon='https://node.xelis.io/json_rpc', ipfs_daemon='http://127.0.0.1:5001', xelis_network="Mainnet"):
+    def __init__(self, static_path, db_path, wallet_path, ipfs_daemon='http://127.0.0.1:5001'):
 
         self.uid = str(uuid.uuid4())
         self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSB7MtcrDXWZNrLHqD5rVyOduvQKQ7EF2GaOEwW5phJUbAo'
@@ -56,17 +56,10 @@ class AxielMachine(object):
         self.db_path = db_path
         self.db = None
         self.state_data = None
-        self.xelis_config = None
         self.node_data = None
         self.file_book = None
         self.peer_book = None
         self.namespaces = None
-
-        #-------XELIS--------
-        self.wallet_path = wallet_path
-        self.xelis_daemon = xelis_daemon
-        self.xelis_wallet_rpc = 'http://127.0.0.1:8081'
-        self.xelis_network = xelis_network
 
         #-------IPFS--------
         self.ipfs_daemon = ipfs_daemon
@@ -93,12 +86,10 @@ class AxielMachine(object):
         self._client_generator_pub = None
         self._seed_cipher = None
 
-        self._dirs = PlatformDirs('AXIEL', 'XRO Network', ensure_exists=True)
-        self._xelis_dirs = PlatformDirs('Xelis-Blockchain', 'Xelis Network', ensure_exists=True)
-        self._xelis_wallet_path = os.path.join(self._dirs.user_config_dir,'xelis_wallet_config.json')
+        self._dirs = PlatformDirs('PHILOS', 'XRO Network', ensure_exists=True)
 
         # Initialize the state machine
-        self.machine = Machine(model=self, states=AxielMachine.states, initial='spawned')
+        self.machine = Machine(model=self, states=PhilosMachine.states, initial='spawned')
 
         self.machine.add_transition(trigger='initialize', source='spawned', dest='initialized', conditions=['do_initialize'])
 
@@ -118,7 +109,6 @@ class AxielMachine(object):
         print('@@@@@@@@@@@@')
         print(self._dirs.user_data_dir)
         print(self._dirs.user_config_dir)
-        print(self._xelis_wallet_path)
 
     def set_client_node_pub(self, client_pub):
         self._client_node_pub = client_pub
@@ -172,7 +162,7 @@ class AxielMachine(object):
         client_mac = Macaroon.deserialize(client_token)
         mac = Macaroon(
             location=client_mac.location,
-            identifier='AXIEL_SESSION',
+            identifier='PHILOS_SESSION',
             key=self.generate_shared_session_secret(b64_pub)
         )
 
@@ -319,14 +309,14 @@ class AxielMachine(object):
     def _create_root_token(self):
         self.root_token = Macaroon(
             location='',
-            identifier='AXIEL_GENERATOR',
+            identifier='PHILOS_GENERATOR',
             key=self.generate_shared_node_secret()
         ).serialize()
 
     def _create_auth_token(self):
         mac = Macaroon(
             location='',
-            identifier='AXIEL_AUTH',
+            identifier='PHILOS_AUTH',
             key=self.generate_shared_session_secret(self._client_session_pub)
         )
         mac.add_first_party_caveat('nonce == '+self.auth_nonce)
@@ -343,8 +333,6 @@ class AxielMachine(object):
     @property
     def create_new_node(self):
         print('creating new node...')
-        self._wallet_config_gen()
-        self._save_wallet_config()
         self._create_root_token()
         self._update_state_data()
         self.active_page = 'establish'
@@ -413,69 +401,10 @@ class AxielMachine(object):
         self.db = TinyDB(encryption_key=self.master_key, path=self.db_path, storage=tae.EncryptedJSONStorage)
         self.state_data = self.db.table('state_data')
         self.node_data = self.db.table('node_data')
-        self.xelis_config = self.db.table('xelis_config')
         self.file_book= self.db.table('file_book')
         self.peer_book= self.db.table('peer_book')
         self.namespaces= self.db.table('namespaces')
 
-    def _xelis_wallet_rpc_auth(username, password):
-        auth = f"{username}:{password}"
-        encoded_auth = base64.b64encode(auth.encode('utf-8')).decode('utf-8')
-        return encoded_auth
-
-    def _wallet_config_gen(self):
-
-        seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_session_secret(self._client_session_pub))
-
-        wallet_config = {
-                "rpc": {
-                    "rpc_bind_address": f'{self.xelis_wallet_rpc}',
-                    "rpc_username": f'{self.uid}',
-                    "rpc_password": f'{self.master_key}',
-                    "rpc_threads": None
-                },
-                "network_handler": {
-                    "daemon_address": f"{self.xelis_daemon}",
-                    "offline_mode": False
-                },
-                "precomputed_tables": {
-                    "precomputed_tables_l1": 26,
-                    "precomputed_tables_path": None
-                },
-                "log": {
-                    "log_level": "info",
-                    "file_log_level": None,
-                    "disable_file_logging": False,
-                    "disable_file_log_date_based": False,
-                    "disable_log_color": False,
-                    "disable_interactive_mode": False,
-                    "filename_log": "xelis-wallet.log",
-                    "logs_path": "logs/",
-                    "logs_modules": []
-                },
-                "wallet_path": f"{self.wallet_path}",
-                "password": f"{self.master_key}",
-                "seed": seed,
-                "network": f"{self.xelis_network}",
-                "enable_xswd": False,
-                "disable_history_scan": False,
-                "force_stable_balance": False
-            }
-        
-        self._open_db()
-
-        self._update_table_doc(self.xelis_config, wallet_config)
-
-        self.db.close()
-
-    def _save_wallet_config(self):
-        print('save wallet config')
-        self._open_db()
-        wallet_config = self.xelis_config.get(doc_id=1)
-        with open(self._xelis_wallet_path, 'w') as f:
-            json.dump(wallet_config, f)
-
-        self.db.close()
 
     def _open_wallet(self):
         print('open wallet')
