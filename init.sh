@@ -10,27 +10,25 @@ sudo apt install python3.12-venv -y
 sudo apt-get install gcc -y
 source ~/.profile
 
-echo "Cloning axiel"
-git clone https://github.com/inviti8/axiel.git
-git clone https://github.com/xelis-project/xelis-paper-wallet.git
-cp -r xelis-paper-wallet/xelis-paper-wallet/ /home/test/axiel/
+echo "Cloning philos"
+git clone https://github.com/inviti8/philos.git
 echo "Creating Env"
-python3 -m venv axiel/axiel
+python3 -m venv philos/philos
 echo "refresh the shell"
 source ~/.profile
 echo "Activating Env"
-source axiel/axiel/bin/activate
+source philos/philos/bin/activate
 echo "Installing requirements:"
-pip install -r /home/test/axiel/requirements.txt
+pip install -r /home/test/philos/requirements.txt
 echo "Deactivate the environment"
 deactivate
-chmod +x axiel/xelis_wallet_gen.sh
-chmod +x axiel/setup.sh
+chmod +x philos/xelis_wallet_gen.sh
+chmod +x philos/setup.sh
 usermod -a -G test www-data
-./axiel/xelis_wallet_gen.sh
-./axiel/setup.sh
-chmod +x axiel/install_xelis.sh
-chmod +x axiel/install_kubo.sh
-chmod +x axiel/update_path.sh
-./axiel/install_xelis.sh
-sudo ./axiel/install_kubo.sh
+./philos/xelis_wallet_gen.sh
+./philos/setup.sh
+chmod +x philos/install_xelis.sh
+chmod +x philos/install_kubo.sh
+chmod +x philos/update_path.sh
+./philos/install_xelis.sh
+sudo ./philos/install_kubo.sh

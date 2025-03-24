@@ -3,8 +3,8 @@ window.fn.establish_data;
 
 // load wasm wallet and generate wallet seed right away
 async function init() {
-    localStorage.removeItem('AXIEL_SESSION');
-    localStorage.removeItem('AXIEL_NODE');
+    localStorage.removeItem('PHILOS_SESSION');
+    localStorage.removeItem('PHILOS_NODE');
     window.fn.generator_keys = await generateClientKeys(true);
 };
 
@@ -132,7 +132,7 @@ document.addEventListener('init', function(event) {
         // };
         
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
-        window.rndr.nodeCardHeader(window.constants.LOGO, 'AXIEL', 'XRO Network');
+        window.rndr.nodeCardHeader(window.constants.LOGO, 'PHILOS', 'XRO Network');
     }
 });
 

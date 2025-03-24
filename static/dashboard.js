@@ -1,7 +1,7 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'AXIEL', 'descriptor': 'XRO Network', 'file_list': [], 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
-window.dash.SESSION_KEYS = 'AXIEL_SESSION';
-window.dash.NODE = 'AXIEL_NODE';
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'file_list': [], 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
+window.dash.SESSION_KEYS = 'PHILOS_SESSION';
+window.dash.NODE = 'PHILOS_NODE';
 window.dash.AUTHORIZED = false;
 window.dash.USING_STORED_SESSION = false;
 
@@ -42,7 +42,7 @@ async function init() {
         window.dash.node_data = node;
         window.dash.CLIENT_PUBLIC_KEY = await exportKey(window.dash.session_keys.publicKey);
         window.dash.data.session_token = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, node.expires );
-        window.dash.data.auth_token = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'AXIEL_AUTH', node.nonce, node.expires );
+        window.dash.data.auth_token = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'PHILOS_AUTH', node.nonce, node.expires );
 
         const body = {
             'token': window.dash.data.session_token.serialize(),
@@ -89,7 +89,7 @@ const authorize = async (prms) => {
     
     const keystore = await prms;
     window.fn.generator_keys = await importJWKCryptoKeyPair(keystore['generator_priv'], keystore['generator_pub']);
-    const authToken = await generateNonceAuthToken(window.constants.SERVER_GENERATOR_PUBLIC_KEY, window.fn.generator_keys.privateKey, 'AXIEL_GENERATOR', window.constants.session_nonce);
+    const authToken = await generateNonceAuthToken(window.constants.SERVER_GENERATOR_PUBLIC_KEY, window.fn.generator_keys.privateKey, 'PHILOS_GENERATOR', window.constants.session_nonce);
 
     const body = {
         'token': window.constants.SESSION_TOKEN.serialize(),
@@ -249,7 +249,6 @@ document.addEventListener('init', function(event) {
         window.rndr.fileListItems(window.dash.data.file_list);
 
     };
-
 
 
     if (page.id === 'authorize') {

@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+from stellar_sdk import Keypair
 from pymacaroons import Macaroon, Verifier
 import hashlib
 import hashlib, binascii
@@ -76,6 +77,9 @@ class PhilosMachine(object):
         self.session_pub = None
         self.node_priv = None
         self.node_pub = None
+
+        #-------STELLAR--------
+        self.stellar_keys = None
 
          #-------PRIVATE VARS--------
         self._generator_token = None
@@ -323,6 +327,9 @@ class PhilosMachine(object):
         mac.add_first_party_caveat('time < '+ str(self.session_ends))
 
         self.auth_token  = mac.serialize()
+
+    def _create_stellar_keypair(self):
+         print('create stellar keypair')
 
     @property
     def do_initialize(self):

@@ -8,9 +8,9 @@ After=network.target
 [Service]
 User=test
 Group=www-data
-WorkingDirectory=/home/test/axiel
-Environment="PATH=/home/test/axiel/bin"
-ExecStart=/home/test/axiel/axiel/bin/gunicorn --workers 3 --bind unix:axiel.sock -m 007 wsgi:app
+WorkingDirectory=/home/test/philos
+Environment="PATH=/home/test/philos/bin"
+ExecStart=/home/test/philos/philos/bin/gunicorn --workers 3 --bind unix:philos.sock -m 007 wsgi:app
 Restart=always
 
 [Install]
@@ -33,7 +33,7 @@ server{
 
     location / {
         include proxy_params;
-        proxy_pass http://unix:/home/test/axiel/axiel.sock;
+        proxy_pass http://unix:/home/test/philos/philos.sock;
     }
 }
 EOF
@@ -44,4 +44,4 @@ sudo systemctl restart nginx
 echo "Owning the directory"
 sudo chown -R test /home/
 echo "Owning the directory"
-sudo chown -R test:www-data /home/test/axiel/
+sudo chown -R test:www-data /home/test/philos/

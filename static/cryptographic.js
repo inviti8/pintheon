@@ -362,7 +362,7 @@ const generateLaunchToken = async (launchKey) => {
     try {
 
         let location = '';
-        let identifier = "AXIEL_LAUNCH_TOKEN";
+        let identifier = "PHILOS_LAUNCH_TOKEN";
         let token = window.MacaroonsBuilder.create(location, launchKey, identifier);
 
         return token.serialize();
@@ -375,7 +375,7 @@ const generateLaunchToken = async (launchKey) => {
 const generateAuthToken = async (serverPub, clientPriv) => {
     try {
 
-        let token = new window.MacaroonsBuilder(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION")
+        let token = new window.MacaroonsBuilder(window.location.href, await generateSharedSecret(serverPub, clientPriv), "PHILOS_SESSION")
         .getMacaroon();
         // .add_first_party_caveat("time < " + Math.floor(new Date().getTime() / 1000 + 60 * 60))
 
@@ -403,7 +403,7 @@ const generateNonceAuthToken = async (serverPub, clientPriv, identifier, nonce) 
 const generateTimestampedAuthToken = async (serverPub, clientPriv, time) => {
     try {
 
-        let token = new window.MacaroonsBuilder(window.location.href, await generateSharedSecret(serverPub, clientPriv), "AXIEL_SESSION")
+        let token = new window.MacaroonsBuilder(window.location.href, await generateSharedSecret(serverPub, clientPriv), "PHILOS_SESSION")
         .add_first_party_caveat("time < " +time)
         .getMacaroon();
 
