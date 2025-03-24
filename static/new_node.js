@@ -13,18 +13,8 @@ async function init() {
 
 init();
 
-const generate_xelis_wallet = function () {
-  
-    const mainnet = "mainnet";
-    const language_idx = 0;
-  
-    const key_pair = new KeyPair(mainnet);
-    xelis_wallet.address = key_pair.address();
-    xelis_wallet.priv = key_pair.secret();
-    xelis_wallet.seed = key_pair.seed(language_idx);
+const generate_wallet = function () {
 
-
-    return xelis_wallet
 };
 
 const new_node = async () => {
@@ -43,7 +33,7 @@ const new_node = async () => {
 
 const establishing = (data) => {
     window.fn.establish_data = data;
-    // document.querySelector('#xelis-seed-text').value ="";
+    // document.querySelector('#seed-text').value ="";
     // document.querySelector('#launch-key').value="";
     window.fn.pushPage('establish')
     console.log("establish : ",data);
@@ -77,11 +67,11 @@ const establish = async () => {
 };
 
 const established = (data) => {
-    const seedTxt = document.querySelector('#xelis-seed-text');
+    const seedTxt = document.querySelector('#seed-text');
     const launchKey = document.querySelector('#launch-key');
     
     if(seedTxt){
-        document.querySelector('#xelis-seed-text').value ="";
+        document.querySelector('#seed-text').value ="";
     };
 
     if(launchKey){
@@ -114,9 +104,9 @@ document.addEventListener('init', function(event) {
 
     if (page.id === 'new_node') {
 
-        document.querySelector('#generate-xelis-seed').onclick = function () {
-            let seed = generate_xelis_wallet().seed;
-            document.querySelector('#xelis-seed-text').value = seed.splice(0, (seed.length+1)).join(" ");
+        document.querySelector('#generate-seed').onclick = function () {
+            let seed = generate_wallet();
+            //document.querySelector('#seed-text').value = seed.splice(0, (seed.length+1)).join(" ");
         };
         document.querySelector('#establish-button').onclick = function () {
             window.fn.validateAllInputsAndCall(
