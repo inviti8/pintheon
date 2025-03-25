@@ -18,3 +18,7 @@ fi
 cargo install --locked stellar-cli@22.6.0 --features opt
 source <(stellar completion --shell bash)
 echo "source <(stellar completion --shell bash)" >> ~/.bashrc
+
+stellar network add --global testnet --rpc-url https://horizon-testnet.stellar.org --network-passphrase "Test SDF Network ; September 2015"
+stellar keys generate --global philos_testnet --network testnet --fund
+stellar keys use philos_testnet

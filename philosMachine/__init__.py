@@ -5,6 +5,7 @@ import os
 import uuid
 import json
 import base64
+import subprocess
 from base64 import b64encode, b64decode
 from flask import jsonify
 import requests
@@ -26,6 +27,7 @@ import datetime
 from datetime import timedelta
 from platformdirs import *
 import re
+from stellar_sdk import Keypair, Network, Server, TransactionBuilder
 
 
 class PhilosMachine(object):
@@ -79,7 +81,8 @@ class PhilosMachine(object):
         self.node_pub = None
 
         #-------STELLAR--------
-        self.stellar_keys = None
+        self.stellar_server = Server("https://horizon-testnet.stellar.org")
+        self.stellar_account = None
 
          #-------PRIVATE VARS--------
         self._generator_token = None
@@ -235,6 +238,7 @@ class PhilosMachine(object):
         self.session_started = datetime.datetime.now()
         self.session_ends = self.session_started + timedelta(hours=self.session_hours)
         self.session_nonce = str(uuid.uuid4())
+        self._load_stellar_keypair()
         return self.session_pub
     
     def end_session(self):
@@ -328,8 +332,17 @@ class PhilosMachine(object):
 
         self.auth_token  = mac.serialize()
 
-    def _create_stellar_keypair(self):
+    def _load_stellar_keypair(self):
          print('create stellar keypair')
+         command = ['stellar', 'keys', 'public-key', 'testnet'] 
+         result = subprocess.run(command, stdout=subprocess.PIPE)
+         pub = result.stdout.decode('utf-8')
+
+         print(pub)
+         
+         self.stellar_account = self.stellar_server.accounts().account_id(pub).call()
+         for balance in self.stellar_account['balances']:
+            print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
 
     @property
     def do_initialize(self):
