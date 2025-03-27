@@ -238,7 +238,6 @@ class PhilosMachine(object):
         self.session_started = datetime.datetime.now()
         self.session_ends = self.session_started + timedelta(hours=self.session_hours)
         self.session_nonce = str(uuid.uuid4())
-        self._load_stellar_keypair()
         return self.session_pub
     
     def end_session(self):
@@ -267,6 +266,7 @@ class PhilosMachine(object):
         keypair = self._new_keypair()
         self.node_priv = keypair['priv']
         self.node_pub = keypair['pub']
+        self._create_stellar_keypair()
         return self.session_pub
     
     def generate_shared_session_secret(self, b64_pub):
@@ -332,13 +332,11 @@ class PhilosMachine(object):
 
         self.auth_token  = mac.serialize()
 
-    def _load_stellar_keypair(self):
+    def _create_stellar_keypair(self):
          print('create stellar keypair')
-         command = ['stellar', 'keys', 'public-key', 'testnet'] 
+         command = ['stellar', 'keys', 'public-key', 'philos_testnet'] 
          result = subprocess.run(command, stdout=subprocess.PIPE)
          pub = result.stdout.decode('utf-8')
-
-         print(pub)
          
          self.stellar_account = self.stellar_server.accounts().account_id(pub).call()
          for balance in self.stellar_account['balances']:

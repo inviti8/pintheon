@@ -1,5 +1,6 @@
 window.fn.generator_keys;
 window.fn.establish_data;
+window.fn.stellar_keys;
 
 // load wasm wallet and generate wallet seed right away
 async function init() {
@@ -10,8 +11,16 @@ async function init() {
 
 init();
 
-const generate_wallet = function () {
+const generate_wallet = async function () {
 
+    if(StellarSdk==undefined)
+        return;
+
+    const randomBytes =  await getRandomBytes(32);
+    const seed = await entropyToMnemonic(randomBytes);
+    window.fn.stellar_keys = StellarSdk.Keypair.fromRawEd25519Seed(Buffer.from(randomBytes));
+
+    return seed
 };
 
 const new_node = async () => {
@@ -20,7 +29,7 @@ const new_node = async () => {
         'token': window.constants.SESSION_TOKEN.serialize(),
         'client_pub': window.constants.CLIENT_PUBLIC_KEY,
         'launch_token': await generateLaunchToken(document.querySelector('#launch-key').value),
-        'seed_cipher': await generateSharedEncryptedText(document.querySelector('#xelis-seed-text').value, window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey),
+        'seed_cipher': await generateSharedEncryptedText(document.querySelector('#seed-text').value, window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey),
         'generator_pub': await exportKey(window.fn.generator_keys.publicKey),
     };
 
@@ -101,9 +110,9 @@ document.addEventListener('init', function(event) {
 
     if (page.id === 'new_node') {
 
-        document.querySelector('#generate-seed').onclick = function () {
-            let seed = generate_wallet();
-            //document.querySelector('#seed-text').value = seed.splice(0, (seed.length+1)).join(" ");
+        document.querySelector('#generate-seed').onclick = async function () {
+            let seed = await generate_wallet();
+            document.querySelector('#seed-text').value = seed;
         };
         document.querySelector('#establish-button').onclick = function () {
             window.fn.validateAllInputsAndCall(
