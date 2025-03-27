@@ -63,15 +63,14 @@ const calculateChecksum = async (entropy /*:Uint8Array*/) => {
     return hashResultAsBitString.slice(0, ENTROPY_LENGTH / 32)
 }
 
-const entropyToMnemonic = async (entropy /*:Uint8Array*/) => {
+const entropyToBip39Mnemonic = async (entropy /*:Uint8Array*/) => {
     const checksum = await calculateChecksum(entropy)
     const bits = [...entropy].map(byte2bin).join("") + checksum
     const chunks = bits.match(/(.{1,11})/g);
     const words = chunks.map((binary)=>{
         const index = bin2byte(binary);
         return wordlist[index];
-    }
-    );
+    });
 
     return words.join(' ')
 
