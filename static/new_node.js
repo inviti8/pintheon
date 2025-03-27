@@ -17,8 +17,9 @@ const generate_wallet = async function () {
         return;
 
     const randomBytes =  await getRandomBytes(32);
-    const seed = await entropyToMnemonic(randomBytes);
-    window.fn.stellar_keys = StellarSdk.Keypair.fromRawEd25519Seed(Buffer.from(randomBytes));
+    const buf = Buffer.from(randomBytes);
+    const seed = await entropyToMnemonic(buf);
+    window.fn.stellar_keys = StellarSdk.Keypair.fromRawEd25519Seed(buf);
 
     return seed
 };
