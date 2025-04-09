@@ -27,7 +27,19 @@ import datetime
 from datetime import timedelta
 from platformdirs import *
 import re
+import tempfile
+import qrcode
+from qrcode.image.styledpil import StyledPilImage
+from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
+from qrcode.image.styles.colormasks import SolidFillColorMask
+from qrcode.image.styles.colormasks import RadialGradiantColorMask
+from PIL import Image, ImageDraw
 from stellar_sdk import Keypair, Network, Server, TransactionBuilder
+
+HVYM_BG_RGB = (152, 49, 74)
+HVYM_FG_RGB = (175, 232, 197)
+STELLAR_BG_RGB = (0, 0, 0)
+STELLAR_FG_RGB = (21, 21, 21)
 
 
 class PhilosMachine(object):
@@ -62,6 +74,7 @@ class PhilosMachine(object):
         self.node_data = None
         self.file_book = None
         self.peer_book = None
+        self.stellar_book = None
         self.namespaces = None
 
         #-------IPFS--------
@@ -83,6 +96,7 @@ class PhilosMachine(object):
         #-------STELLAR--------
         self.stellar_server = Server("https://horizon-testnet.stellar.org")
         self.stellar_account = None
+        self.stellar_keypair = None
 
          #-------PRIVATE VARS--------
         self._generator_token = None
@@ -266,7 +280,6 @@ class PhilosMachine(object):
         keypair = self._new_keypair()
         self.node_priv = keypair['priv']
         self.node_pub = keypair['pub']
-        self._create_stellar_keypair()
         return self.session_pub
     
     def generate_shared_session_secret(self, b64_pub):
@@ -308,6 +321,26 @@ class PhilosMachine(object):
     def establish_data(self):
         return {'node_id': self.uid, 'node_pub': self.node_pub, 'root_token': self.root_token, 'master_key': self.master_key}
     
+    def _custom_qr_code(data, cntrImg, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+        img = qr.make_image(image_factory=StyledPilImage, 
+            module_drawer=RoundedModuleDrawer(),
+            color_mask=SolidFillColorMask(back_color=back_color, front_color=front_color),
+            embeded_image_path=cntrImg)
+        qr = None
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=True) as f:
+            img.save(f, format='PNG') 
+            qr = f
+
+        return qr
+    
     def _create_shared_secret(self, b64_pub, server_priv):
         pem_string = self.pem_format(b64_pub)
         pub_key = serialization.load_pem_public_key(pem_string.encode('utf-8'), default_backend())
@@ -332,13 +365,16 @@ class PhilosMachine(object):
 
         self.auth_token  = mac.serialize()
 
-    def _create_stellar_keypair(self):
+    def _create_stellar_keypair_from_seed(self, seed):
          print('create stellar keypair')
-         command = ['stellar', 'keys', 'public-key', 'philos_testnet'] 
-         result = subprocess.run(command, stdout=subprocess.PIPE)
-         pub = result.stdout.decode('utf-8')
+         self.stellar_keypair = Keypair.from_mnemonic_phrase(seed)
+
+         keypair = { 'pub': self.stellar_keypair.public_key, 'priv': self.stellar_keypair.secret }
+         self._open_db()
+         self.stellar_book.insert(keypair)
+         self.db.close()
          
-         self.stellar_account = self.stellar_server.accounts().account_id(pub).call()
+         self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
          for balance in self.stellar_account['balances']:
             print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
 
@@ -351,6 +387,8 @@ class PhilosMachine(object):
     @property
     def create_new_node(self):
         print('creating new node...')
+        seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_session_secret(self._client_session_pub))
+        self._create_stellar_keypair_from_seed(seed)
         self._create_root_token()
         self._update_state_data()
         self.active_page = 'establish'
@@ -421,6 +459,7 @@ class PhilosMachine(object):
         self.node_data = self.db.table('node_data')
         self.file_book= self.db.table('file_book')
         self.peer_book= self.db.table('peer_book')
+        self.stellar_book= self.db.table('stellar_book')
         self.namespaces= self.db.table('namespaces')
 
 
