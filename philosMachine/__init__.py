@@ -369,10 +369,22 @@ class PhilosMachine(object):
          print('create stellar keypair')
          self.stellar_keypair = Keypair.from_mnemonic_phrase(seed)
 
-         keypair = { 'pub': self.stellar_keypair.public_key, 'priv': self.stellar_keypair.secret }
+         keypair = { 'name': self.node_name, 'pub': self.stellar_keypair.public_key, 'priv': self.stellar_keypair.secret }
          self._open_db()
          self.stellar_book.insert(keypair)
          self.db.close()
+         
+         self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
+         for balance in self.stellar_account['balances']:
+            print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
+
+    def _load_stellar_keypair(self):
+         print('load stellar keypair')
+         self._open_db()
+         doc = Query()
+         keypair = self.stellar_book.search(doc.name == self.node_name)
+         self.db.close()
+         self.stellar_keypair = Keypair.from_secret(keypair['secret'])
          
          self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
          for balance in self.stellar_account['balances']:
