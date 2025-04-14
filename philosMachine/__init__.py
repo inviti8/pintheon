@@ -343,6 +343,18 @@ class PhilosMachine(object):
     def establish_data(self):
         return {'node_id': self.uid, 'node_pub': self.node_pub, 'root_token': self.root_token, 'master_key': self.master_key}
     
+    def opus_symbol(self):
+        tx = self._opus_symbol()
+        return asyncio.run(self._call_soroban(tx))
+
+    def opus_balance(self, address):
+        tx = self._opus_balance(address)
+        return asyncio.run(self._call_soroban(tx))
+    
+    def collective_symbol(self):
+        tx = self._collective_symbol()
+        return asyncio.run(self._call_soroban(tx))
+    
     def _custom_qr_code(data, cntrImg, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
         qr = qrcode.QRCode(
             version=1,
@@ -386,9 +398,6 @@ class PhilosMachine(object):
         mac.add_first_party_caveat('time < '+ str(self.session_ends))
 
         self.auth_token  = mac.serialize()
-
-    def _establish_opus_trust(self):
-         print('establish opus trust')
 
     def _create_stellar_keypair_from_seed(self, seed):
          print('create stellar keypair')
