@@ -34,12 +34,22 @@ from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
 from qrcode.image.styles.colormasks import SolidFillColorMask
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
 from PIL import Image, ImageDraw
-from stellar_sdk import Keypair, Network, Server, TransactionBuilder
+from stellar_sdk import Keypair, Network, Server, SorobanServer, TransactionBuilder, Asset, scval
+from stellar_sdk import xdr as stellar_xdr
+from stellar_sdk.xdr import TransactionResult
+from stellar_sdk.exceptions import PrepareTransactionException
+from stellar_sdk.soroban_rpc import GetTransactionStatus, SendTransactionStatus
+from stellar_sdk.contract import AssembledTransaction, ContractClient
+import asyncio
+import json
+import requests
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
 STELLAR_BG_RGB = (0, 0, 0)
 STELLAR_FG_RGB = (21, 21, 21)
+
+
 
 
 class PhilosMachine(object):
@@ -94,9 +104,14 @@ class PhilosMachine(object):
         self.node_pub = None
 
         #-------STELLAR--------
+        self.soroban_rpc_url = "https://soroban-testnet.stellar.org:443"
+        self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.stellar_server = Server("https://horizon-testnet.stellar.org")
+        self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
+        self.BASE_FEE = self.stellar_server.fetch_base_fee()
         self.stellar_account = None
         self.stellar_keypair = None
+        
 
          #-------PRIVATE VARS--------
         self._generator_token = None
@@ -365,6 +380,9 @@ class PhilosMachine(object):
 
         self.auth_token  = mac.serialize()
 
+    def _establish_opus_trust(self):
+         print('establish opus trust')
+
     def _create_stellar_keypair_from_seed(self, seed):
          print('create stellar keypair')
          self.stellar_keypair = Keypair.from_mnemonic_phrase(seed)
@@ -387,8 +405,88 @@ class PhilosMachine(object):
          self.stellar_keypair = Keypair.from_secret(keypair['secret'])
          
          self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
+
          for balance in self.stellar_account['balances']:
             print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
+
+    def _stellar_getter_tx(self, contract, method):
+        tx = (
+            TransactionBuilder(self.stellar_keypair.public_key, self.NETWORK_PASSPHRASE, base_fee=100)
+            .set_timeout(300)
+            .append_invoke_contract_function_op(
+                contract_id=contract,
+                function_name=method,
+            )
+            .build()
+        )
+
+        return tx
+    
+    def _stellar_action_tx(self, contract, method, address):
+        tx = (
+            TransactionBuilder(self.stellar_keypair.public_key, self.NETWORK_PASSPHRASE, base_fee=100)
+            .set_timeout(300)
+            .append_invoke_contract_function_op(
+                contract_id=contract,
+                function_name=method,
+                parameters=[scval.to_address(address)],
+            )
+            .build()
+        )
+
+        return tx
+    
+    async def _stellar_handle_tx(self, tx):
+        send_transaction_data = self.soroban_server.send_transaction(tx)
+
+        if send_transaction_data.status != SendTransactionStatus.PENDING:
+            raise Exception("send transaction failed")
+        while True:
+            get_transaction_data = self.soroban_server.get_transaction(send_transaction_data.hash)
+            if get_transaction_data.status != GetTransactionStatus.NOT_FOUND:
+                break
+            await asyncio.sleep(3)
+
+        return get_transaction_data
+    
+    async def _stellar_handle_tx(self, tx):
+        send_transaction_data = self.soroban_server.send_transaction(tx)
+
+        if send_transaction_data.status != SendTransactionStatus.PENDING:
+            raise Exception("send transaction failed")
+        while True:
+            get_transaction_data = self.soroban_server.get_transaction(send_transaction_data.hash)
+            if get_transaction_data.status != GetTransactionStatus.NOT_FOUND:
+                break
+            await asyncio.sleep(3)
+
+        return get_transaction_data
+
+
+    async def _call_soroban(self, tx):
+        result = None
+        try:
+            tx = self.soroban_server.prepare_transaction(tx)
+        except PrepareTransactionException as e:
+            print(f"Got exception: {e.simulate_transaction_response}")
+            raise e
+
+        tx.sign(self.stellar_keypair)
+
+        get_transaction_data = await self._stellar_handle_tx(tx)
+
+        if get_transaction_data.status == GetTransactionStatus.SUCCESS:
+            assert get_transaction_data.result_meta_xdr is not None
+            transaction_meta = stellar_xdr.TransactionMeta.from_xdr(
+                get_transaction_data.result_meta_xdr
+            )
+            response = transaction_meta.v3.soroban_meta.return_value  # type: ignore[union-attr]
+            result = scval.to_native(response)
+
+        else:
+            print(f"Transaction failed: {get_transaction_data.result_xdr}")
+
+        return result
 
     @property
     def do_initialize(self):
