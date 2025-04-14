@@ -49,6 +49,11 @@ HVYM_FG_RGB = (175, 232, 197)
 STELLAR_BG_RGB = (0, 0, 0)
 STELLAR_FG_RGB = (21, 21, 21)
 
+COLLECTIVE_TESTNET = 'CDHXRJOXX3MTMQX5245YR75DJNY4RBNRXEDXIWVVEUGSSE7HUHMZEQOR'
+OPUS_TESTNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
+COLLECTIVE_MAINNET = 'CDHXRJOXX3MTMQX5245YR75DJNY4RBNRXEDXIWVVEUGSSE7HUHMZEQOR'
+OPUS_MAINNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
+
 
 
 
@@ -107,6 +112,8 @@ class PhilosMachine(object):
         self.soroban_rpc_url = "https://soroban-testnet.stellar.org:443"
         self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.stellar_server = Server("https://horizon-testnet.stellar.org")
+        self.COLLECTIVE_ID = COLLECTIVE_TESTNET
+        self.OPUS_ID = OPUS_TESTNET
         self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
         self.BASE_FEE = self.stellar_server.fetch_base_fee()
         self.stellar_account = None
@@ -409,32 +416,34 @@ class PhilosMachine(object):
          for balance in self.stellar_account['balances']:
             print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
 
-    def _stellar_getter_tx(self, contract, method):
+    def _stellar_tx(self, contract, method, args=None):
         tx = (
-            TransactionBuilder(self.stellar_keypair.public_key, self.NETWORK_PASSPHRASE, base_fee=100)
+            TransactionBuilder(self.stellar_keypair.public_key, self.NETWORK_PASSPHRASE, base_fee=self.BASE_FEE)
             .set_timeout(300)
             .append_invoke_contract_function_op(
                 contract_id=contract,
                 function_name=method,
+                parameters=args,
             )
             .build()
         )
 
         return tx
     
-    def _stellar_action_tx(self, contract, method, address):
-        tx = (
-            TransactionBuilder(self.stellar_keypair.public_key, self.NETWORK_PASSPHRASE, base_fee=100)
-            .set_timeout(300)
-            .append_invoke_contract_function_op(
-                contract_id=contract,
-                function_name=method,
-                parameters=[scval.to_address(address)],
-            )
-            .build()
-        )
+    def _opus_symbol(self):
+        return self._stellar_getter_tx(self.OPUS_ID, 'symbol')
 
-        return tx
+    def _opus_balance(self, address):
+        return self._stellar_action_tx(self.OPUS_ID, 'balance', [scval.to_address(address)])
+
+    def _collective_symbol(self):
+        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'symbol')
+
+    def _stellar_getter_tx(self, contract, method, args=None):
+        return self._stellar_tx(contract, method, args)
+    
+    def _stellar_action_tx(self, contract, method, args):
+        return self._stellar_tx(contract, method, args)
     
     async def _stellar_handle_tx(self, tx):
         send_transaction_data = self.soroban_server.send_transaction(tx)
