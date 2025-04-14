@@ -448,20 +448,6 @@ class PhilosMachine(object):
             await asyncio.sleep(3)
 
         return get_transaction_data
-    
-    async def _stellar_handle_tx(self, tx):
-        send_transaction_data = self.soroban_server.send_transaction(tx)
-
-        if send_transaction_data.status != SendTransactionStatus.PENDING:
-            raise Exception("send transaction failed")
-        while True:
-            get_transaction_data = self.soroban_server.get_transaction(send_transaction_data.hash)
-            if get_transaction_data.status != GetTransactionStatus.NOT_FOUND:
-                break
-            await asyncio.sleep(3)
-
-        return get_transaction_data
-
 
     async def _call_soroban(self, tx):
         result = None
