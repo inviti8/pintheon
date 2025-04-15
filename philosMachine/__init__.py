@@ -355,6 +355,22 @@ class PhilosMachine(object):
         tx = self._collective_symbol()
         return asyncio.run(self._call_soroban(tx))
     
+    def join_collective(self):
+        tx = self._join_collective()
+        return asyncio.run(self._call_soroban(tx))
+    
+    def is_member(self):
+        tx = self._is_member()
+        return asyncio.run(self._call_soroban(tx))
+    
+    def deploy_node_token(self, name, descriptor):
+        tx = self._deploy_node_token(name, descriptor)
+        return asyncio.run(self._call_soroban(tx)).address
+
+    def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash="NONE"):
+        tx = self._deploy_ipfs_token(name, ipfs_hash, file_type, gateways, _ipns_hash)
+        return asyncio.run(self._call_soroban(tx)).address
+    
     def _custom_qr_code(data, cntrImg, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
         qr = qrcode.QRCode(
             version=1,
@@ -447,6 +463,29 @@ class PhilosMachine(object):
 
     def _collective_symbol(self):
         return self._stellar_getter_tx(self.COLLECTIVE_ID, 'symbol')
+    
+    def _collective_join_fee(self):
+        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'join_fee')
+
+    def _collective_mint_fee(self):
+        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'mint_fee')
+
+    def _collective_opus_reward(self):
+        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'opus_reward')
+    
+    def _join_collective(self):
+        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'join', [scval.to_address(self.stellar_keypair.public_key)])
+
+    def _is_member(self):
+        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'is_member', [scval.to_address(self.stellar_keypair.public_key)])
+
+    def _deploy_node_token(self, name, descriptor):
+        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'deploy_node_token', [scval.to_address(self.stellar_keypair.public_key), scval.to_string(name), scval.to_string(descriptor)])
+
+    def _deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash = "NONE"):
+        args = [scval.to_address(self.stellar_keypair.public_key), scval.to_string(name), scval.to_string(ipfs_hash), scval.to_string(file_type), scval.to_string(gateways), scval.to_string(_ipns_hash)]
+
+        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'deploy_ipfs_token', args)
 
     def _stellar_getter_tx(self, contract, method, args=None):
         return self._stellar_tx(contract, method, args)
