@@ -35,11 +35,8 @@ from qrcode.image.styles.colormasks import SolidFillColorMask
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
 from PIL import Image, ImageDraw
 from stellar_sdk import Keypair, Network, Server, SorobanServer, TransactionBuilder, Asset, scval
-from stellar_sdk import xdr as stellar_xdr
-from stellar_sdk.xdr import TransactionResult
-from stellar_sdk.exceptions import PrepareTransactionException
-from stellar_sdk.soroban_rpc import GetTransactionStatus, SendTransactionStatus
-from stellar_sdk.contract import AssembledTransaction, ContractClient
+from hvym_collective_bindings import Client  as Collective
+from opus_bindings import Client as Opus
 import asyncio
 import json
 import requests
@@ -110,7 +107,6 @@ class PhilosMachine(object):
 
         #-------STELLAR--------
         self.soroban_rpc_url = "https://soroban-testnet.stellar.org:443"
-        self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.stellar_server = Server("https://horizon-testnet.stellar.org")
         self.COLLECTIVE_ID = COLLECTIVE_TESTNET
         self.OPUS_ID = OPUS_TESTNET
@@ -118,6 +114,8 @@ class PhilosMachine(object):
         self.BASE_FEE = self.stellar_server.fetch_base_fee()
         self.stellar_account = None
         self.stellar_keypair = None
+        self.hvym_collective = Collective(self.COLLECTIVE_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
+        self.opus = Opus(self.OPUS_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         
 
          #-------PRIVATE VARS--------
@@ -344,32 +342,36 @@ class PhilosMachine(object):
         return {'node_id': self.uid, 'node_pub': self.node_pub, 'root_token': self.root_token, 'master_key': self.master_key}
     
     def opus_symbol(self):
-        tx = self._opus_symbol()
-        return asyncio.run(self._call_soroban(tx))
+        tx = self.opus.symbol(self.stellar_keypair.public_key)
+        return tx.result()
 
-    def opus_balance(self, address):
-        tx = self._opus_balance(address)
-        return asyncio.run(self._call_soroban(tx))
+    def opus_balance(self):
+        tx = self.opus.balance(id=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+        return tx.result()
     
     def collective_symbol(self):
-        tx = self._collective_symbol()
-        return asyncio.run(self._call_soroban(tx))
+        tx = self.hvym_collective.symbol(self.stellar_keypair.public_key)
+        return tx.result()
     
     def join_collective(self):
-        tx = self._join_collective()
-        return asyncio.run(self._call_soroban(tx))
+        tx = self.hvym_collective.join(caller=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+        tx.sign_and_submit()
+        res = tx.result()
+        return { 'address': res.address.address, 'paid': res.paid }
     
     def is_member(self):
-        tx = self._is_member()
-        return asyncio.run(self._call_soroban(tx))
+        tx = self.hvym_collective.is_member(self.stellar_keypair.public_key)
+        return tx.result()
     
     def deploy_node_token(self, name, descriptor):
-        tx = self._deploy_node_token(name, descriptor)
-        return asyncio.run(self._call_soroban(tx)).address
+        tx = self.hvym_collective.deploy_node_token(caller=self.stellar_keypair.public_key, name=name, descriptor=descriptor, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+        tx.sign_and_submit()
+        return tx.result().address
 
     def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash="NONE"):
-        tx = self._deploy_ipfs_token(name, ipfs_hash, file_type, gateways, _ipns_hash)
-        return asyncio.run(self._call_soroban(tx)).address
+        tx = self.hvym_collective.deploy_ipfs_token(caller=self.stellar_keypair.public_key.public_key, name=name, ipfs_hash=ipfs_hash, file_type=file_type, gateways=gateways, _ipns_hash=_ipns_hash, source=self.stellar_keypair.public_key.public_key, signer=self.stellar_keypair.public_key)
+        tx.sign_and_submit()
+        return tx.result().address
     
     def _custom_qr_code(data, cntrImg, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
         qr = qrcode.QRCode(
@@ -441,95 +443,6 @@ class PhilosMachine(object):
          for balance in self.stellar_account['balances']:
             print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
 
-    def _stellar_tx(self, contract, method, args=None):
-        tx = (
-            TransactionBuilder(self.stellar_keypair.public_key, self.NETWORK_PASSPHRASE, base_fee=self.BASE_FEE)
-            .set_timeout(300)
-            .append_invoke_contract_function_op(
-                contract_id=contract,
-                function_name=method,
-                parameters=args,
-            )
-            .build()
-        )
-
-        return tx
-    
-    def _opus_symbol(self):
-        return self._stellar_getter_tx(self.OPUS_ID, 'symbol')
-
-    def _opus_balance(self, address):
-        return self._stellar_action_tx(self.OPUS_ID, 'balance', [scval.to_address(address)])
-
-    def _collective_symbol(self):
-        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'symbol')
-    
-    def _collective_join_fee(self):
-        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'join_fee')
-
-    def _collective_mint_fee(self):
-        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'mint_fee')
-
-    def _collective_opus_reward(self):
-        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'opus_reward')
-    
-    def _join_collective(self):
-        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'join', [scval.to_address(self.stellar_keypair.public_key)])
-
-    def _is_member(self):
-        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'is_member', [scval.to_address(self.stellar_keypair.public_key)])
-
-    def _deploy_node_token(self, name, descriptor):
-        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'deploy_node_token', [scval.to_address(self.stellar_keypair.public_key), scval.to_string(name), scval.to_string(descriptor)])
-
-    def _deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash = "NONE"):
-        args = [scval.to_address(self.stellar_keypair.public_key), scval.to_string(name), scval.to_string(ipfs_hash), scval.to_string(file_type), scval.to_string(gateways), scval.to_string(_ipns_hash)]
-
-        return self._stellar_getter_tx(self.COLLECTIVE_ID, 'deploy_ipfs_token', args)
-
-    def _stellar_getter_tx(self, contract, method, args=None):
-        return self._stellar_tx(contract, method, args)
-    
-    def _stellar_action_tx(self, contract, method, args):
-        return self._stellar_tx(contract, method, args)
-    
-    async def _stellar_handle_tx(self, tx):
-        send_transaction_data = self.soroban_server.send_transaction(tx)
-
-        if send_transaction_data.status != SendTransactionStatus.PENDING:
-            raise Exception("send transaction failed")
-        while True:
-            get_transaction_data = self.soroban_server.get_transaction(send_transaction_data.hash)
-            if get_transaction_data.status != GetTransactionStatus.NOT_FOUND:
-                break
-            await asyncio.sleep(3)
-
-        return get_transaction_data
-
-    async def _call_soroban(self, tx):
-        result = None
-        try:
-            tx = self.soroban_server.prepare_transaction(tx)
-        except PrepareTransactionException as e:
-            print(f"Got exception: {e.simulate_transaction_response}")
-            raise e
-
-        tx.sign(self.stellar_keypair)
-
-        get_transaction_data = await self._stellar_handle_tx(tx)
-
-        if get_transaction_data.status == GetTransactionStatus.SUCCESS:
-            assert get_transaction_data.result_meta_xdr is not None
-            transaction_meta = stellar_xdr.TransactionMeta.from_xdr(
-                get_transaction_data.result_meta_xdr
-            )
-            response = transaction_meta.v3.soroban_meta.return_value  # type: ignore[union-attr]
-            result = scval.to_native(response)
-
-        else:
-            print(f"Transaction failed: {get_transaction_data.result_xdr}")
-
-        return result
 
     @property
     def do_initialize(self):
