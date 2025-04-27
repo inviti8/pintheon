@@ -34,10 +34,10 @@ from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
 from qrcode.image.styles.colormasks import SolidFillColorMask
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
 from PIL import Image, ImageDraw
-from stellar_sdk import Keypair, Network, Server, SorobanServer, TransactionBuilder, Asset, scval
-from hvym_collective_bindings import Client  as Collective
+from stellar_sdk import Keypair, Network, Server
+from hvym_collective_bindings import Client as Collective
 from opus_bindings import Client as Opus
-import asyncio
+from ipfs_token_bindings import Client as IPFS_Token
 import json
 import requests
 
@@ -117,7 +117,6 @@ class PhilosMachine(object):
         self.hvym_collective = Collective(self.COLLECTIVE_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.opus = Opus(self.OPUS_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         
-
          #-------PRIVATE VARS--------
         self._generator_token = None
         self._BLOCK_SIZE = 16
@@ -342,12 +341,10 @@ class PhilosMachine(object):
         return {'node_id': self.uid, 'node_pub': self.node_pub, 'root_token': self.root_token, 'master_key': self.master_key}
     
     def opus_symbol(self):
-        tx = self.opus.symbol(self.stellar_keypair.public_key)
-        return tx.result()
+        return self._token_symbol(self.opus)
 
     def opus_balance(self):
-        tx = self.opus.balance(id=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-        return tx.result()
+        return self._token_balance(self.opus)
     
     def collective_symbol(self):
         tx = self.hvym_collective.symbol(self.stellar_keypair.public_key)
@@ -372,6 +369,21 @@ class PhilosMachine(object):
         tx = self.hvym_collective.deploy_ipfs_token(caller=self.stellar_keypair.public_key.public_key, name=name, ipfs_hash=ipfs_hash, file_type=file_type, gateways=gateways, _ipns_hash=_ipns_hash, source=self.stellar_keypair.public_key.public_key, signer=self.stellar_keypair.public_key)
         tx.sign_and_submit()
         return tx.result().address
+    
+    def ipfs_token_balance(self, token_id):
+         token = self._bind_ipfs_token(token_id)
+         return self._token_balance(token)
+    
+    def _bind_ipfs_token(self, token_id):
+         return IPFS_Token(token_id, self.stellar_server, self.NETWORK_PASSPHRASE)
+    
+    def _token_balance(self, token):
+         tx = token.balance(id=self.stellar_keypair.public_key.public_key, source=self.stellar_keypair.public_key.public_key, signer=self.stellar_keypair)
+         return tx.result()
+    
+    def _token_symbol(self, token):
+         tx = token.symbol(self.stellar_keypair.public_key.public_key)
+         return tx.result()
     
     def _custom_qr_code(data, cntrImg, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
         qr = qrcode.QRCode(
