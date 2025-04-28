@@ -35,9 +35,9 @@ from qrcode.image.styles.colormasks import SolidFillColorMask
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
 from PIL import Image, ImageDraw
 from stellar_sdk import Keypair, Network, Server
-from hvym_collective_bindings import Client as Collective
-from opus_bindings import Client as Opus
-from ipfs_token_bindings import Client as IPFS_Token
+from .hvym_collective_bindings import Client as Collective
+from .opus_bindings import Client as Opus
+from .ipfs_token_bindings import Client as IPFS_Token
 import json
 import requests
 
@@ -52,8 +52,6 @@ COLLECTIVE_MAINNET = 'CDHXRJOXX3MTMQX5245YR75DJNY4RBNRXEDXIWVVEUGSSE7HUHMZEQOR'
 OPUS_MAINNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
 
 
-
-
 class PhilosMachine(object):
 
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
@@ -61,7 +59,7 @@ class PhilosMachine(object):
     def __init__(self, static_path, db_path, wallet_path, ipfs_daemon='http://127.0.0.1:5001'):
 
         self.uid = str(uuid.uuid4())
-        self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIyaWRlbnRpZmllciBBWElFTF9MQVVOQ0hfVE9LRU4KMDAyZnNpZ25hdHVyZSB7MtcrDXWZNrLHqD5rVyOduvQKQ7EF2GaOEwW5phJUbAo'
+        self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIzaWRlbnRpZmllciBQSElMT1NfTEFVTkNIX1RPS0VOCjAwMmZzaWduYXR1cmUgm2DPFKM5bRmCSPqmBaFOVeUEliIy3fPs_ngrdloMYFcK'
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
         self.session_active = False
         self.session_started = None
