@@ -73,6 +73,7 @@ class PhilosMachine(object):
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.static_path = static_path
         self.logo_url = None
+        self.node_contract = None
         self.node_name = None
         self.node_descriptor = None
         self.node_meta_data = None
@@ -168,6 +169,9 @@ class PhilosMachine(object):
         self.node_name = name
         self.node_descriptor = descriptor
         self.node_meta_data = metadata
+        self.node_contract = self.deploy_node_token(name, descriptor)
+
+        self._update_node_data(self.logo_url, self.node_name, self.node_descriptor, self.node_contract)
 
     def ab2hexstring(b):
         return ''.join('{:02x}'.format(c) for c in b)
@@ -456,7 +460,7 @@ class PhilosMachine(object):
 
     @property
     def do_initialize(self):
-        self._update_node_data(os.path.join(self.static_path, 'hvym_logo.png'), self._dirs.appname, self._dirs.appauthor)
+        self._update_node_data(os.path.join(self.static_path, 'hvym_logo.png'), self._dirs.appname, self._dirs.appauthor, self.node_contract)
         self._update_state_data()
         return True
 
@@ -506,12 +510,13 @@ class PhilosMachine(object):
         self._update_table_doc(self.state_data, data)
         self.db.close()
 
-    def _update_node_data(self, logo_url, name, descriptor):
+    def _update_node_data(self, logo_url, name, descriptor, node_contract):
         self._open_db()
         self.logo_url = logo_url
         self.node_name = name
         self.node_descriptor = descriptor
-        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
+        self.node_contract = node_contract
+        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'node_contract':self.node_contract, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
         
         self._update_table_doc(self.node_data, data)
 
@@ -527,7 +532,7 @@ class PhilosMachine(object):
         if not table.contains(doc_id=id):
             table.insert(data)
         else:
-            table.get(doc_id=id).update(data)
+            table.update(data)
 
     def _open_db(self):
         self.db = TinyDB(encryption_key=self.master_key, path=self.db_path, storage=tae.EncryptedJSONStorage)
