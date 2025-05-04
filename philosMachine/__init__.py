@@ -284,6 +284,9 @@ class PhilosMachine(object):
         self.session_nonce = None
 
     def authorized(self):
+        if self.stellar_keypair == None:
+             self._load_stellar_keypair()
+
         self.auth_nonce = str(uuid.uuid4())
         self.auth_token = self._create_auth_token()
         self.logged_in = True
@@ -293,6 +296,8 @@ class PhilosMachine(object):
     def deauthorized(self):
         self.auth_nonce = None
         self.auth_token = None
+        self.stellar_account = None
+        self.stellar_keypair = None
         self.logged_in = False
         self.session_active = False
         self.active_page = 'authorize'
@@ -316,10 +321,6 @@ class PhilosMachine(object):
         lines = [base64_string[i:i+64] for i in range(0, len(base64_string), 64)]
         
         return "\n".join([header] + lines + [footer])
-        
-    def derive_key(self, password, salt):
-        dk = hashlib.pbkdf2_hmac('sha256', password.encode(), binascii.unhexlify(salt), 100000)
-        return dk
     
     def decrypt_aes(self, data, key):
         padded = self.pad_key(key)
@@ -441,6 +442,7 @@ class PhilosMachine(object):
          self.db.close()
          
          self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
+         
          for balance in self.stellar_account['balances']:
             print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
 
