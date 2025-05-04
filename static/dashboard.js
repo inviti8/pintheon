@@ -267,7 +267,7 @@ document.addEventListener('init', function(event) {
             upload_file_dlg(update_logo);
         };
 
-        document.querySelector('#upload-file-dialog-button').onclick = function () {
+        document.querySelector('#upload-button').onclick = function () {
             upload_file_dlg(upload_file);
         };
 
