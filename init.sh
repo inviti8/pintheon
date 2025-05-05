@@ -23,12 +23,8 @@ echo "Installing requirements:"
 pip install -r /home/test/philos/requirements.txt
 echo "Deactivate the environment"
 deactivate
-chmod +x philos/xelis_wallet_gen.sh
-chmod +x philos/setup.sh
 usermod -a -G test www-data
-./philos/xelis_wallet_gen.sh
 ./philos/setup.sh
-chmod +x philos/install_xelis.sh
 chmod +x philos/install_kubo.sh
 chmod +x philos/update_path.sh
 ./philos/install_xelis.sh
