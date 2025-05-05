@@ -31,9 +31,11 @@ cat > /etc/nginx/sites-available/default<<  EOF
 server{
     listen 80;
 
+    location ~* \.(eot|ttf|woff|woff2)$ {
+        add_header Access-Control-Allow-Origin *;
+    }
+
     location / {
-        add_header 'Access-Control-Allow-Origin' '*';
-        add_header 'Access-Control-Allow-Methods' 'GET, POST';
         include proxy_params;
         proxy_pass http://unix:/home/test/philos/philos.sock;
     }
