@@ -26,6 +26,5 @@ deactivate
 usermod -a -G test www-data
 ./philos/setup.sh
 chmod +x philos/install_kubo.sh
-chmod +x philos/update_path.sh
 ./philos/install_xelis.sh
 sudo ./philos/install_kubo.sh
