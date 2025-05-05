@@ -56,7 +56,7 @@ class PhilosMachine(object):
 
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
-    def __init__(self, static_path, db_path, wallet_path, ipfs_daemon='http://127.0.0.1:5001'):
+    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001'):
 
         self.uid = str(uuid.uuid4())
         self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIzaWRlbnRpZmllciBQSElMT1NfTEFVTkNIX1RPS0VOCjAwMmZzaWduYXR1cmUgm2DPFKM5bRmCSPqmBaFOVeUEliIy3fPs_ngrdloMYFcK'
@@ -442,7 +442,7 @@ class PhilosMachine(object):
          self.db.close()
          
          self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
-         
+
          for balance in self.stellar_account['balances']:
             print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
 

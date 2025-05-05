@@ -10,15 +10,13 @@ from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-xelis_wallet_dirs = PlatformDirs('xelis-blockchain', 'Xelis')
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
 STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
-WALLET_PATH = xelis_wallet_dirs.user_data_dir
 
-PHILOS = PhilosMachine(STATIC_PATH, DB_PATH, WALLET_PATH)
+PHILOS = PhilosMachine(STATIC_PATH, DB_PATH)
 PHILOS.initialize()
 
 ##UTILITIES###
