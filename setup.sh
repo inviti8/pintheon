@@ -32,18 +32,18 @@ server{
     listen 80;
 
     location / {
-        add_header Access-Control-Allow-Origin $allow_origin;
-        add_header Access-Control-Allow-Methods $allow_methods;
+        add_header Access-Control-Allow-Origin *;
+        add_header Access-Control-Allow-Methods *;
 
         # Handling preflight requests
         if ($request_method = OPTIONS) {
-            add_header Access-Control-Allow-Origin $allow_origin;
-            add_header Access-Control-Allow-Methods $allow_methods;
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods *;
             add_header Content-Type text/plain;
             add_header Content-Length 0;
             return 204;
         }
-        
+
         include proxy_params;
         proxy_pass http://unix:/home/test/philos/philos.sock;
     }
