@@ -36,7 +36,7 @@ server{
         add_header Access-Control-Allow-Methods *;
 
         # Handling preflight requests
-        if ($request_method = OPTIONS) {
+        if ($request_method == OPTIONS) {
             add_header Access-Control-Allow-Origin *;
             add_header Access-Control-Allow-Methods *;
             add_header Content-Type text/plain;
