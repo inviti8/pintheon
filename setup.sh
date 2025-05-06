@@ -35,14 +35,6 @@ server{
         add_header Access-Control-Allow-Origin *;
         add_header Access-Control-Allow-Methods *;
 
-        if ($request_method = 'OPTIONS') {
-            add_header Access-Control-Allow-Origin *;
-            add_header Access-Control-Allow-Methods *;
-            add_header Content-Type text/plain;
-            add_header Content-Length 0;
-            return 204;
-        }
-
         include proxy_params;
         proxy_pass http://unix:/home/test/philos/philos.sock;
     }
