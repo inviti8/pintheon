@@ -23,8 +23,8 @@ echo "Installing requirements:"
 pip install -r /home/test/philos/requirements.txt
 echo "Deactivate the environment"
 deactivate
-chmod +x philos/setup.sh
 usermod -a -G test www-data
-./philos/setup.sh
+# chmod +x philos/setup.sh
+# ./philos/setup.sh
 chmod +x philos/install_kubo.sh
 sudo ./philos/install_kubo.sh
