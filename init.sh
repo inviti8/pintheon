@@ -24,9 +24,7 @@ pip install -r /home/test/philos/requirements.txt
 echo "Deactivate the environment"
 deactivate
 usermod -a -G test www-data
-# chmod +x philos/setup.sh
-# ./philos/setup.sh
-chmod +x philos/gun_test.sh
-./philos/gun_test.sh
+chmod +x philos/setup.sh
+./philos/setup.sh
 chmod +x philos/install_kubo.sh
 sudo ./philos/install_kubo.sh
