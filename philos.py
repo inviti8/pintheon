@@ -1,7 +1,7 @@
 import os
 import requests
 from flask import Flask, render_template, request, session, abort, redirect, jsonify, url_for
-# from flask_cors import CORS, cross_origin
+from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound, HTTPException
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
@@ -11,7 +11,7 @@ from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-# CORS(app)
+CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
 STATIC_PATH = os.path.join(SCRIPT_DIR, "static")

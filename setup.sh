@@ -36,6 +36,10 @@ server{
         proxy_pass http://unix:/home/test/philos/philos.sock;
     }
 
+    location /static  {
+        include  /etc/nginx/mime.types;
+        root /home/test/philos/;
+    }
 }
 EOF
 
