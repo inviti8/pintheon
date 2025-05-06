@@ -156,6 +156,7 @@ def end_session():
         return jsonify({'authorized': False}), 200
 
 @app.route('/new_node', methods=['POST'])
+@cross_origin()
 def new_node():
    required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']
    data = request.get_json()
@@ -182,6 +183,7 @@ def new_node():
 
 
 @app.route('/establish', methods=['POST'])
+@cross_origin()
 def establish():
    required = ['token', 'client_pub', 'name', 'descriptor', 'meta_data']
    data = request.get_json()
@@ -204,6 +206,7 @@ def establish():
    
 
 @app.route('/authorize', methods=['POST'])
+@cross_origin()
 def authorize():
    required = ['token', 'client_pub', 'auth_token', 'generator_pub']
    data = request.get_json()
@@ -223,6 +226,7 @@ def authorize():
    
 
 @app.route('/authorized', methods=['POST'])
+@cross_origin()
 def authorized():
    required = ['token', 'auth_token', 'client_pub']
    data = request.get_json()
@@ -241,6 +245,7 @@ def authorized():
    
 
 @app.route('/deauthorize', methods=['POST'])
+@cross_origin()
 def deauthorize():
    required = ['token', 'client_pub']
    data = request.get_json()
@@ -263,11 +268,13 @@ def deauthorize():
    
 
 @app.route('/upload', methods=['POST'])
+@cross_origin()
 def upload():
    required = ['token', 'client_pub']
    return _handle_upload(required, request)
 
 @app.route('/upate_logo', methods=['POST'])
+@cross_origin()
 def update_logo():
    required = ['token', 'client_pub']
    response = _handle_upload(required, request)
@@ -276,6 +283,7 @@ def update_logo():
    return response
 
 @app.route('/remove_file', methods=['POST'])
+@cross_origin()
 def remove_file():
    required = ['token', 'client_pub', 'cid']
    for field in required:
@@ -296,6 +304,7 @@ def remove_file():
             return ipfs_response
         
 @app.route('/add_to_namespace', methods=['POST'])
+@cross_origin()
 def add_to_namespace():
    required = ['token', 'client_pub', 'cid']
    for field in required:
@@ -319,6 +328,7 @@ def add_to_namespace():
             return ipfs_response
         
 @app.route('/dashboard_data', methods=['POST'])
+@cross_origin()
 def dashboard_data():
    required = ['token', 'client_pub']
    for field in required:
