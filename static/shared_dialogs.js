@@ -64,6 +64,7 @@ const _fileLoaderInputChangeCallback = function(id, input, callback){
     const file = files[0];
 
     if(file){
+      window.dlg.hide(id);
       callback(file);
     };
 

@@ -244,7 +244,7 @@ document.addEventListener('init', function(event) {
 
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
         window.rndr.nodeCardHeader(window.dash.data['logo'], window.dash.data.name, window.dash.data.descriptor);
-        window.rndr.nodeInfo('test1234556789','test.com');
+        window.rndr.nodeInfo('test1234556789','http://127.0.0.1:9500');
         window.rndr.networkTraffic('100', '99');
         window.rndr.fileListItems(window.dash.data.file_list);
 

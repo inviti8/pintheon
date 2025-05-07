@@ -213,6 +213,7 @@ document.addEventListener('init', function(event) {
             })
             .then(data => {
                 console.log('Server response:', data);
+                window.dlg.hide('loading-dialog');
                 callback(data);
             })
             .catch(error => {
