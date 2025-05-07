@@ -30,8 +30,17 @@ echo "Configuring Nginx"
 cat > /etc/nginx/sites-available/default<<  EOF
 server{
     listen 80;
+    server_name localhost;
 
     location / {
+        proxy_pass http://127.0.0.1:8082;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+	}
+
+    location /admin {
         add_header Access-Control-Allow-Origin *;
         add_header Access-Control-Allow-Methods *;
 
@@ -51,7 +60,6 @@ sudo chown -R test /home/
 echo "Owning the directory"
 sudo chown -R test:www-data /home/test/philos/
 echo "set ownership to nginx for staic files"
-sudo chown -R nginx:nginx /home/test/philos/static
 sudo chmod -R 755 /home/test/philos/static
 echo "Restarting Nginx"
 sudo systemctl restart nginx

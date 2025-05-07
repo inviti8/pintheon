@@ -103,7 +103,7 @@ def unauthorized_access(e):
     return 'Server Error', 500
 
 ##ROUTES## 
-@app.route('/')
+@app.route('/admin')
 def home():
    hsh = PHILOS.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
    print(PHILOS.hash_key(hsh))

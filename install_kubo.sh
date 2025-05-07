@@ -57,6 +57,9 @@ ipfs repo gc
 echo 'ipfs config Addresses.Gateway /ip4/127.0.0.1/tcp/8082'
 ipfs config Addresses.Gateway /ip4/127.0.0.1/tcp/8082
 
+echo 'ipfs config Gateway.PublicGateways '
+ipfs config Gateway.PublicGateways --json '{ "localhost": { "UseSubdomains": true, "Paths": ["/ipfs", "/ipns"] } }'
+
 #SETUP IPFS AS SERVICE
 echo "Creating Kubo service"
 cat > /etc/systemd/system/ipfs.service <<  EOF
