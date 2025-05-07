@@ -28,3 +28,6 @@ chmod +x philos/setup.sh
 ./philos/setup.sh
 chmod +x philos/install_kubo.sh
 sudo ./philos/install_kubo.sh
+export EDITOR=$(which vim)
+echo "refresh the shell"
+source ~/.profile
