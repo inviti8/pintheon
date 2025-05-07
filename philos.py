@@ -84,12 +84,6 @@ def unauthorized_access(e):
     _on_failure_error()
     return 'Access Denied', 401
 
-@app.errorhandler(Unauthorized)
-def handle_unauthorized(e):
-    # handle unauthorized access here
-    _on_failure_error()
-    return 'Access Denied', 401
-
 @app.errorhandler(Forbidden)
 def handle_forbidden(e):
     # handle forbidden action here
