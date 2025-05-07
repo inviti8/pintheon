@@ -53,3 +53,6 @@ echo "Owning the directory"
 sudo chown -R test /home/
 echo "Owning the directory"
 sudo chown -R test:www-data /home/test/philos/
+echo "set ownership to nginx for staic files"
+sudo chown -R nginx:nginx /home/test/philos/static
+sudo chmod -R 755 /home/test/philos/static
