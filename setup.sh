@@ -10,7 +10,7 @@ User=test
 Group=www-data
 WorkingDirectory=/home/test/philos
 Environment="PATH=/home/test/philos/bin"
-ExecStart=/home/test/philos/philos/bin/gunicorn --workers 3 --bind unix:philos.sock -m 007 wsgi:app
+ExecStart=/home/test/philos/philos/bin/gunicorn --workers 1 --bind unix:philos.sock -m 007 wsgi:app
 Restart=always
 
 [Install]

@@ -136,6 +136,7 @@ def home():
    return render_template(template, page=page, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
 
 @app.route('/end_session', methods=['POST'])
+@cross_origin()
 def end_session():
    required = ['token', 'client_pub']
    data = request.get_json()
