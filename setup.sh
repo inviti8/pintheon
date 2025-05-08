@@ -40,7 +40,7 @@ server{
         proxy_set_header X-Forwarded-Proto \$scheme;
 	}
 
-    location /admin {
+    location ~ ^/(admin|reset_init|new_node|establish|authorize|authorized|deauthorize|upload|upload_logo) {
         add_header Access-Control-Allow-Origin *;
         add_header Access-Control-Allow-Methods *;
 
