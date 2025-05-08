@@ -451,10 +451,9 @@ class PhilosMachine(object):
     def _load_stellar_keypair(self):
          print('load stellar keypair')
          self._open_db()
-         doc = Query()
-         keypair = self.stellar_book.search(doc.name == self.node_name)
+         keypair = self.stellar_book.get(doc_id=1)
          self.db.close()
-         self.stellar_keypair = Keypair.from_secret(keypair['secret'])
+         self.stellar_keypair = Keypair.from_secret(keypair['priv'])
          
          self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
 
