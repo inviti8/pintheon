@@ -163,13 +163,13 @@
 
   <template id="file-list-items-template">
     <ons-list-item expandable>
-      <p class="truncate"></p>
+      <span><img id="file-list-item-icon" class="list-item__thumbnail" src=""><p class="truncate"></p></span>
       <div class="expandable-content">
         <ons-list modifier="default">
           <ons-list-item> Size: <span class="file-size"></span></ons-list-item>
           <ons-list-item>
             <div class="left identifier">
-              <span><img id="file-list-item-icon" class="list-item__thumbnail" src="">File Hash: <a class="file_url" href=""></a></span>
+              <span>File Hash: <a class="file_url" href=""></a></span>
             </div>
             <div class="right">
               <ons-button modifier="quiet" onclick="" id="file-remove">
