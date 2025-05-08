@@ -227,7 +227,7 @@ document.addEventListener('init', function(event) {
             }else if (fileType=='application/octet-stream'){
                 icon = window.icons.TXT;
             }
-            
+            clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
             clone.querySelector('.file-size').textContent = fileList[i]['Size'];
             clone.querySelector('.file_url').href = fileUrl;
