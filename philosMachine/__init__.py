@@ -134,6 +134,8 @@ class PhilosMachine(object):
 
         self.machine.add_transition(trigger='new', source='initialized', dest='establishing', conditions=['create_new_node'])
 
+        self.machine.add_transition(trigger='init_reset', source='establishing', dest='initialized', conditions=['reset_init'])
+
         self.machine.add_transition(trigger='established', source='establishing', dest='idle', conditions=['on_established'])
 
         self.machine.add_transition(trigger='handle_file', source='idle', dest='handling_file', conditions=['do_handle_file'])
@@ -475,6 +477,12 @@ class PhilosMachine(object):
         self._update_state_data()
         self.active_page = 'establish'
         self.logged_in = True
+        return True
+    
+    @property
+    def reset_init(self):
+        print('resetting node...')
+        self.active_page = 'new_node'
         return True
         
     @property

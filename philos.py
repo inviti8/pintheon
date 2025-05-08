@@ -149,6 +149,16 @@ def end_session():
         PHILOS.end_session()
         
         return jsonify({'authorized': False}), 200
+   
+@app.route('/reset_init', methods=['POST'])
+@cross_origin()
+def reset_init():
+     if PHILOS.state == 'establishing':
+          PHILOS.init_reset()
+          PHILOS.end_session()
+          home()
+        
+     return jsonify({'authorized': False}), 200
 
 @app.route('/new_node', methods=['POST'])
 @cross_origin()

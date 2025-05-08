@@ -24,6 +24,16 @@ const generate_wallet = async function () {
     return seed
 };
 
+const reset_init = async () => {
+
+    const body = {
+        'token': window.constants.SESSION_TOKEN.serialize(),
+        'client_pub': window.constants.CLIENT_PUBLIC_KEY
+    };
+
+    window.fn.call(body, '/reset_init', complete);
+};
+
 const new_node = async () => {
 
     const body = {
@@ -128,6 +138,10 @@ document.addEventListener('init', function(event) {
         //         document.querySelector('#'+inp).click();
         //     };
         // });
+
+        document.querySelector('#btn-establish-back').onclick = function () {
+            reset_init();
+        };
 
         document.querySelector('#btn-key-store-file').onclick = function () {
             create_keystore();
