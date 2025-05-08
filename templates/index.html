@@ -28,6 +28,7 @@
   <script type="module" src="{{client_tokens}}"></script>
   <script src="{{ url_for('static', filename='cryptographic.js') }}"></script>
   <script type="module">
+    window.icons = {};
     window.constants = {};
     window.constants.session_end = '{{session_data.time}}';
     window.constants.session_nonce = '{{session_data.nonce}}';
@@ -37,6 +38,21 @@
     window.constants.SERVER_PUBLIC_KEY = await importServerPub("{{session_data.pub}}");
     window.constants.CLIENT_PUBLIC_KEY = await exportKey(window.constants.CLIENT_SESSION_KEYS.publicKey);
     window.constants.SESSION_TOKEN = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey, window.constants.session_end);
+    window.icons.UNKNOWN = "{{ url_for('static', filename='unknown-file.png') }}";
+    window.icons.ZIP = "{{ url_for('static', filename='zip-file.png') }}";
+    window.icons.XLS = "{{ url_for('static', filename='xls-file.png') }}";
+    window.icons.WAV = "{{ url_for('static', filename='wav-file.png') }}";
+    window.icons.WEB = "{{ url_for('static', filename='web-file.png') }}";
+    window.icons.WORD = "{{ url_for('static', filename='word-file.png') }}";
+    window.icons.TXT = "{{ url_for('static', filename='txt-file.png') }}";
+    window.icons.PDF = "{{ url_for('static', filename='pdf-file.png') }}";
+    window.icons.PSD = "{{ url_for('static', filename='psd-file.png') }}";
+    window.icons.PPT = "{{ url_for('static', filename='ppt-file.png') }}";
+    window.icons.MP3 = "{{ url_for('static', filename='mp3-file.png') }}";
+    window.icons.MOV = "{{ url_for('static', filename='mov-file.png') }}";
+    window.icons.EPS = "{{ url_for('static', filename='eps-file.png') }}";
+    window.icons.DLL = "{{ url_for('static', filename='dll-file.png') }}";
+    window.icons.AVI = "{{ url_for('static', filename='avi-file.png') }}";
     if("{{session_data.generator_pub}}"!="None"){
       window.constants.SERVER_GENERATOR_PUBLIC_KEY = await importServerPub("{{session_data.generator_pub}}");
       console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
@@ -53,6 +69,7 @@
     // console.log(x)
 
     console.log(window.location.href)
+    console.log(window.location.host)
 
 
     console.log(window.constants.CLIENT_SESSION_KEYS.publicKey)
