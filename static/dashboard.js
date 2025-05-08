@@ -214,9 +214,7 @@ document.addEventListener('init', function(event) {
             return;
 
         let _updateElem = function(clone, i, fileList){
-            let gateway_input = document.getElementById('node-info-gateway-url');
-            let link = gateway_input.getAttribute('Value');
-            var fileUrl = 'http://' + link + '/ipfs/' + fileList[i]['CID'];
+            var fileUrl = 'http://' + window.location.host + '/ipfs/' + fileList[i]['CID'];
             
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
             clone.querySelector('.file-size').textContent = fileList[i]['Size'];
@@ -244,7 +242,7 @@ document.addEventListener('init', function(event) {
 
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
         window.rndr.nodeCardHeader(window.dash.data['logo'], window.dash.data.name, window.dash.data.descriptor);
-        window.rndr.nodeInfo('test1234556789','http://127.0.0.1:9500');
+        window.rndr.nodeInfo('test1234556789', window.location.host);
         window.rndr.networkTraffic('100', '99');
         window.rndr.fileListItems(window.dash.data.file_list);
 
