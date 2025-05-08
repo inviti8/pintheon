@@ -214,7 +214,19 @@ document.addEventListener('init', function(event) {
             return;
 
         let _updateElem = function(clone, i, fileList){
-            var fileUrl = 'http://' + window.location.host + '/ipfs/' + fileList[i]['CID'];
+            let fileUrl = 'http://' + window.location.host + '/ipfs/' + fileList[i]['CID'];
+            let fileType = fileList[i]['Type'];
+            let icon = window.icons.UNKNOWN;
+
+            if(fileType.contains('image')){
+                icon = fileUrl;
+            }else if (fileType=='application/zip'||fileType=='application/x-7z-compressed'){
+                icon = window.icons.ZIP;
+            }else if (fileType=='application/pdf'){
+                icon = window.icons.PDF;
+            }else if (fileType=='application/octet-stream'){
+                icon = window.icons.TXT;
+            }
             
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
             clone.querySelector('.file-size').textContent = fileList[i]['Size'];
