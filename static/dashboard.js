@@ -166,7 +166,7 @@ const upload_file = async (file) => {
 
     if(file){
         const CHUNK_SIZE = 256 * 1024;
-        
+
         for (let start = 0; start < file.size; start += CHUNK_SIZE) {
             const chunk = file.slice(start, start + CHUNK_SIZE);
             const formData = new FormData();
@@ -230,7 +230,7 @@ document.addEventListener('init', function(event) {
             let fileType = fileList[i]['Type'];
             let icon = window.icons.UNKNOWN;
 
-            if(fileType.contains('image')){
+            if(fileType.includes('image')){
                 icon = fileUrl;
             }else if (fileType=='application/zip'||fileType=='application/x-7z-compressed'){
                 icon = window.icons.ZIP;
