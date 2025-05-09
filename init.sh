@@ -32,10 +32,8 @@ export EDITOR=$(which vim)
 sudo ufw reset
 sudo ufw default allow outgoing
 sudo ufw allow 4001/tcp #IPFS inter-node communication
-sudo ufw allow 8080/tcp #IPFS API server
-sudo ufw allow 8082/tcp #NGINX reverse proxy for IPFS Kubo
 sudo ufw allow 80/tcp #HTTP port for NGINX
 sudo ufw allow 443/tcp #HTTPS port for NGINX with SSL
-sudo ufw enable
+sudo ufw enable -y
 echo "refresh the shell"
 source ~/.profile
