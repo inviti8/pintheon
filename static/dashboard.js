@@ -165,7 +165,7 @@ const upload_file = async (file) => {
     const session = _getSessionData();
 
     if(file){
-        const CHUNK_SIZE = 256 * 1024;
+        const CHUNK_SIZE = 40000;
 
         for (let start = 0; start < file.size; start += CHUNK_SIZE) {
             const chunk = file.slice(start, start + CHUNK_SIZE);

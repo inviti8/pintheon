@@ -163,7 +163,12 @@
 
   <template id="file-list-items-template">
     <ons-list-item expandable>
-      <span><img id="file-list-item-icon" class="list-item__thumbnail" src=""><p class="truncate"></p></span>
+      <div class="fab-container left">
+        <img id="file-list-item-icon" class="list-item__thumbnail" src="">
+      </div>
+      <div class="center">
+        <span id="file-list-item-name" class="list-item__title"><p class="truncate"></p></span>
+      </div>
       <div class="expandable-content">
         <ons-list modifier="default">
           <ons-list-item> Size: <span class="file-size"></span></ons-list-item>
