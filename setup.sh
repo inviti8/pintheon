@@ -28,6 +28,10 @@ sudo apt install nginx -y
 echo "Configuring Nginx"
 
 cat > /etc/nginx/sites-available/default<<  EOF
+http {
+    client_max_body_size 200M;
+}
+
 server{
     listen 80;
     server_name localhost;

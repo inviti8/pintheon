@@ -696,9 +696,15 @@ class PhilosMachine(object):
             # print('ipfs res : ',ipfs_data)
             cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
             if cid != None:
+                
                 file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
                 self._open_db()
-                self.file_book.insert(file_info)
+                file = Query()
+                record = self.file_book.get(file.CID == cid)
+                if record != None:
+                     self.file_book.update(file_info, record.doc_id)
+                else:
+                    self.file_book.insert(file_info)
                 all_file_info = self.file_book.all()
                 self.db.close()
 
