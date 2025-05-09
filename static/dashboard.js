@@ -165,12 +165,24 @@ const upload_file = async (file) => {
     const session = _getSessionData();
 
     if(file){
-        const formData = new FormData()
+        const CHUNK_SIZE = 256 * 1024;
+        
+        for (let start = 0; start < file.size; start += CHUNK_SIZE) {
+            const chunk = file.slice(start, start + CHUNK_SIZE);
+            const formData = new FormData();
 
-        formData.append('token', session.token.serialize());
-        formData.append('client_pub', session.pub);
-        formData.append('file', file);
-        await window.fn.uploadFile(file, formData, '/upload', file_uploaded);
+            formData.append('token', session.token.serialize());
+            formData.append('client_pub', session.pub);
+            formData.append('file', file);
+            await window.fn.uploadFile(file, formData, '/upload', file_uploaded);
+
+        }
+        // const formData = new FormData()
+
+        // formData.append('token', session.token.serialize());
+        // formData.append('client_pub', session.pub);
+        // formData.append('file', file);
+        // await window.fn.uploadFile(file, formData, '/upload', file_uploaded);
     };
 };
 
