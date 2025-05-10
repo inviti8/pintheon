@@ -250,7 +250,7 @@ def authorized():
    elif not PHILOS.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'nonce': PHILOS.auth_nonce, 'expires': str(PHILOS.session_ends), 'authorized': True}), 200
+        return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'nonce': PHILOS.auth_nonce, 'file_list': PHILOS.get_files(), 'expires': str(PHILOS.session_ends), 'authorized': True}), 200
    
 
 @app.route('/deauthorize', methods=['POST'])

@@ -638,6 +638,13 @@ class PhilosMachine(object):
         else:
              return None
         
+    def get_files(self):
+        self._open_db()
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
+        
     def get_file_list(self):
         url = f'{self.ipfs_endpoint}/files/ls'
         response = requests.post(url);
