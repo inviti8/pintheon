@@ -11,9 +11,9 @@ from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-MEGABYTE = (2 ** 10) ** 2
-app.config['MAX_CONTENT_LENGTH'] = None
-app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
+# MEGABYTE = (2 ** 10) ** 2
+# app.config['MAX_CONTENT_LENGTH'] = None
+# app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 
 CORS(app)
 
