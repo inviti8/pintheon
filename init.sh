@@ -12,7 +12,7 @@ sudo apt-get install gcc -y
 source ~/.profile
 
 echo "Cloning philos"
-git clone https://github.com/inviti8/philos.git
+git clone test_gateway https://github.com/inviti8/philos.git
 echo "Creating Env"
 python3 -m venv philos/philos
 echo "refresh the shell"
