@@ -236,9 +236,24 @@ document.addEventListener('init', function(event) {
                 icon = window.icons.ZIP;
             }else if (fileType=='application/pdf'){
                 icon = window.icons.PDF;
-            }else if (fileType=='application/octet-stream'){
+            }else if (fileType=='application/octet-stream'||fileType=='text/plain'){
                 icon = window.icons.TXT;
+            }else if (fileType=='application/msword'||fileType=='application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
+                icon = window.icons.WORD;
+            }else if (fileType=='application/vnd.ms-excel'||fileType=='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
+                icon = window.icons.XLS;
+            }else if (fileType=='text/html'){
+                icon = window.icons.WEB;
+            }else if (fileType=='audio/mpeg'){
+                icon = window.icons.MP3;
+            }else if (fileType=='audio/mp4'){
+                icon = window.icons.MOV;
+            }else if (fileType=='audio/wav'){
+                icon = window.icons.WAV;
+            }else if (fileType=='application/vnd.ms-powerpoint'){
+                icon = window.icons.PPT;
             }
+
             clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
             clone.querySelector('.file-size').textContent = fileList[i]['Size'];
