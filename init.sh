@@ -29,11 +29,14 @@ chmod +x philos/setup.sh
 chmod +x philos/install_kubo.sh
 sudo ./philos/install_kubo.sh
 export EDITOR=$(which vim)
-# sudo ufw reset -y
-# sudo ufw default allow outgoing
-# sudo ufw allow 4001/tcp #IPFS inter-node communication
-# sudo ufw allow 80/tcp #HTTP port for NGINX
-# sudo ufw allow 443/tcp #HTTPS port for NGINX with SSL
-# sudo ufw enable
+sudo ufw reset -y
+sudo ufw default allow outgoing
+sudo ufw default allow incoming
+sudo ufw allow 8080/tcp
+sudo ufw allow 8082/tcp
+sudo ufw allow 4001/tcp #IPFS inter-node communication
+sudo ufw allow 80/tcp #HTTP port for NGINX
+sudo ufw allow 443/tcp #HTTPS port for NGINX with SSL
+sudo ufw enable
 echo "refresh the shell"
 source ~/.profile
