@@ -231,7 +231,7 @@ def authorize():
    else:
         PHILOS.set_client_session_pub(data['client_pub'])
         PHILOS.authorized()
-        return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'nonce': PHILOS.auth_nonce, 'expires': str(PHILOS.session_ends), 'authorized': True}), 200
+        return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'nonce': PHILOS.auth_nonce, 'file_list': PHILOS.get_files(), 'expires': str(PHILOS.session_ends), 'authorized': True}), 200
    
 
 @app.route('/authorized', methods=['POST'])
