@@ -28,7 +28,11 @@ sudo apt install nginx -y
 echo "Configuring Nginx"
 
 echo "Generate SSL Certs."
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/localhost.key -out certs/localhost.crt -config ./localhost.cnf -extensions ext
+# mkcert localhost
+# sudo mv -f localhost.pem /etc/ssl/localhost.crt
+# sudo mv -f localhost-key.pem /etc/ssl/localhost.key
+#openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/localhost.key -out certs/localhost.crt -config ./philos/localhost.cnf -extensions ext
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt -config ./philos/localhost.cnf
 
 cat > /etc/nginx/sites-available/default<<  EOF
 
@@ -48,10 +52,8 @@ server {
     server_name localhost;
     client_max_body_size 200M;
 
-    http2 on;
-
-    ssl_certificate /etc/ssl/localhost.crt;
-    ssl_certificate_key /etc/ssl/localhost.key;
+    ssl_certificate /etc/ssl/certs/localhost.crt;
+    ssl_certificate_key /etc/ssl/private/localhost.key;
     
     ssl_protocols TLSv1.2 TLSv1.1 TLSv1;
 
