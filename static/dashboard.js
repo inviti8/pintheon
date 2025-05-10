@@ -253,11 +253,14 @@ document.addEventListener('init', function(event) {
             }else if (fileType=='application/vnd.ms-powerpoint'){
                 icon = window.icons.PPT;
             }
+            console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+            console.log(fileUrl)
+            console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
 
             clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
             clone.querySelector('.file-size').textContent = fileList[i]['Size'];
-            clone.querySelector('.file_url').href = fileUrl;
+            clone.querySelector('.file_url').href = fileUrl.toString();
             clone.querySelector('.file_url').textContent = fileList[i]['CID'];
             clone.querySelector('#file-remove').setAttribute('onclick', 'fn.removeFile("' + fileList[i]['CID'] + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
