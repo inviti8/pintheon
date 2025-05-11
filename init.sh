@@ -7,9 +7,14 @@ sudo apt install python3-dev -y
 sudo apt install python3-pip -y
 sudo apt install python3.12-venv -y
 sudo apt-get install libudev-dev
+sudo apt install libnss3-tools
 
 sudo apt-get install gcc -y
 source ~/.profile
+
+curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
+chmod +x mkcert-v1.4.4-linux-amd64
+sudo cp mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
 
 echo "Cloning philos"
 git clone https://github.com/inviti8/philos.git

@@ -28,34 +28,22 @@ sudo apt install nginx -y
 echo "Configuring Nginx"
 
 echo "Generate SSL Certs."
-# mkcert localhost
-# sudo mv -f localhost.pem /etc/ssl/localhost.crt
-# sudo mv -f localhost-key.pem /etc/ssl/localhost.key
+mkcert local.philos.com localhost 127.0.0.1 ::1
+sudo mv -f localhost.pem /etc/ssl/localhost.crt
+sudo mv -f localhost-key.pem /etc/ssl/localhost.key
 #openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/localhost.key -out certs/localhost.crt -config ./philos/localhost.cnf -extensions ext
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt -config ./philos/localhost.cnf
+#sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt -config ./philos/localhost.cnf
 
 cat > /etc/nginx/sites-available/default<<  EOF
-
-server{
-    listen 80;
-    server_name localhost;
-    client_max_body_size 200M;
-
-    location / {
-        return 301 https://$host$request_uri;
-     }
-}
 
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    server_name localhost;
+    server_name local.philos.com;
     client_max_body_size 200M;
 
     ssl_certificate /etc/ssl/certs/localhost.crt;
     ssl_certificate_key /etc/ssl/private/localhost.key;
-    
-    ssl_protocols TLSv1.2 TLSv1.1 TLSv1;
 
     location ~ ^/(ipfs|ipns) {
         proxy_pass http://127.0.0.1:8082;
