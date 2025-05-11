@@ -29,8 +29,8 @@ echo "Configuring Nginx"
 
 echo "Generate SSL Certs."
 mkcert local.philos.com localhost 127.0.0.1 ::1
-sudo mv -f localhost.pem /etc/ssl/localhost.crt
-sudo mv -f localhost-key.pem /etc/ssl/localhost.key
+sudo mv -f localhost.pem /etc/ssl/philos.crt
+sudo mv -f localhost-key.pem /etc/ssl/philos.key
 #openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/localhost.key -out certs/localhost.crt -config ./philos/localhost.cnf -extensions ext
 #sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt -config ./philos/localhost.cnf
 
@@ -42,8 +42,8 @@ server {
     server_name local.philos.com;
     client_max_body_size 200M;
 
-    ssl_certificate /etc/ssl/certs/localhost.crt;
-    ssl_certificate_key /etc/ssl/private/localhost.key;
+    ssl_certificate /etc/ssl/certs/philos.crt;
+    ssl_certificate_key /etc/ssl/private/philos.key;
 
     location ~ ^/(ipfs|ipns) {
         proxy_pass http://127.0.0.1:8082;
