@@ -48,7 +48,7 @@
   --alert-dialog-text-color: rgba(252,252,252,1);
   --alert-dialog-button-color: var(--highlight-color);
   --alert-dialog-separator-color: #ddd;
-  --dialog-background-color: rgba(143,231,227,0.94);
+  --dialog-background-color: #0d0d0d;
   --dialog-text-color: #1f1f21;
   --popover-background-color: #242424;
   --popover-text-color: var(--text-color);
@@ -147,6 +147,10 @@
   /* others */
   --tap-highlight-color: transparent;
   --outline-color: hsla(177, 100%, 50%, 0.547);
+}
+
+.page--gradient__background {
+  background: linear-gradient(180deg,rgb(26, 45, 44) 0%, rgba(23, 41, 40, 1) 50%, rgb(18, 32, 31) 100%);
 }
 
 .card--outlined {
