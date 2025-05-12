@@ -226,7 +226,7 @@ document.addEventListener('init', function(event) {
             return;
 
         let _updateElem = function(clone, i, fileList){
-            let fileUrl = 'http://' + window.location.host + '/ipfs/' + fileList[i]['CID'];
+            let fileUrl = 'https://' + window.location.host + '/ipfs/' + fileList[i]['CID'];
             let fileType = fileList[i]['Type'];
             let icon = window.icons.UNKNOWN;
 
