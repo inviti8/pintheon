@@ -65,7 +65,7 @@
   --fab-text-color: rgba(68,68,68,1);
   --fab-background-color: var(--highlight-color);
   --fab-active-background-color: color-mod(var(--fab-background-color) a(70%));
-  --card-background-color: var(--border-color);
+  --card-background-color: rgba(103,162,159,0.61);
   --card-text-color: var(--text-color);
   --toast-background-color: #ccc;
   --toast-text-color: #000;
