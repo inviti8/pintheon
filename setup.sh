@@ -28,6 +28,7 @@ sudo apt install nginx -y
 echo "Configuring Nginx"
 
 echo "Generate SSL Certs."
+mkcert -install
 mkcert local.philos.com localhost 127.0.0.1 ::1
 sudo mv -f local.philos.com+3.pem /etc/ssl/philos.crt
 sudo mv -f local.philos.com+3-key.pem /etc/ssl/philos.key
