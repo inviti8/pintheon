@@ -5,10 +5,10 @@
   /* variables for iOS components */
   --background-color: rgba(40,70,69,1);
   --text-color: rgba(155,252,248,1);
-  --sub-text-color: #999;
+  --sub-text-color: #01FFF4;
   --highlight-color: hsl(177.41,100.00%,50.20%);
   --second-highlight-color: rgba(4,200,191,1);
-  --border-color: rgba(0,2,2,1);
+  --border-color: rgba(157,255,251,1);
   --button-background-color: rgba(2,207,198,1);
   --button-cta-background-color: var(--second-highlight-color);
   --button-light-color: rgba(255,255,255,1);
