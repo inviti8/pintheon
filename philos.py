@@ -288,7 +288,9 @@ def update_logo():
    required = ['token', 'client_pub']
    response = _handle_upload(required, request)
    if response.status_code == 200:
-       PHILOS.logo_url
+       PHILOS.logo_url = 'https//127.0.0.1:9500/ipfs/'+response['CID']
+       PHILOS.update_node_data()
+
    return response
 
 @app.route('/remove_file', methods=['POST'])

@@ -506,6 +506,14 @@ class PhilosMachine(object):
     def on_file_handled(self):
         print('file handled!!')
 
+    def update_node_data(self):
+        print('Update node data...')
+        self._open_db()
+        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'node_contract':self.node_contract, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
+        self._update_table_doc(self.node_data, data)
+        print(self.node_data.all())
+        self.db.close()
+
     def _new_keypair(self):
         priv = ec.generate_private_key(ec.SECP256R1(), default_backend())
         bytes = priv.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
@@ -520,18 +528,11 @@ class PhilosMachine(object):
         self.db.close()
 
     def _update_node_data(self, logo_url, name, descriptor, node_contract):
-        self._open_db()
         self.logo_url = logo_url
         self.node_name = name
         self.node_descriptor = descriptor
         self.node_contract = node_contract
-        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'node_contract':self.node_contract, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
-        
-        self._update_table_doc(self.node_data, data)
-
-        print(self.node_data.all())
-
-        self.db.close()
+        self.update_node_data()
 
     def _initialize_db(self):
         self._open_db()
