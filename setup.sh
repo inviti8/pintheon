@@ -43,8 +43,8 @@ server {
     server_name local.philos.com;
     client_max_body_size 200M;
 
-    ssl_certificate /etc/ssl/certs/philos.crt;
-    ssl_certificate_key /etc/ssl/private/philos.key;
+    ssl_certificate /etc/ssl/philos.crt;
+    ssl_certificate_key /etc/ssl/philos.key;
 
     location ~ ^/(ipfs|ipns) {
         proxy_pass http://127.0.0.1:8082;
