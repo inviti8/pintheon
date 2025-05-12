@@ -3,7 +3,7 @@
 
 :root {
   /* variables for iOS components */
-  --background-color: rgba(40,70,69,1);
+  --background-color: linear-gradient(90deg,rgba(40, 70, 69, 1) 0%, rgba(23, 41, 40, 1) 50%, rgba(0, 0, 0, 1) 100%);
   --text-color: rgba(155,252,248,1);
   --sub-text-color: #01FFF4;
   --highlight-color: hsl(177.41,100.00%,50.20%);
@@ -48,7 +48,7 @@
   --alert-dialog-text-color: rgba(252,252,252,1);
   --alert-dialog-button-color: var(--highlight-color);
   --alert-dialog-separator-color: #ddd;
-  --dialog-background-color: #0d0d0d;
+  --dialog-background-color: rgba(143,231,227,0.94);
   --dialog-text-color: #1f1f21;
   --popover-background-color: #242424;
   --popover-text-color: var(--text-color);
@@ -146,4 +146,15 @@
 
   /* others */
   --tap-highlight-color: transparent;
+  --outline-color: hsla(177, 100%, 50%, 0.547);
+}
+
+.card--outlined {
+  border: 1px solid var(--outline-color);
+  box-shadow: 0 0 2px hsla(177, 100%, 50%, 0.1), 
+                 0 0 4px hsla(177, 100%, 50%, 0.25), 
+                 0 0 6px hsla(177, 100%, 50%, 0.4);   
+}
+.toolbar--outlined {
+  border: 1px solid var(--outline-color);
 }

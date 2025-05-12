@@ -1,7 +1,7 @@
 <template id="authorize.html">
     <ons-page id="authorize">
       <div class="card-container">
-        <ons-card>
+        <ons-card modifier="outlined">
           <ons-list class="card-content" modifier="noborder">
             <ons-list-item modifier="nodivider"></ons-list-item>
             <ons-list-item modifier="nodivider"></ons-list-item>
@@ -38,7 +38,7 @@
             <div class="expanded_article">
               <br />
               <ons-col width="80%">
-                <ons-card class="right">
+                <ons-card class="right" modifier="outlined">
                   <header>
                     <ons-switch id="dashboard-online-switch" disabled class="right"></ons-switch>
                     <span><ons-button onclick="window.updateDashboard()" modifier="quiet"><ons-icon icon="fa-refresh"></ons-button></span>
@@ -68,7 +68,7 @@
             <ons-row>
              </ons-col>
              <ons-col width="100%">
-                <ons-card modifier="default">
+                <ons-card modifier="default outlined">
                   <H3>FILES</H3>
                   <div class="content"><ons-button modifier="large" id="upload-button">UPLOAD</ons-button></div>
                   <div class="content">
