@@ -49,7 +49,7 @@
   --alert-dialog-button-color: var(--highlight-color);
   --alert-dialog-separator-color: #ddd;
   --dialog-background-color: rgba(143, 231, 227, 0.949);
-  --dialog-text-color: #1f1f21;
+  --dialog-text-color: #9696a0;
   --popover-background-color: #242424;
   --popover-text-color: var(--text-color);
   --action-sheet-title-color: #8f8e94;
@@ -159,6 +159,23 @@
   box-shadow: 0 0 2px hsla(177, 100%, 50%, 0.1), 
                  0 0 4px hsla(177, 100%, 50%, 0.25), 
                  0 0 6px hsla(177, 100%, 50%, 0.4);   
+}
+
+.dialog-content--outlined {
+  background-color: var(--background-color);
+  border: 1px solid var(--outline-color);
+  box-shadow: 0 0 2px hsla(177, 100%, 50%, 0.1), 
+                 0 0 4px hsla(177, 100%, 50%, 0.25), 
+                 0 0 6px hsla(177, 100%, 50%, 0.4);   
+}
+
+.card-content--no-color {
+  background: None; 
+  background-color: None; 
+}
+
+.dialog-p {
+  color: var(--text-color);
 }
 .toolbar--outlined {
   border: 1px solid var(--outline-color-faint);

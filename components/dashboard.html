@@ -1,8 +1,8 @@
 <template id="authorize.html">
     <ons-page id="authorize" modifier="gradient">
-      <div class="card-container">
+      <div class="card-container" modifier="outlined">
         <ons-card modifier="outlined">
-          <ons-list class="card-content" modifier="noborder">
+          <ons-list class="card-content" modifier="noborder no-color">
             <ons-list-item modifier="nodivider"></ons-list-item>
             <ons-list-item modifier="nodivider"></ons-list-item>
             <ons-list-item style="text-align: center;" modifier="nodivider">
@@ -92,10 +92,10 @@
   </template>
 
   <template id="upload-logo-file-dialog.html">
-    <ons-dialog id="upload-logo-file-dialog" cancelable>
+    <ons-dialog id="upload-logo-file-dialog" modifier="outlined" cancelable>
       <div style="text-align: center; padding: 10px;">
-        <p>UPDATE LOGO IMAGE</p>
-        <p>Select a file to upload:</p>
+        <p class="dialog-p">UPDATE LOGO IMAGE</p>
+        <p class="dialog-p">Select a file to upload:</p>
         <p>
           <ons-button id="upload-logo-file-dialog-button" class="can-callback">UPLOAD
             <input type="file" id="upload-logo-file-dialog-input" style="display: none;">
@@ -108,8 +108,8 @@
   <template id="upload-file-dialog.html">
     <ons-dialog id="upload-file-dialog" cancelable>
       <div style="text-align: center; padding: 10px;">
-        <p>UPLOAD FILE</p>
-        <p>Select a file to upload:</p>
+        <p class="dialog-p">UPLOAD FILE</p>
+        <p class="dialog-p">Select a file to upload:</p>
         <p>
           <ons-button id="upload-file-dialog-button" class="can-callback">UPLOAD
             <input type="file" id="upload-file-dialog-input" style="display: none;">

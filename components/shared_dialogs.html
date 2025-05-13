@@ -1,8 +1,8 @@
 <template id="loading-dialog.html">
     <ons-dialog id="loading-dialog">
       <div style="text-align: center; padding: 10px;">
-        <p>
-          <span>
+        <p class="dialog-p">
+          <span class="dialog-p">
             <ons-progress-circular style="scale: 0.8; vertical-align: middle;" indeterminate></ons-progress-circular>
             LOADING
           </span>
@@ -17,7 +17,7 @@
   <template id="fail-dialog.html">
     <ons-dialog id="fail-dialog" cancelable>
         <div style="text-align: center; padding: 10px;">
-          <p id="fail-dialog-text">FAILED</p>
+          <p class="dialog-p" id="fail-dialog-text">FAILED</p>
           <p>
             <ons-button id="fail-dialog-button" onclick="window.dlg.hide('fail-dialog')">  OK  </ons-button>
           </p>
@@ -28,7 +28,7 @@
   <template id="new-password-dialog.html">
     <ons-dialog id="new-password-dialog" cancelable>
         <div style="text-align: center; padding: 10px;">
-          <p id="new-password-dialog-text">ENTER YOUR PASSWORD</p>
+          <p class="dialog-p" id="new-password-dialog-text">ENTER YOUR PASSWORD</p>
           <p>
             <ons-input id="new-password-dialog-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
           </p>
@@ -45,7 +45,7 @@
   <template id="load-encrypted-file-dialog.html">
     <ons-dialog id="load-encrypted-file-dialog" cancelable>
         <div style="text-align: center; padding: 10px;">
-          <p id="load-encrypted-file-dialog-text">ENTER YOUR PASSWORD</p>
+          <p class="dialog-p" id="load-encrypted-file-dialog-text">ENTER YOUR PASSWORD</p>
           <p>
             <ons-input id="load-encrypted-file-dialog-pw-input" class="card-content pw-input" modifier="underbar" type="password" placeholder="PASSWORD" float></ons-input>
           </p>
@@ -61,7 +61,7 @@
   <template id="load-file-dialog.html">
     <ons-dialog id="load-file-dialog" cancelable>
         <div style="text-align: center; padding: 10px;">
-          <p id="load-file-dialog-text">LOAD KEYSTORE</p>
+          <p class="dialog-p" id="load-file-dialog-text">LOAD KEYSTORE</p>
           <p>
             <ons-button id="load-file-dialog-button" class="can-callback">  LOAD  
               <input type="file" id="load-file-dialog-input" class="file-input" name="load-file-dialog-upload" style="display: none;">
