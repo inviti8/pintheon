@@ -37,6 +37,16 @@ sudo mv -f local.philos.com+3-key.pem /etc/ssl/philos.key
 
 cat > /etc/nginx/sites-available/default<<  EOF
 
+server{
+    listen 80;
+    server_name local.philos.com;
+    client_max_body_size 200M;
+
+    location / {
+        return 301 https://\$host\$request_uri;
+     }
+}
+
 server {
     listen 443 ssl;
     listen [::]:443 ssl;

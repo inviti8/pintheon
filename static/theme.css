@@ -44,11 +44,11 @@
   --range-thumb-background-color: #fff;
   --modal-background-color: color-mod(black a(70%));
   --modal-text-color: #fff;
-  --alert-dialog-background-color: rgba(131,113,90,0.47);
+  --alert-dialog-background-color: rgba(131, 113, 90, 0.751);
   --alert-dialog-text-color: rgba(252,252,252,1);
   --alert-dialog-button-color: var(--highlight-color);
   --alert-dialog-separator-color: #ddd;
-  --dialog-background-color: rgba(143,231,227,0.94);
+  --dialog-background-color: rgba(143, 231, 227, 0.949);
   --dialog-text-color: #1f1f21;
   --popover-background-color: #242424;
   --popover-text-color: var(--text-color);
