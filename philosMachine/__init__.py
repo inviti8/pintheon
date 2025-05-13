@@ -513,6 +513,7 @@ class PhilosMachine(object):
         self._update_table_doc(self.node_data, data)
         print(self.node_data.all())
         self.db.close()
+        return data
 
     def _new_keypair(self):
         priv = ec.generate_private_key(ec.SECP256R1(), default_backend())

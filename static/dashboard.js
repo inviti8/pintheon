@@ -134,6 +134,10 @@ const logged_out = () => {
 };
 
 const upload_file_dlg = async (callback) => {
+    window.dlg.showLoadFileDlg('upload-file-dialog', callback, false, [], 'FILE');
+};
+
+const upload_logo_dlg = async (callback) => {
     window.dlg.showLoadFileDlg('upload-logo-file-dialog', callback, false, [], 'FILE');
 };
 
@@ -147,16 +151,15 @@ const update_logo = async (file) => {
         formData.append('token', session.token.serialize());
         formData.append('client_pub', session.pub);
         formData.append('file', file);
-        await window.fn.uploadFile(file, formData, '/upload', logo_updated);
+        await window.fn.uploadFile(file, formData, '/update_logo', logo_updated);
     };
 };
 
-const logo_updated = (fileList) => {
+const logo_updated = (node_data) => {
 
-    console.log(fileList)
-    _updateDashData({ 'file_list': fileList });
+    console.log(node_data)
+    _updateDashData(node_data);
     window.rndr.dashboard();
-    //window.rndr.fileListItems(fileList)
 
 };
 
@@ -165,18 +168,6 @@ const upload_file = async (file) => {
     const session = _getSessionData();
 
     if(file){
-        // const CHUNK_SIZE = 40000;
-
-        // for (let start = 0; start < file.size; start += CHUNK_SIZE) {
-        //     const chunk = file.slice(start, start + CHUNK_SIZE);
-        //     const formData = new FormData();
-
-        //     formData.append('token', session.token.serialize());
-        //     formData.append('client_pub', session.pub);
-        //     formData.append('file', file);
-        //     await window.fn.uploadFile(file, formData, '/upload', file_uploaded);
-
-        // }
         const formData = new FormData()
 
         formData.append('token', session.token.serialize());
@@ -304,7 +295,7 @@ document.addEventListener('init', function(event) {
         };
 
         document.querySelector('#update-logo-button').onclick = function () {
-            upload_file_dlg(update_logo);
+            upload_logo_dlg(update_logo);
         };
 
         document.querySelector('#upload-button').onclick = function () {

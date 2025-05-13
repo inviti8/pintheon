@@ -289,9 +289,9 @@ def update_logo():
    response = _handle_upload(required, request)
    if response.status_code == 200:
        PHILOS.logo_url = 'https//127.0.0.1:9500/ipfs/'+response['CID']
-       PHILOS.update_node_data()
+       data = PHILOS.update_node_data()
 
-   return response
+   return data
 
 @app.route('/remove_file', methods=['POST'])
 @cross_origin()
