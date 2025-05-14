@@ -86,8 +86,8 @@ source ~/.profile
 # echo "systemctl daemon reloaded."
 
 # sudo systemctl enable ipfs
-service ipfs on
-echo "service ipfs on"
+# service ipfs on
+# echo "service ipfs on"
 
-service ipfs start
-echo "service ipfs start"
+# service ipfs start
+# echo "service ipfs start"

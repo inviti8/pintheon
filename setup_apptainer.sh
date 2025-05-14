@@ -1,28 +1,28 @@
 #!/bin/sh
-echo "Creating gunicorn service"
-cat > /etc/systemd/system/gunicorn.service <<  EOF
-[Unit]
-Description=Gunicorn Service
-After=network.target
+# echo "Creating gunicorn service"
+# cat > /etc/systemd/system/gunicorn.service <<  EOF
+# [Unit]
+# Description=Gunicorn Service
+# After=network.target
 
-[Service]
-User=test
-Group=www-data
-WorkingDirectory=/home/test/philos
-Environment="PATH=/home/test/philos/bin"
-ExecStart=/home/test/philos/philos/bin/gunicorn --workers 1 --limit-request-line 0 --bind unix:philos.sock -m 007 wsgi:app
-Restart=always
+# [Service]
+# User=test
+# Group=www-data
+# WorkingDirectory=/home/test/philos
+# Environment="PATH=/home/test/philos/bin"
+# ExecStart=/home/test/philos/philos/bin/gunicorn --workers 1 --limit-request-line 0 --bind unix:philos.sock -m 007 wsgi:app
+# Restart=always
 
-[Install]
-WantedBy=multi-user.target
-EOF
+# [Install]
+# WantedBy=multi-user.target
+# EOF
 
-echo "Starting Gunicorn Service..."
-# systemctl daemon-reload
-# systemctl enable gunicorn.service
-chkconfig gunicorn on
-# systemctl start gunicorn.service
-service gunicorn start
+# echo "Starting Gunicorn Service..."
+# # systemctl daemon-reload
+# # systemctl enable gunicorn.service
+# chkconfig gunicorn on
+# # systemctl start gunicorn.service
+# service gunicorn start
 
 
 echo "Installing nginx:"
@@ -82,9 +82,9 @@ server {
 EOF
 
 echo "Owning the directory"
-chown -R test /home/
+chown -R root /home/
 echo "Owning the directory"
-chown -R test:www-data /home/test/philos/
+chown -R root:www-data /home/test/philos/
 echo "set ownership to nginx for staic files"
 chmod -R 755 /home/test/philos/static
 echo "Restarting Nginx"
