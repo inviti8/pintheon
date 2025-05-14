@@ -8,6 +8,8 @@ apt install python3-pip -y
 apt install python3.12-venv -y
 apt-get install libudev-dev
 apt install libnss3-tools
+apt install curl
+apt install git
 
 apt-get install gcc -y
 source ~/.profile
@@ -29,9 +31,9 @@ pip install -r /home/test/philos/requirements.txt
 echo "Deactivate the environment"
 deactivate
 usermod -a -G test www-data
-chmod +x philos/setup.sh
+chmod +x philos/setup_apptainer.sh
 ./philos/setup_apptainer.sh
-chmod +x philos/install_kubo.sh
+chmod +x philos/install_kubo_apptainer.sh
 ./philos/install_kubo_apptainer.sh
 export EDITOR=$(which vim)
 ufw reset -y
