@@ -79,7 +79,7 @@ ipfs config Gateway.PublicGateways --json '{"localhost": null }'
 
 # echo "ipfs sevice created."
 
-sudo chown -R test $IPFS_PATH
+sudo chown -R root $IPFS_PATH
 source ~/.profile
 
 # sudo systemctl daemon-reload
