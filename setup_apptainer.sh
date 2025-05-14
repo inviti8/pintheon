@@ -8,9 +8,9 @@
 # [Service]
 # User=test
 # Group=www-data
-# WorkingDirectory=/home/test/philos
-# Environment="PATH=/home/test/philos/bin"
-# ExecStart=/home/test/philos/philos/bin/gunicorn --workers 1 --limit-request-line 0 --bind unix:philos.sock -m 007 wsgi:app
+# WorkingDirectory=/philos
+# Environment="PATH=/philos/bin"
+# ExecStart=/philos/philos/bin/gunicorn --workers 1 --limit-request-line 0 --bind unix:philos.sock -m 007 wsgi:app
 # Restart=always
 
 # [Install]
@@ -82,11 +82,11 @@ server {
 EOF
 
 echo "Owning the directory"
-chown -R root /home/
+chown -R root /root/
 echo "Owning the directory"
-chown -R root:www-data /home/test/philos/
+chown -R root:www-data /root/philos/
 echo "set ownership to nginx for staic files"
-chmod -R 755 /home/test/philos/static
+chmod -R 755 /root/philos/static
 echo "Restarting Nginx"
 # systemctl restart nginx
 service nginx restart

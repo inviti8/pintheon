@@ -1,4 +1,5 @@
 #!/bin/bash
+cd ~
 echo "Installing requirements"
 # cd /home/test
 apt update -y
