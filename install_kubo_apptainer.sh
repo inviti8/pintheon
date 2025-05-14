@@ -11,7 +11,7 @@ export SWARM_KEY=$(tr -dc a-f0-9 </dev/urandom | head -c 64; echo '')
 echo "Created secret: $SWARM_KEY"
 
 export LIBP2P_FORCE_PNET=1
-echo 'export IPFS_PATH=/home/test/.ipfs' >>~/.profile
+echo 'export IPFS_PATH=/.ipfs' >>~/.profile
 source ~/.profile
 
 echo "IPFS_PATH:"
@@ -61,23 +61,23 @@ echo 'ipfs config Gateway.PublicGateways '
 ipfs config Gateway.PublicGateways --json '{"localhost": null }'
 
 #SETUP IPFS AS SERVICE
-echo "Creating Kubo service"
-cat > /etc/systemd/system/ipfs.service <<  EOF
-[Unit]
-Description=Kubo Service
-After=syslog.target network.target remote-fs.target nss-lookup.target
+# echo "Creating Kubo service"
+# cat > /etc/systemd/system/ipfs.service <<  EOF
+# [Unit]
+# Description=Kubo Service
+# After=syslog.target network.target remote-fs.target nss-lookup.target
 
-[Service]
-User=test
-WorkingDirectory=$IPFS_PATH
-ExecStart=/usr/local/bin/ipfs daemon
-Restart=always
+# [Service]
+# User=test
+# WorkingDirectory=$IPFS_PATH
+# ExecStart=/usr/local/bin/ipfs daemon
+# Restart=always
 
-[Install]
-WantedBy=multi-user.target
-EOF
+# [Install]
+# WantedBy=multi-user.target
+# EOF
 
-echo "ipfs sevice created."
+# echo "ipfs sevice created."
 
 sudo chown -R test $IPFS_PATH
 source ~/.profile

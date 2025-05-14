@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Installing requirements"
-cd /home/test
+# cd /home/test
 apt update -y
 apt upgrade -y
 apt install build-essential python3-dev python3.12-venv -y
@@ -30,7 +30,7 @@ source ~/.profile
 echo "Activating Env"
 source philos/philos/bin/activate
 echo "Installing requirements:"
-pip install -r /home/test/philos/requirements.txt
+pip install -r /philos/requirements.txt
 echo "Deactivate the environment"
 deactivate
 usermod -a -G root www-data
@@ -38,7 +38,6 @@ chmod +x philos/setup_apptainer.sh
 ./philos/setup_apptainer.sh
 chmod +x philos/install_kubo_apptainer.sh
 ./philos/install_kubo_apptainer.sh
-export EDITOR=$(which vim)
 # ufw reset
 # ufw default allow outgoing
 # ufw default allow incoming
