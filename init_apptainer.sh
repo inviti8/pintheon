@@ -1,5 +1,6 @@
 #!/bin/bash
 echo "Installing requirements"
+cd /home/test
 apt update -y
 apt upgrade -y
 apt install build-essential python3-dev python3.12-venv -y
@@ -20,6 +21,10 @@ cp mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
 
 echo "Cloning philos"
 git clone https://github.com/inviti8/philos.git
+echo "------------------------------------"
+echo "$PWD"
+echo "$(ls)"
+echo "------------------------------------"
 echo "Creating Env"
 python3 -m venv philos/philos
 echo "refresh the shell"
