@@ -9,11 +9,6 @@ apt install python3-pip -y
 apt install python3.12-venv -y
 apt-get install libudev-dev
 apt install libnss3-tools
-apt install curl
-echo "------------------------------------"
-echo "apt install git"
-apt install git
-echo "------------------------------------"
 
 apt-get install gcc -y
 source ~/.profile
@@ -44,13 +39,13 @@ chmod +x philos/setup_apptainer.sh
 chmod +x philos/install_kubo_apptainer.sh
 ./philos/install_kubo_apptainer.sh
 export EDITOR=$(which vim)
-ufw reset -y
-ufw default allow outgoing
-ufw default allow incoming
-ufw allow 8080/tcp
-ufw allow 8082/tcp
-ufw allow 4001/tcp #IPFS inter-node communication
-ufw allow 80/tcp #HTTP port for NGINX
-ufw allow 443/tcp #HTTPS port for NGINX with SSL
-ufw enable
+# ufw reset
+# ufw default allow outgoing
+# ufw default allow incoming
+# ufw allow 8080/tcp
+# ufw allow 8082/tcp
+# ufw allow 4001/tcp #IPFS inter-node communication
+# ufw allow 80/tcp #HTTP port for NGINX
+# ufw allow 443/tcp #HTTPS port for NGINX with SSL
+# ufw enable
 
