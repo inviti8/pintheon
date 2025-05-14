@@ -10,7 +10,10 @@ apt install python3.12-venv -y
 apt-get install libudev-dev
 apt install libnss3-tools
 apt install curl
+echo "------------------------------------"
+echo "apt install git"
 apt install git
+echo "------------------------------------"
 
 apt-get install gcc -y
 source ~/.profile
