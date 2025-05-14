@@ -18,9 +18,11 @@ WantedBy=multi-user.target
 EOF
 
 echo "Starting Gunicorn Service..."
-systemctl daemon-reload
-systemctl enable gunicorn.service
-systemctl start gunicorn.service
+# systemctl daemon-reload
+# systemctl enable gunicorn.service
+chkconfig gunicorn on
+# systemctl start gunicorn.service
+service gunicorn start
 
 
 echo "Installing nginx:"
@@ -86,4 +88,5 @@ chown -R test:www-data /home/test/philos/
 echo "set ownership to nginx for staic files"
 chmod -R 755 /home/test/philos/static
 echo "Restarting Nginx"
-systemctl restart nginx
+# systemctl restart nginx
+service nginx restart

@@ -82,11 +82,12 @@ echo "ipfs sevice created."
 sudo chown -R test $IPFS_PATH
 source ~/.profile
 
-sudo systemctl daemon-reload
-echo "systemctl daemon reloaded."
+# sudo systemctl daemon-reload
+# echo "systemctl daemon reloaded."
 
-sudo systemctl enable ipfs
-echo "systemctl enbled ipfs"
+# sudo systemctl enable ipfs
+service ipfs on
+echo "service ipfs on"
 
-sudo systemctl start ipfs
-echo "systemctl started ipfs"
+service ipfs start
+echo "service ipfs start"
