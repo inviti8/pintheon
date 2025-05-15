@@ -173,17 +173,31 @@ const upload_file = async (file) => {
         formData.append('token', session.token.serialize());
         formData.append('client_pub', session.pub);
         formData.append('file', file);
-        await window.fn.uploadFile(file, formData, '/upload', file_uploaded);
+        await window.fn.uploadFile(file, formData, '/upload', file_updated);
     };
 };
 
-const file_uploaded = (fileList) => {
+const file_updated = (fileList) => {
 
     console.log(fileList)
     _updateDashData({ 'file_list': fileList });
     window.rndr.dashboard();
     //window.rndr.fileListItems(fileList)
 
+};
+
+const remove_file = async (cid) => {
+
+    const session = _getSessionData();
+
+    if(cid){
+        const formData = new FormData()
+
+        formData.append('token', session.token.serialize());
+        formData.append('client_pub', session.pub);
+        formData.append('cid', cid);
+        await window.fn.removeFile( formData, '/remove_file', file_updated);
+    };
 };
 
 
@@ -251,9 +265,9 @@ document.addEventListener('init', function(event) {
             clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('.truncate').textContent = fileList[i]['Name'];
             clone.querySelector('.file-size').textContent = fileList[i]['Size'];
-            clone.querySelector('.file_url').href = fileUrl.toString();
+            clone.querySelector('.file_url').href = fileUrl;
             clone.querySelector('.file_url').textContent = fileList[i]['CID'];
-            clone.querySelector('#file-remove').setAttribute('onclick', 'fn.removeFile("' + fileList[i]['CID'] + '")');
+            clone.querySelector('#file-remove').setAttribute('onclick', 'remove_file("' + fileList[i]['CID'] + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
         }
 

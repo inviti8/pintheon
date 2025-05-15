@@ -225,7 +225,49 @@ document.addEventListener('init', function(event) {
         reader.readAsArrayBuffer(file);
     }
 
+    window.fn.removeFile = async (formData, endpoint, callback, method='POST') => {
+        ons.notification.confirm('Are you sure you want to delete this file?')
+        .then(function(yes) {
+            if(yes){
+                window.dlg.show('loading-dialog');
+                fetch(endpoint, {
+                    method: method,
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        window.dlg.hide('loading-dialog');
+                        window.dlg.show('fail-dialog');
+                        throw new Error('File upload failed');
+                    }
+                })
+                .then(data => {
+                    console.log('Server response:', data);
+                    window.dlg.hide('loading-dialog');
+                    callback(data);
+                })
+                .catch(error => {
+                    window.dlg.hide('loading-dialog');
+                    console.error('Error removing file:', error);
+                });
+
+            };
+
+        })
+    };
+    
+
     //utils
+    window.fn.copyToClipboard = function(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            ons.notification.toast('Copied to clipboard!', { timeout: 2000 });
+        }).catch(function(error) {
+            console.error("Could not copy text: ", error);
+        });
+    };
+
     window.fn.download = function(content, mimeType, filename){
         const a = document.createElement('a') // Create "a" element
         const blob = new Blob([content], {type: mimeType}) // Create a blob (file-like object)
