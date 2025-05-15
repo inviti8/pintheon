@@ -31,7 +31,7 @@ source ~/.profile
 echo "Activating Env"
 source philos/philos/bin/activate
 echo "Installing requirements:"
-pip install -r /philos/requirements.txt
+pip install -r /root/philos/requirements.txt
 echo "Deactivate the environment"
 deactivate
 usermod -a -G root www-data
