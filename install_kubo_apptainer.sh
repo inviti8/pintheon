@@ -20,10 +20,12 @@ echo "$IPFS_PATH"
 
 ver="v0.31.0" 
 echo 'wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz'
-wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz
+# wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz
+wget https://dist.ipfs.tech/kubo/v0.34.1/kubo_v0.34.1_linux-amd64.tar.gz
 
 echo 'tar -xvzf kubo_v0.31.0_linux-amd64.tar.gz'
-tar -xvzf kubo_v0.31.0_linux-amd64.tar.gz
+# tar -xvzf kubo_v0.31.0_linux-amd64.tar.gz
+tar -xvzf kubo_v0.34.1_linux-amd64.tar.gz
 
 echo './kubo/install.sh'
 ./kubo/install.sh
@@ -41,7 +43,7 @@ $SWARM_KEY" > $IPFS_PATH/swarm.key
 chmod 600 $IPFS_PATH/swarm.key
 echo "swarm key created!!"
 
-chown -R test $IPFS_PATH
+chown -R root $IPFS_PATH
 
 echo 'ipfs init --profile=server'
 ipfs init --profile=server
