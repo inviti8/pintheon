@@ -71,12 +71,12 @@ server {
         add_header Access-Control-Allow-Methods *;
 
         include proxy_params;
-        proxy_pass http://unix:/home/test/philos/philos.sock;
+        proxy_pass http://unix:/home/philos/philos.sock;
     }
 
     location /static  {
         include  /etc/nginx/mime.types;
-        root /home/test/philos/;
+        root /home/philos/;
     }
 }
 EOF
