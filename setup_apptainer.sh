@@ -82,11 +82,11 @@ server {
 EOF
 
 echo "Owning the directory"
-chown -R root /root/
+chown -R root /home/
 echo "Owning the directory"
-chown -R root:www-data /root/philos/
+chown -R root:www-data /home/philos/
 echo "set ownership to nginx for staic files"
-chmod -R 755 /root/philos/static
+chmod -R 755 /home/philos/static
 echo "Restarting Nginx"
 # systemctl restart nginx
 service nginx restart
