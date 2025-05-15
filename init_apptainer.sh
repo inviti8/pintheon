@@ -2,6 +2,8 @@
 cd /home
 echo "Installing requirements"
 # cd /home/test
+echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf > /dev/null
+sudo apt-get install apt-utils
 apt update -y
 apt upgrade -y
 apt install build-essential python3-dev python3.12-venv -y
@@ -12,6 +14,7 @@ apt-get install libudev-dev
 apt install libnss3-tools
 
 apt-get install gcc -y
+
 source ~/.profile
 
 curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
