@@ -89,4 +89,4 @@ echo "set ownership to nginx for staic files"
 chmod -R 755 /home/philos/static
 echo "Restarting Nginx"
 # systemctl restart nginx
-service nginx restart
+# service nginx restart
