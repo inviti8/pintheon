@@ -180,3 +180,8 @@
 .toolbar--outlined {
   border: 1px solid var(--outline-color-faint);
 }
+
+.list-item__thumbnail--file-thumb{
+  width: 300px;
+  height: 300px;
+}
