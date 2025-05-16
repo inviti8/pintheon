@@ -116,11 +116,16 @@ def home():
    print(m.serialize())
    print(PHILOS.state)
    print('-----------------------------------')
+
+       
+   PHILOS.logo_url = url_for('static', filename='hvym_logo.png')
+   PHILOS.stellar_logo_url = url_for('static', filename='stellar_logo.png')
+   PHILOS.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
+
    pub = PHILOS.session_pub
    if not PHILOS.logged_in:
        pub = PHILOS.new_session()
-       
-   PHILOS.logo_url = url_for('static', filename='hvym_logo.png')
+
    template = PHILOS.view_template
    components=_load_components(PHILOS.view_components)
    page = PHILOS.active_page
@@ -132,6 +137,16 @@ def home():
    
    session_data = { 'pub': pub, 'generator_pub': PHILOS.node_pub, 'time': PHILOS.session_ends, 'nonce': PHILOS.session_nonce }
    return render_template(template, page=page, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
+
+@app.route('/top_up_stellar')
+def top_up_stellar():
+   PHILOS.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
+   template = 'index_top_up.html'
+   page = 'top_up'
+   js=_load_js('top_up')
+   qr=PHILOS.stellar_wallet_qr
+
+   return render_template(template, page=page, js=js, qr=qr)
 
 @app.route('/end_session', methods=['POST'])
 @cross_origin()

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="{{ url_for('static', filename='onsenui.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='onsen-css-components.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <script src="{{ url_for('static', filename='onsenui.min.js') }}"></script>
+</head>
+<body>
+  <ons-navigator swipeable id="Nav" page="{{page}}.html"></ons-navigator>
+  <template id="top_up.html">
+    <ons-page id="top_up" modifier="gradient">
+      <div class="card-container">
+        <ons-card style="background: url('{{qr}}') no-repeat center / cover; " modifier="outlined">
+        </ons-card>
+      </div>
+    </ons-page>
+  </template>
+  <script src="{{js}}"></script>
+
+</body>
+</html>

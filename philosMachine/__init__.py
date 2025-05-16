@@ -43,8 +43,8 @@ import requests
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
-STELLAR_BG_RGB = (0, 0, 0)
-STELLAR_FG_RGB = (21, 21, 21)
+STELLAR_BG_RGB = (135, 133, 83)
+STELLAR_FG_RGB = (0, 0, 0)
 
 COLLECTIVE_TESTNET = 'CDHXRJOXX3MTMQX5245YR75DJNY4RBNRXEDXIWVVEUGSSE7HUHMZEQOR'
 OPUS_TESTNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
@@ -115,6 +115,8 @@ class PhilosMachine(object):
         self.stellar_keypair = None
         self.hvym_collective = Collective(self.COLLECTIVE_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.opus = Opus(self.OPUS_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
+        self.stellar_logo_img = None
+        self.stellar_wallet_qr = None
         
          #-------PRIVATE VARS--------
         self._generator_token = None
@@ -275,6 +277,7 @@ class PhilosMachine(object):
         self.session_started = datetime.datetime.now()
         self.session_ends = self.session_started + timedelta(hours=self.session_hours)
         self.session_nonce = str(uuid.uuid4())
+
         return self.session_pub
     
     def end_session(self):
@@ -390,7 +393,7 @@ class PhilosMachine(object):
          tx = token.symbol(self.stellar_keypair.public_key.public_key)
          return tx.result()
     
-    def _custom_qr_code(data, cntrImg, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
+    def _custom_qr_code(self, data, cntrImg, out_url, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -403,12 +406,16 @@ class PhilosMachine(object):
             module_drawer=RoundedModuleDrawer(),
             color_mask=SolidFillColorMask(back_color=back_color, front_color=front_color),
             embeded_image_path=cntrImg)
-        qr = None
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=True) as f:
-            img.save(f, format='PNG') 
-            qr = f
-
-        return qr
+        # Ensure directory exists before saving the image
+        if not os.path.exists(os.path.dirname(out_url)):
+            try:
+                os.makedirs(os.path.dirname(out_url))
+            except OSError as exc:  # Guard against race condition
+                raise
+        
+        img.save(out_url)
+        
+        return out_url
     
     def _create_shared_secret(self, b64_pub, server_priv):
         pem_string = self.pem_format(b64_pub)
@@ -476,6 +483,7 @@ class PhilosMachine(object):
         self._update_state_data()
         self.active_page = 'establish'
         self.logged_in = True
+        self._custom_qr_code(self.stellar_keypair.public_key, './static/stellar_logo.png', './static/stellar_wallet_qr.png', STELLAR_BG_RGB, STELLAR_FG_RGB )
         return True
     
     @property
