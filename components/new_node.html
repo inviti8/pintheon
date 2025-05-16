@@ -9,17 +9,17 @@
             </div>
             <div class="content">
               <p>
-                <ons-button id="generate-seed" modifier="outline"><ons-icon icon="sync"></ons-icon></ons-button>
+                <ons-button id="generate-seed" modifier="outline" ripple><ons-icon icon="sync" ripple></ons-icon></ons-button>
               </p>
               <p>
-                <textarea id="seed-text" modifier="large" class="textarea card-content" rows="4" placeholder="SEED"></textarea>
+                <textarea id="seed-text" modifier="large" class="textarea card-content" rows="4" placeholder="SEED" ripple></textarea>
               </p>
               <p>
-                <ons-input id="launch-key" class="card-content" modifier="underbar" type="password" placeholder="LAUNCH KEY" float></ons-input>
+                <ons-input id="launch-key" class="card-content" modifier="underbar" type="password" placeholder="LAUNCH KEY" float ripple></ons-input>
               </p>
               <div style="text-align: center;">
-              <ons-button id="establish-button" modifier="large outline" onclick="">ESTABLISH</ons-button>
-              <ons-button id="debug-button" style="margin: 20px;" onclick="window.fn.pushPage('establish')" >DEBUG</ons-button>
+              <ons-button id="establish-button" modifier="large outline" onclick="" ripple>ESTABLISH</ons-button>
+              <ons-button id="debug-button" style="margin: 20px;" onclick="window.fn.pushPage('establish')"  ripple>DEBUG</ons-button>
               </div>
             </div>
           </div>
@@ -64,7 +64,7 @@
             <textarea  id="node-meta-data" modifier="large" class="textarea card-content" rows="4" placeholder="META-DATA"></textarea>
           </p>
           <p>
-            <ons-button id="btn-key-store-file" modifier="large"></ons-icon>SAVE KEYSTORE <ons-icon icon="download"></ons-icon>
+            <ons-button id="btn-key-store-file" modifier="large" ripple></ons-icon>SAVE KEYSTORE <ons-icon icon="download"></ons-icon>
               <input style="display: none" name="Select File" type="file" id="key-store-file" webkitdirectory>
             </ons-button>
           </p>
