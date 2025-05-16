@@ -297,7 +297,7 @@ def upload():
    required = ['token', 'client_pub']
    return _handle_upload(required, request)
 
-@app.route('/upate_logo', methods=['POST'])
+@app.route('/update_logo', methods=['POST'])
 @cross_origin()
 def update_logo():
    required = ['token', 'client_pub']
