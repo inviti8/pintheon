@@ -70,7 +70,7 @@ def _handle_upload(required, request):
             return ipfs_response
 
 
-##ERROR HEANDLING##
+##ERROR HANDLING##
 class Forbidden(HTTPException):
     code = 403
     description = 'You do not have the permission to perform this action'
@@ -374,11 +374,6 @@ def dashboard_data():
         else:
             return ipfs_response
         
-@app.route('/data', methods=['POST'])
-def create_data():
-   data = request.get_json()
-   # Here you would normally save the data to a database
-   return jsonify(message='Data received', data=data), 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
