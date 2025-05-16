@@ -162,37 +162,31 @@
   
 
   <template id="file-list-items-template">
-    <ons-list-item>
-      <ons-list>
-        <ons-list-item>
-            <div class="fab-container left">
-              <img id="file-list-item-icon" class="list-item__thumbnail" src="">
+    <ons-list-item expandable ripple>
+      <div class="fab-container left">
+        <img id="file-list-item-icon" class="list-item__thumbnail" src="">
+      </div>
+      <div class="center">
+        <span id="file-list-item-name" class="list-item__title"><p class="truncate"></p></span>
+      </div>
+      <div class="expandable-content">
+        <ons-list modifier="default">
+          <ons-list-item> Size: <span class="file-size"></span></ons-list-item>
+          <ons-list-item>
+            <div class="left identifier">
+              <span>File Hash: <a class="file_url" href=""></a></span>
             </div>
-            <div class="center">
-              <span id="file-list-item-name" class="list-item__title"><p class="truncate"></p></span>
+            <div class="right">
+              <ons-button modifier="quiet" onclick="" id="file-remove">
+                <ons-icon icon="fa-remove"></ons-icon>
+              </ons-button>
+              <ons-button modifier="quiet" onclick="" id="copy-file-url">
+                <ons-icon icon="fa-link"></ons-icon>
+              </ons-button>
             </div>
-        </ons-list-item>
-      <ons-list-item expandable ripple>
-        <div class="expandable-content">
-          <ons-list modifier="default">
-            <ons-list-item> Size: <span class="file-size"></span></ons-list-item>
-            <ons-list-item>
-              <div class="left identifier">
-                <span>File Hash: <a class="file_url" href=""></a></span>
-              </div>
-              <div class="right">
-                <ons-button modifier="quiet" onclick="" id="file-remove">
-                  <ons-icon icon="fa-remove"></ons-icon>
-                </ons-button>
-                <ons-button modifier="quiet" onclick="" id="copy-file-url">
-                  <ons-icon icon="fa-link"></ons-icon>
-                </ons-button>
-              </div>
-            </ons-list-item>
-          </ons-list>
-        </div>
-      </ons-list-item>
-      </ons-list>
+          </ons-list-item>
+        </ons-list>
+      </div>
     </ons-list-item>
   </template>
   
