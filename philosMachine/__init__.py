@@ -675,8 +675,43 @@ class PhilosMachine(object):
                 return response
         else:
                 return jsonify({'error': 'stats not available.'}), 400
+        
+    def file_exists(self, file_name):
+        result = False
+        self._open_db()
+        file = Query()
+        record = self.file_book.get(file.Name == file_name)
+        if record != None:
+             result = True
+        self.db.close()
 
-    def add_file_to_ipfs(self, file_name, file_type, file_data):
+        return result
+        
+    def update_file_as_logo(self, file_name):
+        self._open_db()
+        file = Query()
+        record = self.file_book.get(file.Name == file_name)
+
+        if record != None and record['IsLogo'] == False:
+             self.file_book.update({'IsLogo': True})
+             self.file_book.update({'IsLogo': True}, file.Name == file_name)
+                
+
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
+         
+        
+    def all_file_info(self):
+        self._open_db()
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
+         
+
+    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False):
         url = f'{self.ipfs_endpoint}/add'
 
         files = {
@@ -717,10 +752,12 @@ class PhilosMachine(object):
                 file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
                 self._open_db()
                 file = Query()
-                record = self.file_book.get(file.CID == cid)
-                if record == None:
-                    self.file_book.insert(file_info)
-                    
+
+                if is_logo:
+                     self.file_book.update({'IsLogo': False})
+                
+                self.file_book.insert(file_info)
+
                 all_file_info = self.file_book.all()
                 self.db.close()
 

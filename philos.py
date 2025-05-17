@@ -45,7 +45,7 @@ def _payload_valid(fields, data):
 
    return result
 
-def _handle_upload(required, request):
+def _handle_upload(required, request, is_logo=False):
     if 'file' not in request.files:
         return "No file uploaded", 400
      
@@ -62,7 +62,7 @@ def _handle_upload(required, request):
         raise Unauthorized()  # Unauthorized
     else:
         file_data = file.read()
-        ipfs_response = PHILOS.add_file_to_ipfs(file.filename, file.mimetype, file_data)
+        ipfs_response = PHILOS.add_file_to_ipfs(file.filename, file.mimetype, file_data, is_logo)
 
         if ipfs_response == None:
                 return jsonify({'error': 'File not added'}), 400
@@ -302,16 +302,24 @@ def upload():
 def update_logo():
    required = ['token', 'client_pub']
    file = request.files['file']
+   file_list = PHILOS.all_file_info()
    cid = None
-   response = _handle_upload(required, request)
-   if response != None:
-       for dat in response:
-           if dat['Name'] == file.fileName and dat['Type'] == file.mimetype:
-               cid = dat['CID']
-               PHILOS.logo_url = 'https//127.0.0.1:9500/ipfs/'+cid
-               PHILOS.update_node_data()
+   
 
-   return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'file_list': response}), 200
+   if PHILOS.file_exists(file.filename):
+       file_list = PHILOS.update_file_as_logo(file.filename)
+   else:
+     files= _handle_upload(required, request)
+     if files != None:
+          file_list = files
+          for dat in files:
+               if dat['Name'] == file.fileName and dat['Type'] == file.mimetype:
+                    cid = dat['CID']
+                    PHILOS.logo_url = 'https//127.0.0.1:9500/ipfs/'+cid
+                    PHILOS.update_node_data()
+                    break
+
+   return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'file_list': file_list}), 200
 
 @app.route('/remove_file', methods=['POST'])
 @cross_origin()
