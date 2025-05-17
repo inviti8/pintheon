@@ -142,20 +142,20 @@ const upload_logo_dlg = async (callback) => {
 };
 
 const update_logo = async (file) => {
-    if( !file['type'].split('/')[0] === 'image')
+    if( !(file['type'].split('/')[0] === 'image') ){
         ons.notification.alert('File must be an image');
-        return
+    }else{
+        const session = _getSessionData();
 
-    const session = _getSessionData();
+        if(file){
+            const formData = new FormData()
 
-    if(file){
-        const formData = new FormData()
-
-        formData.append('token', session.token.serialize());
-        formData.append('client_pub', session.pub);
-        formData.append('file', file);
-        await window.fn.uploadFile(file, formData, '/update_logo', logo_updated);
-    };
+            formData.append('token', session.token.serialize());
+            formData.append('client_pub', session.pub);
+            formData.append('file', file);
+            await window.fn.uploadFile(file, formData, '/update_logo', logo_updated);
+        };
+    }
 };
 
 const logo_updated = (node_data) => {
