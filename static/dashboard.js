@@ -142,6 +142,9 @@ const upload_logo_dlg = async (callback) => {
 };
 
 const update_logo = async (file) => {
+    if( !file['type'].split('/')[0] === 'image')
+        ons.notification.alert('File must be an image');
+        return
 
     const session = _getSessionData();
 
