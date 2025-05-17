@@ -269,6 +269,7 @@ document.addEventListener('init', function(event) {
             clone.querySelector('.file_url').textContent = fileList[i]['CID'];
             clone.querySelector('#file-remove').setAttribute('onclick', 'remove_file("' + fileList[i]['CID'] + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
+            if(fileList[i]['IsLogo'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-star"></ons-icon>'};
         }
 
         window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, fileList);

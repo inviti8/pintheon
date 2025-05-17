@@ -751,7 +751,6 @@ class PhilosMachine(object):
                 
                 file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
                 self._open_db()
-                file = Query()
 
                 if is_logo:
                      self.file_book.update({'IsLogo': False})
