@@ -718,10 +718,9 @@ class PhilosMachine(object):
                 self._open_db()
                 file = Query()
                 record = self.file_book.get(file.CID == cid)
-                if record != None:
-                     self.file_book.update(file_info, record.doc_id)
-                else:
+                if record == None:
                     self.file_book.insert(file_info)
+                    
                 all_file_info = self.file_book.all()
                 self.db.close()
 

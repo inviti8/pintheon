@@ -301,12 +301,17 @@ def upload():
 @cross_origin()
 def update_logo():
    required = ['token', 'client_pub']
+   file = request.files['file']
+   cid = None
    response = _handle_upload(required, request)
-   if response.status_code == 200:
-       PHILOS.logo_url = 'https//127.0.0.1:9500/ipfs/'+response['CID']
-       data = PHILOS.update_node_data()
+   if response != None:
+       for dat in response:
+           if dat['Name'] == file.fileName and dat['Type'] == file.mimetype:
+               cid = dat['CID']
+               PHILOS.logo_url = 'https//127.0.0.1:9500/ipfs/'+cid
+               PHILOS.update_node_data()
 
-   return data
+   return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'file_list': response}), 200
 
 @app.route('/remove_file', methods=['POST'])
 @cross_origin()
