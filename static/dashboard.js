@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'file_list': [], 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'repo': {}, 'stats': null, 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
 window.dash.SESSION_KEYS = 'PHILOS_SESSION';
 window.dash.NODE = 'PHILOS_NODE';
 window.dash.AUTHORIZED = false;
@@ -142,20 +142,17 @@ const upload_logo_dlg = async (callback) => {
 };
 
 const update_logo = async (file) => {
-    if( !(file['type'].split('/')[0] === 'image') ){
-        ons.notification.alert('File must be an image');
-    }else{
-        const session = _getSessionData();
 
-        if(file){
-            const formData = new FormData()
+    const session = _getSessionData();
 
-            formData.append('token', session.token.serialize());
-            formData.append('client_pub', session.pub);
-            formData.append('file', file);
-            await window.fn.uploadFile(file, formData, '/update_logo', logo_updated);
-        };
-    }
+    if(file){
+        const formData = new FormData()
+
+        formData.append('token', session.token.serialize());
+        formData.append('client_pub', session.pub);
+        formData.append('file', file);
+        await window.fn.uploadFile(file, formData, '/update_logo', logo_updated);
+    };
 };
 
 const logo_updated = (node_data) => {
@@ -199,30 +196,50 @@ const remove_file = async (cid) => {
         formData.append('token', session.token.serialize());
         formData.append('client_pub', session.pub);
         formData.append('cid', cid);
-        await window.fn.removeFile( formData, '/remove_file', file_updated);
+        
     };
 };
 
+const dash_data = async (callback) => {
+    const session = _getSessionData();
+    const formData = new FormData()
+
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    await window.fn.dashData( formData, '/dashboard_data', callback);
+};
+
+const dash_updated = (node) => {
+    _updateDashData(node);
+    window.rndr.dashboard();
+};
+
+const settings_updated = (node) => {
+    _updateDashData(node);
+    window.fn.pushPage('settings', node, window.rndr.settings);
+    
+};
 
 document.addEventListener('init', function(event) {
     let page = event.target;
 
     //Element rendering methods:
-    window.rndr.nodeInfo = function(multiaddress, url){
+    window.rndr.nodeInfo = function(repo_size, storage_max, percentage){
 
         let _updateElem = function(clone, elem, multiaddress, url){
-            clone.querySelector('#'+elem+'-multiaddress').value = multiaddress;
-            clone.querySelector('#'+elem+'-gateway-url').value = url;
+            clone.querySelector('#'+elem+'-repo-size').innerHTML = " "+repo_size+" mb";
+            clone.querySelector('#'+elem+'-storage-max').innerHTML= " "+storage_max+" mb";
+            clone.querySelector('#'+elem+'-repo-size-graph').value= percentage
         }
 
-        window.rndr.RENDER_ELEM('node-info', _updateElem, multiaddress, url);
+        window.rndr.RENDER_ELEM('node-info', _updateElem, repo_size, storage_max);
     };
 
     window.rndr.networkTraffic = function(incoming, outgoing){
 
         let _updateElem = function(clone, elem, incoming, outgoing){
-            clone.querySelector('#'+elem+'-kbs-incoming').textContent = incoming;
-            clone.querySelector('#'+elem+'-kbs-outgoing').textContent = outgoing;
+            clone.querySelector('#'+elem+'-kbs-incoming').textContent = incoming + ' Kb/s incoming';
+            clone.querySelector('#'+elem+'-kbs-outgoing').textContent = outgoing + ' Kb/s outgoing';
         }
 
         window.rndr.RENDER_ELEM('network-traffic', _updateElem, incoming, outgoing);
@@ -272,10 +289,24 @@ document.addEventListener('init', function(event) {
             clone.querySelector('.file_url').textContent = fileList[i]['CID'];
             clone.querySelector('#file-remove').setAttribute('onclick', 'remove_file("' + fileList[i]['CID'] + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
-            if(fileList[i]['IsLogo'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-star"></ons-icon>'};
+            if (fileList[i]['IsLogo'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-star"></ons-icon>'};
         }
 
         window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, fileList);
+    };
+
+    window.rndr.settingsNodeInfo = function(multiaddress, url){
+
+        let _updateElem = function(clone, elem, multiaddress, url){
+            clone.querySelector('#'+elem+'-multiaddress').value = multiaddress;
+            clone.querySelector('#'+elem+'-gateway-url').value = url;
+        }
+
+        window.rndr.RENDER_ELEM('settings-info', _updateElem, multiaddress, url);
+    };
+
+    window.rndr.settingsAppearance = function(){
+        window.rndr.RENDER_ELEM('settings-appearance');
     };
 
     window.rndr.peerListItems = function(peerList){
@@ -293,11 +324,16 @@ document.addEventListener('init', function(event) {
 
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
         window.rndr.nodeCardHeader(window.dash.data['logo'], window.dash.data.name, window.dash.data.descriptor);
-        window.rndr.nodeInfo('test1234556789', window.location.host);
+        window.rndr.nodeInfo(window.dash.data.repo.RepoSize, window.dash.data.repo.StorageMax, window.dash.data.repo.usedPercentage);
         window.rndr.networkTraffic('100', '99');
         window.rndr.fileListItems(window.dash.data.file_list);
 
     };
+
+    window.rndr.settings = function(){
+        window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.location.host);
+        window.rndr.settingsAppearance();
+    }
 
 
     if (page.id === 'authorize') {
@@ -320,11 +356,24 @@ document.addEventListener('init', function(event) {
             upload_file_dlg(upload_file);
         };
 
+        document.querySelector('#settings-button').onclick = function () {
+            dash_data(settings_updated);
+        };
+
         window.rndr.dashboard();
 
+    }else if (page.id === 'settings') {
+        document.querySelector('#settings-back-button').options.callback = function () {
+            dash_data(dash_updated);
+        };
     };
 });
 
-window.fn.pushPage = function(page, node_data) {
-    document.querySelector('#Nav').pushPage(page+'.html');
+window.fn.pushPage = function(page, node_data, callback = null, ...args) {
+    document.querySelector('#Nav').pushPage(page+'.html')
+    .then(function(){
+        if(callback){
+            callback(...args);
+        }
+    });
 };

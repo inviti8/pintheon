@@ -12,7 +12,7 @@ import requests
 import subprocess
 from transitions import Machine, State
 from cryptography.fernet import Fernet, InvalidToken
-from tinydb import TinyDB, Query
+from tinydb import *
 import tinydb_encrypted_jsonstorage as tae
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -675,41 +675,51 @@ class PhilosMachine(object):
                 return response
         else:
                 return jsonify({'error': 'stats not available.'}), 400
-        
-    def file_exists(self, file_name):
+
+    def file_exists(self, file_name, file_type):
         result = False
         self._open_db()
         file = Query()
         record = self.file_book.get(file.Name == file_name)
+
         if record != None:
-             result = True
+            result = True
+
         self.db.close()
 
         return result
-        
-    def update_file_as_logo(self, file_name):
+
+    def update_file_as_logo(self, file_name, file_type):
+        result = False
         self._open_db()
         file = Query()
         record = self.file_book.get(file.Name == file_name)
 
         if record != None and record['IsLogo'] == False:
-             self.file_book.update({'IsLogo': True})
-             self.file_book.update({'IsLogo': True}, file.Name == file_name)
-                
+            self.file_book.update({'IsLogo': False})
+            self.file_book.update({'IsLogo': True}, file.Name == file_name)
+            result = True
 
         all_file_info = self.file_book.all()
         self.db.close()
 
         return all_file_info
-         
-        
+
     def all_file_info(self):
         self._open_db()
         all_file_info = self.file_book.all()
         self.db.close()
 
         return all_file_info
-         
+
+    def ipfs_repo_stats(self):
+        url = f'{self.ipfs_endpoint}/repo/stat?size-only=false&human=true'
+        response = requests.post(url);
+
+        if response.status_code == 200:
+                return response
+        else:
+                return jsonify({'error': 'stats not available.'}), 400
 
     def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False):
         url = f'{self.ipfs_endpoint}/add'
@@ -749,12 +759,13 @@ class PhilosMachine(object):
             cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
             if cid != None:
                 
-                file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size']}
+                file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size'], 'IsLogo':is_logo}
                 self._open_db()
+                file = Query()
 
                 if is_logo:
-                     self.file_book.update({'IsLogo': False})
-                
+                    self.file_book.update({'IsLogo': False})
+
                 self.file_book.insert(file_info)
 
                 all_file_info = self.file_book.all()
@@ -791,23 +802,47 @@ class PhilosMachine(object):
             return None
         
     def get_dashboard_data(self):
-        result = {'moniker':None, 'peer-id':None, 'stats':None, 'files':None, 'peers':None}
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True}
+        self._open_db()
         stats_response = self.get_stats('bw')
+        repo_response = self.ipfs_repo_stats()
         files_list = self.file_book.all()
-        peers_response = self.get_peer_list()
         peer_id_response = self.get_peer_id()
-
+        self.db.close()
 
         if stats_response.status_code == 200:
-                result['stats'] = stats_response.json()
+            result['stats'] = stats_response.json()
+
+        if repo_response.status_code == 200:
+            repo = repo_response.json()
+            repo['RepoSize'] = repo['RepoSize'] / (1024 * 1024)
+            repo['StorageMax'] = repo['StorageMax'] / (1024 * 1024)
+            repo['usedPercentage'] = (repo['RepoSize'] / repo['StorageMax']) * 100
+            repo['RepoSize'] = f"{repo['RepoSize']:.2f}"
+            repo['StorageMax'] = f"{repo['StorageMax']:.2f}"
+            
+            del repo['RepoPath']
+            del repo['Version']
+            result['repo'] = repo
 
         if files_list != None:
-                result['files'] = files_list
-
-        if peers_response.status_code == 200:
-                result['peers'] = peers_response.json()['Peers']
+            result['file_list'] = files_list
 
         if peer_id_response.status_code == 200:
-                result['peer-id'] = peer_id_response.json()['Value']
+            result['peer_id'] = peer_id_response.json()['Value']
+
+        return result
+
+    def get_settings_data(self):
+        result = {'peer_id':None, 'peer_list':None}
+        self._open_db()
+        peer_id_response = self.get_peer_id()
+        peers = self.peer_book.all()
+        self.db.close()
+
+        if peer_id_response.status_code == 200:
+                result['peer_id'] = peer_id_response.json()['Value']
+
+        result['peer_list'] = peers
 
         return result

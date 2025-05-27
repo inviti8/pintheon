@@ -50,24 +50,29 @@ def _handle_upload(required, request, is_logo=False):
         return "No file uploaded", 400
      
     file = request.files['file']
+    print(file)
+    print(file.filename)
+    print(file.mimetype)
+
      
     for field in required:
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-    if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
-        abort(Forbidden())  # Forbidden
-    
-    elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-    else:
-        file_data = file.read()
-        ipfs_response = PHILOS.add_file_to_ipfs(file.filename, file.mimetype, file_data, is_logo)
+    file_data = file.read()
+    ipfs_response = PHILOS.add_file_to_ipfs(file.filename, file.mimetype, file_data, is_logo)
 
-        if ipfs_response == None:
-                return jsonify({'error': 'File not added'}), 400
-        else:
-            return ipfs_response
+    print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+    print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+    print(ipfs_response)
+    print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+    print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+
+    if ipfs_response == None:
+        return jsonify({'error': 'File not added'}), 400
+    else:
+        return ipfs_response
+        
 
 
 ##ERROR HANDLING##
@@ -115,6 +120,7 @@ def home():
    print('-----------------------------------')
    print(m.serialize())
    print(PHILOS.state)
+   print(request.headers)
    print('-----------------------------------')
 
        
@@ -203,8 +209,8 @@ def new_node():
         PHILOS.set_client_node_pub(data['generator_pub'])
         PHILOS.new()
         
-        return PHILOS.establish_data(), 200
-
+   return PHILOS.establish_data(), 200
+        
 
 @app.route('/establish', methods=['POST'])
 @cross_origin()
@@ -226,7 +232,7 @@ def establish():
         PHILOS.set_node_data(data['name'], data['descriptor'], data['meta_data'])
         PHILOS.established()
         
-        return PHILOS.establish_data(), 200
+   return PHILOS.establish_data(), 200
    
 
 @app.route('/authorize', methods=['POST'])
@@ -265,7 +271,11 @@ def authorized():
    elif not PHILOS.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'nonce': PHILOS.auth_nonce, 'file_list': PHILOS.get_files(), 'expires': str(PHILOS.session_ends), 'authorized': True}), 200
+     data = PHILOS.get_dashboard_data()
+     if data == None:
+          return jsonify({'error': 'Cannot get dash data'}), 400
+     else:
+          return data, 200  
    
 
 @app.route('/deauthorize', methods=['POST'])
@@ -303,23 +313,28 @@ def update_logo():
    required = ['token', 'client_pub']
    file = request.files['file']
    file_list = PHILOS.all_file_info()
-   cid = None
-   
 
-   if PHILOS.file_exists(file.filename):
-       file_list = PHILOS.update_file_as_logo(file.filename)
+   if PHILOS.file_exists(file.filename, file.mimetype):
+    file_list = PHILOS.update_file_as_logo(file.filename, file.mimetype)
    else:
-     files= _handle_upload(required, request)
-     if files != None:
-          file_list = files
-          for dat in files:
-               if dat['Name'] == file.fileName and dat['Type'] == file.mimetype:
-                    cid = dat['CID']
-                    PHILOS.logo_url = 'https//127.0.0.1:9500/ipfs/'+cid
-                    PHILOS.update_node_data()
-                    break
+    files = _handle_upload(required, request, True)
+    print(files)
 
-   return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'file_list': file_list}), 200
+    if files != None:
+        file_list = files
+        for dat in file_list:
+            print(dat['Name'])
+            if dat['Name'] == file.filename and dat['Type'] == file.mimetype:
+                cid = dat['CID']
+                PHILOS.logo_url = 'https//127.0.0.1:5000/ipfs/'+cid
+                data = PHILOS.update_node_data()
+                break
+
+   data = PHILOS.get_dashboard_data()
+   if data == None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+   else:
+        return data, 200
 
 @app.route('/remove_file', methods=['POST'])
 @cross_origin()
@@ -380,12 +395,12 @@ def dashboard_data():
    elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        ipfs_response = PHILOS.get_dashboard_data()
+        data = PHILOS.get_dashboard_data()
 
-        if ipfs_response == None:
-                return jsonify({'error': 'File not removed'}), 400
+        if data == None:
+                return jsonify({'error': 'Cannot get dash data'}), 400
         else:
-            return ipfs_response
+            return data, 200
         
 
 if __name__ == '__main__':

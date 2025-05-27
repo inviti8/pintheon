@@ -31,6 +31,12 @@
           </ons-toolbar-button>
         </div>
         <div class="center"></div>
+        <div class="right">
+          <ons-toolbar-button id="settings-button">
+            <ons-icon size="30px" icon="md-settings" class="left"></ons-icon>
+            <ons-icon size="30px" icon="md-chevron-right">
+          </ons-toolbar-button>
+        </div>
       </ons-toolbar>
   
       <div style="text-align: center; margin-top:20px">
@@ -63,7 +69,7 @@
                   </div>
                 </ons-card>
               </ons-col>
-            <ons-row>
+
              </ons-col>
              <ons-col width="100%">
                 <ons-card modifier="default outlined">
@@ -86,6 +92,53 @@
             </div>
         </div>
       </div>
+    </ons-page>
+  </template>
+
+  <template id="settings.html">
+    <ons-page id="settings" modifier="gradient">
+      <ons-toolbar modifier="default">
+        <div class="left">
+          <ons-back-button id="settings-back-button">
+          </ons-back-button>
+        </div>
+        <div class="center">SETTINGS</div>
+      </ons-toolbar>
+
+      <div style="text-align: center;">
+          <br />
+            <div class="expanded_article">
+              <br />
+              <ons-col width="80%">
+                <ons-card class="" modifier="outlined" style="height:200px;">
+                  <div class="content center-both">
+                    <div style="width:100%;">
+
+                      <ons-lazy-repeat id="settings-info"></ons-lazy-repeat>
+                      <ons-lazy-repeat id="settings-appearance"></ons-lazy-repeat>
+
+                    </div>  
+                  </div>
+                </ons-card>
+              </ons-col>
+            <ons-row>
+             </ons-col>
+             <ons-col width="100%">
+                <ons-card modifier="default outlined">
+                  <div class="content"><ons-button modifier="large" id="upload-button" ripple>ADD PEER</ons-button></div>
+                  <div class="content">
+                    <ons-list  id="file-list-main">
+                      <ons-list-header>PEER LIST</ons-list-header>
+                      <!-- <ons-lazy-repeat id="file-list-items"></ons-lazy-repeat> -->
+                    </ons-list>
+                  </div>
+              </ons-card>
+             </ons-col>
+           </ons-row>
+            </div>
+        </div>
+      </div>
+
     </ons-page>
   </template>
 
@@ -118,42 +171,46 @@
   </template>
 
   <template id="node-info-template">
-    <ons-list class="stat-ul" style="width:45%; height:200px;">
+    <ons-list class="stat-ul" style="width:30%; height:200px;">
       <ons-list-header>NODE INFO</ons-list-header>
-      <ons-list-item modifier="nodivider" style="width:100%;" >
-          <div style="margin: 20px auto;">
-            <header>
-              <pre><span>ID:   </span></pre>
-              <span ><ons-input class="dash-input" id="node-info-multiaddress" modifier="large" placeholder="Multiaddress" float></ons-input></span>
-            </header>
-            <header>
-              <pre><span>GATEWAY:   </span></pre>
-              <span><ons-input class="dash-input" id="node-info-gateway-url" modifier="large" value="127.0.0.1:9500" float></ons-input></span>
-              <span><ons-button onclick="window.updateGateway()" modifier="quiet"><ons-icon icon="fa-cloud-arrow-up"></ons-button></span>
-            </header>
-          </div>
+      <ons-list-item class="node-data-card-header-list-item" modifier="nodivider">
+        <div class="fab-container left"> 
+          <ons-progress-circular id="node-info-repo-size-graph" value="10", secondary-value="100" modifier="material"></ons-progress-circular>
+        </div>
+        <div class="center">
+          <span class="list-item__title"></span>Used Space<span id="node-info-repo-size" class="list-item__subtitle">></span>
+        </div>
+      </ons-list-item>
+      <ons-list-item class="node-data-card-header-list-item" modifier="nodivider">
+        <div class="fab-container left"> 
+          <ons-icon icon="fa-database"  size="20px" modifier="material"></ons-icon>
+        </div>
+        <div class="center">
+          <span class="list-item__title"></span>Total Space<span id="node-info-storage-max" class="list-item__subtitle">></span>
+        </div>
       </ons-list-item>
     </ons-list>
   </template>
 
+
   <template id="network-traffic-template">
-    <ons-list class="stat-ul" style="width:20%; height:200px;">
+    <ons-list class="stat-ul" style="width:25%; height:200px;">
       <ons-list-header>NETWORK TRAFFIC</ons-list-header>
       <ons-list-item modifier="nodivider" style="width:100%;" >
-          <div style="margin: 20px auto; width:100%;">
-            <ons-progress-bar id="bar-kbs-incoming" style="width:100%;" value="20" secondary-value="50">
-              <header>
-                <h3 id="network-traffic-kbs-incoming">100 </h3>
-                <span><pre> Kb/s incoming</pre></span>
-              </header>
-            </ons-progress-bar>
-            <ons-progress-bar id="bar-kbs-outgoing" style="width:100%;" value="20" secondary-value="50">
-              <header>
-                <h3  id="network-traffic-kbs-outgoing">100 </h3>
-                <span><pre> Kb/s outgoing</pre></span>
-              </header>
-            </ons-progress-bar>
+        <header>
+          <div class="center">
+             <ons-icon icon="fa-cloud-download"  modifier="material"></ons-icon>
+              <span id="network-traffic-kbs-incoming" class="list-item__subtitle">100 </span>
           </div>
+        </header>
+      </ons-list-item>
+      <ons-list-item modifier="nodivider" style="width:100%;" >
+        <header>
+          <div class="center">
+              <ons-icon icon="fa-cloud-upload"  modifier="material"></ons-icon>
+              <span  id="network-traffic-kbs-outgoing" class="list-item__subtitle">100 </span>
+          </div>
+        </header>
       </ons-list-item>
     </ons-list>
   </template>
@@ -161,6 +218,7 @@
 
   <template id="file-list-items-template">
     <ons-list-item expandable ripple>
+
       <div class="fab-container left">
         <span class="logo left"> </span>
         <img id="file-list-item-icon" class="list-item__thumbnail" modifier="file-thumb" src="">
@@ -168,6 +226,8 @@
       <div class="center">
         <span id="file-list-item-name" class="list-item__title"><p class="truncate"></p></span>
       </div>
+
+
       <div class="expandable-content">
         <ons-list modifier="default">
           <ons-list-item> Size: <span class="file-size"></span><span class="right">File Hash: <a class="file_url truncate" href=""></a></span></ons-list-item>
@@ -187,6 +247,59 @@
         </ons-list>
       </div>
     </ons-list-item>
+  </template>
+
+  <template id="settings-info-template">
+    <ons-list class="stat-ul" style="width:40%; height:200px;">
+      <ons-list-header>NODE INFO</ons-list-header>
+      <ons-list-item style="width:100%;" >
+            <header>
+              <pre><span class="list-item__subtitle">id:   </span></pre>
+              <span ><ons-input class="dash-input" id="settings-info-multiaddress" modifier="large" placeholder="Multiaddress"  style="width:80%;"></ons-input><ons-button modifier="quiet" onclick="" id="copy-peer-id">
+                <ons-icon icon="fa-clipboard"></ons-icon>
+              </ons-button></span>
+            </header>
+      </ons-list-item>
+      <ons-list-item style="width:100%;" >
+            <header>
+              <pre><span class="list-item__subtitle">gateway:   </span></pre>
+              <span><ons-input class="dash-input" id="settings-info-gateway-url" modifier="large" value="127.0.0.1:9500" float></ons-input></span>
+            </header>
+      </ons-list-item>
+    </ons-list>
+  </template>
+
+  <template id="settings-appearance-template">
+    <ons-list class="stat-ul" style="width:50%; height:200px;">
+      <ons-list-header>APPEARANCE</ons-list-header>
+      <ons-list-item style="width:100%;" >
+            <header>
+              <pre><span class="list-item__subtitle">theme:   </span></pre>
+              <span >
+                <ons-select id="settings-appearance-select" onchange="" modifier="underbar">
+                  <option value="default">default</option>
+                    <option value="dark">dark</option>
+                    <option value="light">light</option>
+                    <option value="golden-crown">golden crown</option>
+                    <option value="vexxed-vampire">vexxed vampire</option>
+                    <option value="ogon-batto">ogon batto</option>
+                    <option value="mandarin-logos">mandarin logos</option>
+                    <option value="deep-blue">deep blue</option>
+                    <option value="crimson-tide">crimson tide</option>
+                </ons-select>
+              </span>
+            </header>
+      </ons-list-item>
+      <ons-list-item style="width:100%;" >
+            <header>
+              <pre><span class="list-item__subtitle">bg image:   </span></pre>
+              <span><ons-button id="settings-appearance-bg-button" class="can-callback" ripple>UPLOAD
+                <input type="file" id="settings-appearance-bg-input" style="display: none;">
+              </ons-button>
+            </span>
+            </header>
+      </ons-list-item>
+    </ons-list>
   </template>
   
   <template id="peer-list-items-template">

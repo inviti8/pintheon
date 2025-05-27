@@ -22,6 +22,7 @@ document.addEventListener('init', function(event) {
     //Shared Rendering methods
 
     window.rndr.RENDER_ELEM = function(elem, callback, ...args){
+        console.log(elem)
         let list = document.querySelector('#'+elem);
 
         try {
@@ -30,9 +31,11 @@ document.addEventListener('init', function(event) {
                 createItemContent: function(i) {
                   var template = document.getElementById(elem+'-template');
                   var clone = document.importNode(template.content, true);
-        
-                  // Update the clone
-                  callback(clone, elem, ...args);
+
+                  if(callback){
+                    // Update the clone
+                    callback(clone, elem, ...args);
+                  }
         
                   return clone.firstElementChild; // Ensure that the returned value is a proper DOM element
                 },
@@ -256,6 +259,29 @@ document.addEventListener('init', function(event) {
             };
 
         })
+    };
+
+    window.fn.dashData = async (formData, endpoint, callback, method='POST') => {
+        fetch(endpoint, {
+                    method: method,
+                    body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                window.dlg.show('fail-dialog');
+                throw new Error('Get Dash Data failed');
+            }
+        })
+        .then(data => {
+            console.log('Server response:', data);
+            callback(data);
+        })
+        .catch(error => {
+            window.dlg.hide('loading-dialog');
+            console.error('Error getting dash data:', error);
+        });
     };
     
 
