@@ -22,7 +22,7 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PHILOS = PhilosMachine(STATIC_PATH, DB_PATH)
+PHILOS = PhilosMachine(static_path=STATIC_PATH, db_path=DB_PATH, debug=True)
 PHILOS.initialize()
 
 ##UTILITIES###
@@ -272,6 +272,8 @@ def authorized():
         raise Unauthorized()  # Unauthorized
    else:
      data = PHILOS.get_dashboard_data()
+     print('!!!!!!!!!!!!!!!!!')
+     print(data)
      if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
      else:

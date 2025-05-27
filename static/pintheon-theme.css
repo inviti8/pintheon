@@ -120,10 +120,10 @@
   --material-alert-dialog-button-color: rgba(3,170,163,1);
   --material-progress-bar-primary-color: rgba(3,170,163,1);
   --material-progress-bar-secondary-color: color-mod(var(--material-progress-bar-primary-color) b(55%));
-  --material-progress-bar-background-color: transparent;
+  --material-progress-bar-background-color: white;
   --material-progress-circle-primary-color: var(--material-progress-bar-primary-color);
   --material-progress-circle-secondary-color: var(--material-progress-bar-secondary-color);
-  --material-progress-circle-background-color: transparent;
+  --material-progress-circle-background-color: white;
   --material-tabbar-background-color: var(--material-toolbar-background-color);
   --material-tabbar-text-color: color-mod(var(--material-toolbar-text-color) a(50%));
   --material-tabbar-highlight-text-color: var(--material-toolbar-text-color);

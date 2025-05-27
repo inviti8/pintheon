@@ -51,12 +51,15 @@ OPUS_TESTNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
 COLLECTIVE_MAINNET = 'CDHXRJOXX3MTMQX5245YR75DJNY4RBNRXEDXIWVVEUGSSE7HUHMZEQOR'
 OPUS_MAINNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
 
+DEBUG_SEED = "mobile isolate scale vendor salt coconut arrest reject rude coyote penalty what cargo dog success deal virus unable wet gravity appear load volume wise"
+DEBUG_NODE_CONTRACT = "CDZ6NQWAFLP5GLMZGZ4LIG5CYSRQRP2CFCFLME6KW42RYJVKH6C7D6BC"
+
 
 class PhilosMachine(object):
 
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
-    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001'):
+    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', debug = False):
 
         self.uid = str(uuid.uuid4())
         self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIzaWRlbnRpZmllciBQSElMT1NfTEFVTkNIX1RPS0VOCjAwMmZzaWduYXR1cmUgm2DPFKM5bRmCSPqmBaFOVeUEliIy3fPs_ngrdloMYFcK'
@@ -122,6 +125,9 @@ class PhilosMachine(object):
         self._generator_token = None
         self._BLOCK_SIZE = 16
 
+        #--------DEBUG--------------
+        self.DEBUG = debug
+
         self._client_node_pub = None
         self._client_session_pub = None
         self._client_generator_pub = None
@@ -173,7 +179,10 @@ class PhilosMachine(object):
         self.node_name = name
         self.node_descriptor = descriptor
         self.node_meta_data = metadata
-        self.node_contract = self.deploy_node_token(name, descriptor)
+        if self.DEBUG:
+            self.node_contract = DEBUG_NODE_CONTRACT
+        else:
+            self.node_contract = self.deploy_node_token(name, descriptor)
 
         self._update_node_data(self.logo_url, self.node_name, self.node_descriptor, self.node_contract)
 
@@ -205,27 +214,33 @@ class PhilosMachine(object):
     def verify_request(self, b64_pub, client_token):
         result = False
 
-        client_mac = Macaroon.deserialize(client_token)
-        mac = Macaroon(
-            location=client_mac.location,
-            identifier='PHILOS_SESSION',
-            key=self.generate_shared_session_secret(b64_pub)
-        )
-
-        mac.add_first_party_caveat('time < '+ str(self.session_ends))
-        
-        if mac.signature == client_mac.signature:
+        if self.DEBUG:
             result = True
+        else:
+            client_mac = Macaroon.deserialize(client_token)
+            mac = Macaroon(
+                location=client_mac.location,
+                identifier='PHILOS_SESSION',
+                key=self.generate_shared_session_secret(b64_pub)
+            )
+
+            mac.add_first_party_caveat('time < '+ str(self.session_ends))
+            
+            if mac.signature == client_mac.signature:
+                result = True
         
         return result
     
     def verify_launch(self, client_launch_token):
         result = False
-        server_mac = Macaroon.deserialize(self.launch_token)
-        client_mac = Macaroon.deserialize(client_launch_token)
-
-        if server_mac.signature == client_mac.signature:
+        if self.DEBUG:
             result = True
+        else:
+            server_mac = Macaroon.deserialize(self.launch_token)
+            client_mac = Macaroon.deserialize(client_launch_token)
+
+            if server_mac.signature == client_mac.signature:
+                result = True
         
         return result
     
@@ -477,7 +492,12 @@ class PhilosMachine(object):
     @property
     def create_new_node(self):
         print('creating new node...')
-        seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_session_secret(self._client_session_pub))
+        seed = None
+        if self.DEBUG:
+            seed = DEBUG_SEED
+        else:
+            seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_session_secret(self._client_session_pub))
+
         self._create_stellar_keypair_from_seed(seed)
         self._create_root_token()
         self._update_state_data()
@@ -803,33 +823,45 @@ class PhilosMachine(object):
         
     def get_dashboard_data(self):
         result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True}
-        self._open_db()
-        stats_response = self.get_stats('bw')
-        repo_response = self.ipfs_repo_stats()
-        files_list = self.file_book.all()
-        peer_id_response = self.get_peer_id()
-        self.db.close()
-
-        if stats_response.status_code == 200:
-            result['stats'] = stats_response.json()
-
-        if repo_response.status_code == 200:
-            repo = repo_response.json()
-            repo['RepoSize'] = repo['RepoSize'] / (1024 * 1024)
-            repo['StorageMax'] = repo['StorageMax'] / (1024 * 1024)
-            repo['usedPercentage'] = (repo['RepoSize'] / repo['StorageMax']) * 100
-            repo['RepoSize'] = f"{repo['RepoSize']:.2f}"
-            repo['StorageMax'] = f"{repo['StorageMax']:.2f}"
-            
-            del repo['RepoPath']
-            del repo['Version']
+        if self.DEBUG:
+            #If DEBUG we just create dummy ipfs data
+            stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}
+            repo = {'RepoSize': "0.1", 'StorageMax':"9000", 'usedPercentage': 0.01}
+            self._open_db()
+            files_list = self.file_book.all()
+            self.db.close()
+            result['stats'] = stats
             result['repo'] = repo
-
-        if files_list != None:
             result['file_list'] = files_list
+            result['peer_id'] = 'FAKE-PEER-ID'
+        else:
+            self._open_db()
+            stats_response = self.get_stats('bw')
+            repo_response = self.ipfs_repo_stats()
+            files_list = self.file_book.all()
+            peer_id_response = self.get_peer_id()
+            self.db.close()
 
-        if peer_id_response.status_code == 200:
-            result['peer_id'] = peer_id_response.json()['Value']
+            if stats_response.status_code == 200:
+                result['stats'] = stats_response.json()
+
+            if repo_response.status_code == 200:
+                repo = repo_response.json()
+                repo['RepoSize'] = repo['RepoSize'] / (1024 * 1024)
+                repo['StorageMax'] = repo['StorageMax'] / (1024 * 1024)
+                repo['usedPercentage'] = (repo['RepoSize'] / repo['StorageMax']) * 100
+                repo['RepoSize'] = f"{repo['RepoSize']:.2f}"
+                repo['StorageMax'] = f"{repo['StorageMax']:.2f}"
+                
+                del repo['RepoPath']
+                del repo['Version']
+                result['repo'] = repo
+
+            if files_list != None:
+                result['file_list'] = files_list
+
+            if peer_id_response.status_code == 200:
+                result['peer_id'] = peer_id_response.json()['Value']
 
         return result
 

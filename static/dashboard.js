@@ -226,13 +226,20 @@ document.addEventListener('init', function(event) {
     //Element rendering methods:
     window.rndr.nodeInfo = function(repo_size, storage_max, percentage){
 
-        let _updateElem = function(clone, elem, multiaddress, url){
+
+        let _updateElem = function(clone, elem, repo_size, storage_max, percentage){
+            console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            console.log(elem)
+            console.log(repo_size)
+            console.log(storage_max)
+            console.log(percentage)
+            console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             clone.querySelector('#'+elem+'-repo-size').innerHTML = " "+repo_size+" mb";
             clone.querySelector('#'+elem+'-storage-max').innerHTML= " "+storage_max+" mb";
-            clone.querySelector('#'+elem+'-repo-size-graph').value= percentage
+            clone.querySelector('#'+elem+'-repo-graph').setAttribute('value', percentage);
         }
 
-        window.rndr.RENDER_ELEM('node-info', _updateElem, repo_size, storage_max);
+        window.rndr.RENDER_ELEM('node-info', _updateElem, repo_size, storage_max, percentage);
     };
 
     window.rndr.networkTraffic = function(incoming, outgoing){
@@ -321,6 +328,10 @@ document.addEventListener('init', function(event) {
     };
 
     window.rndr.dashboard = function(){
+
+        console.log('window.dash:')
+        console.log(window.dash)
+        console.log(window.dash.data.repo.usedPercentage)
 
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
         window.rndr.nodeCardHeader(window.dash.data['logo'], window.dash.data.name, window.dash.data.descriptor);
