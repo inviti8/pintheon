@@ -253,7 +253,7 @@
     <ons-list class="stat-ul" style="width:40%; height:200px;">
       <ons-list-header>NODE INFO</ons-list-header>
       <ons-list-item style="width:100%;" >
-            <header>
+            <header class="center-both">
               <pre><span class="list-item__subtitle">id:   </span></pre>
               <span ><ons-input class="dash-input" id="settings-info-multiaddress" modifier="large" placeholder="Multiaddress"  style="width:80%;"></ons-input><ons-button modifier="quiet" onclick="" id="copy-peer-id">
                 <ons-icon icon="fa-clipboard"></ons-icon>
@@ -261,7 +261,7 @@
             </header>
       </ons-list-item>
       <ons-list-item style="width:100%;" >
-            <header>
+            <header class="center-both">
               <pre><span class="list-item__subtitle">gateway:   </span></pre>
               <span><ons-input class="dash-input" id="settings-info-gateway-url" modifier="large" value="127.0.0.1:9500" float></ons-input></span>
             </header>
@@ -273,16 +273,16 @@
     <ons-list class="stat-ul" style="width:50%; height:200px;">
       <ons-list-header>APPEARANCE</ons-list-header>
       <ons-list-item style="width:100%;" >
-            <header>
+            <header class="center-both">
               <pre><span class="list-item__subtitle">theme:   </span></pre>
               <span >
-                <ons-select class="center" id="settings-appearance-select" onchange="" modifier="underbar">
+                <ons-select id="settings-appearance-select" onchange="" modifier="underbar">
                 </ons-select>
               </span>
             </header>
       </ons-list-item>
       <ons-list-item style="width:100%;" >
-            <header>
+            <header class="center-both">
               <pre><span class="list-item__subtitle">bg image:   </span></pre>
               <span><ons-button id="settings-appearance-bg-button" class="can-callback" ripple>UPLOAD
                 <input type="file" id="settings-appearance-bg-input" style="display: none;">

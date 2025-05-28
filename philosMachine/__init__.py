@@ -601,10 +601,13 @@ class PhilosMachine(object):
     def get_customization(self):
         result = None
         self._open_db()
-        result = self.customization.all()
+        result = self.customization.all()[0]
         self.db.close()
 
         return result
+    
+    def update_customization(self):
+        self._update_customization()
 
     def _open_wallet(self):
         print('open wallet')

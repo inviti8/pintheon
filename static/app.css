@@ -146,3 +146,7 @@ header {
   z-index: -1;
 }
 
+.list-item__thumbnail--file-thumb{
+  width: 300px;
+  height: 300px;
+}

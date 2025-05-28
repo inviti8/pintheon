@@ -137,12 +137,15 @@ def home():
    page = PHILOS.active_page
    js=_load_js(PHILOS.view_components)
    logo=PHILOS.logo_url
+   customization = PHILOS.get_customization()
+   theme = customization['themes'][customization['current_theme']]
    shared_dialogs=_load_components(PHILOS.shared_dialogs)
    shared_dialogs_js=_load_js(PHILOS.shared_dialogs)
    client_tokens= _load_js('macaroons_js_bundle')
+   theme_css = url_for('static', filename=theme+'-theme.css')
    
    session_data = { 'pub': pub, 'generator_pub': PHILOS.node_pub, 'time': PHILOS.session_ends, 'nonce': PHILOS.session_nonce }
-   return render_template(template, page=page, components=components, js=js, logo=logo, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
+   return render_template(template, page=page, components=components, js=js, logo=logo, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
 
 @app.route('/top_up_stellar')
 def top_up_stellar():
@@ -405,6 +408,30 @@ def dashboard_data():
                 return jsonify({'error': 'Cannot get dash data'}), 400
         else:
             return data, 200
+        
+@app.route('/update_theme', methods=['POST'])
+@cross_origin()
+def update_theme():
+   required = ['token', 'client_pub', 'theme']
+   req = request.get_json()
+   print(req)
+
+   if not _payload_valid(required, req):
+        abort(400)  # Bad Request
+   elif not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PHILOS.verify_request(req['client_pub'], req['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+   
+     PHILOS.theme = req['theme']
+     PHILOS.update_customization()
+     data = PHILOS.get_dashboard_data()
+     if data == None:
+          return jsonify({'error': 'Cannot get dash data'}), 400
+     else:
+          return data, 200
         
 
 if __name__ == '__main__':

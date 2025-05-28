@@ -220,6 +220,29 @@ const settings_updated = (node) => {
     
 };
 
+const update_theme = async (theme) => {
+
+    const session = _getSessionData();
+
+    const body = {
+        'token': window.constants.SESSION_TOKEN.serialize(),
+        'client_pub': window.constants.CLIENT_PUBLIC_KEY,
+        'theme': theme,
+    };
+        
+    await window.fn.call(body, '/update_theme', theme_updated);
+};
+
+const theme_updated = (data) => {
+
+    console.log(data)
+    _updateDashData({ 'customization': data.customization });
+    window.rndr.settings();
+    window.location.reload();
+    window.fn.pushPage('settings', data);
+
+};
+
 document.addEventListener('init', function(event) {
     let page = event.target;
 
@@ -309,10 +332,11 @@ document.addEventListener('init', function(event) {
 
         let _updateElem = function(clone, elem, selected_theme, themes, bg_img){
             let sel = clone.querySelector('#'+elem+'-select');
-            sel.setAttribute('select-id', selected_theme);
             for (let i = 0; i < themes.length; i++) {
                 sel.firstChild.insertAdjacentHTML('beforeend', '<option value="'+themes[i]+'">'+themes[i]+'</option>')
             }
+            sel.setAttribute('select-id', themes[selected_theme]);
+            sel.value = themes[selected_theme];
         }
 
         window.rndr.RENDER_ELEM('settings-appearance', _updateElem, selected_theme, themes, bg_img);
@@ -349,6 +373,7 @@ document.addEventListener('init', function(event) {
 
         document.querySelector('#settings-appearance-select').onchange = function  (event) {
             console.log(event.target.selectedIndex)
+            update_theme(event.target.selectedIndex);
         };
     }
 
