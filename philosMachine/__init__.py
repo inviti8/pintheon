@@ -735,7 +735,7 @@ class PhilosMachine(object):
 
         return result
 
-    def update_file_as_logo(self, file_name, file_type):
+    def update_file_as_logo(self, file_name):
         result = False
         self._open_db()
         file = Query()
@@ -744,6 +744,22 @@ class PhilosMachine(object):
         if record != None and record['IsLogo'] == False:
             self.file_book.update({'IsLogo': False})
             self.file_book.update({'IsLogo': True}, file.Name == file_name)
+            result = True
+
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
+    
+    def update_file_as_bg_img(self, file_name):
+        result = False
+        self._open_db()
+        file = Query()
+        record = self.file_book.get(file.Name == file_name)
+
+        if record != None and record['IsBgImg'] == False:
+            self.file_book.update({'IsBgImg': False})
+            self.file_book.update({'IsBgImg': True}, file.Name == file_name)
             result = True
 
         all_file_info = self.file_book.all()
@@ -767,7 +783,7 @@ class PhilosMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False):
+    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False):
         url = f'{self.ipfs_endpoint}/add'
 
         files = {
@@ -805,12 +821,15 @@ class PhilosMachine(object):
             cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
             if cid != None:
                 
-                file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size'], 'IsLogo':is_logo}
+                file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img}
                 self._open_db()
                 file = Query()
 
                 if is_logo:
                     self.file_book.update({'IsLogo': False})
+
+                if is_bg_img:
+                    self.file_book.update({'IsBgImg': False})
 
                 self.file_book.insert(file_info)
 

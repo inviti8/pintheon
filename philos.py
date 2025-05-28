@@ -45,7 +45,7 @@ def _payload_valid(fields, data):
 
    return result
 
-def _handle_upload(required, request, is_logo=False):
+def _handle_upload(required, request, is_logo=False, is_bg_img=False):
     if 'file' not in request.files:
         return "No file uploaded", 400
      
@@ -60,7 +60,7 @@ def _handle_upload(required, request, is_logo=False):
             return "Missing or empty value for field: {}".format(field), 400
 
     file_data = file.read()
-    ipfs_response = PHILOS.add_file_to_ipfs(file.filename, file.mimetype, file_data, is_logo)
+    ipfs_response = PHILOS.add_file_to_ipfs(file_name=file.filename, file_type=file.mimetype, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -72,6 +72,17 @@ def _handle_upload(required, request, is_logo=False):
         return jsonify({'error': 'File not added'}), 400
     else:
         return ipfs_response
+    
+def _get_file_cid(file, files):
+    cid = None
+    if files != None:
+        file_list = files
+        for dat in file_list:
+            if dat['Name'] == file.filename and dat['Type'] == file.mimetype:
+                cid = dat['CID']
+                break
+
+    return cid
         
 
 
@@ -319,23 +330,17 @@ def upload():
 def update_logo():
    required = ['token', 'client_pub']
    file = request.files['file']
-   file_list = PHILOS.all_file_info()
+   PHILOS.all_file_info()
 
    if PHILOS.file_exists(file.filename, file.mimetype):
-    file_list = PHILOS.update_file_as_logo(file.filename, file.mimetype)
+          PHILOS.update_file_as_logo(file.filename)
    else:
-    files = _handle_upload(required, request, True)
-    print(files)
+        files = _handle_upload(required, request, True)
+        cid = _get_file_cid(file, files)
 
-    if files != None:
-        file_list = files
-        for dat in file_list:
-            print(dat['Name'])
-            if dat['Name'] == file.filename and dat['Type'] == file.mimetype:
-                cid = dat['CID']
-                PHILOS.logo_url = 'https//127.0.0.1:5000/ipfs/'+cid
-                data = PHILOS.update_node_data()
-                break
+   if cid != None:
+        PHILOS.logo_url = 'https//127.0.0.1:5000/ipfs/'+cid
+        data = PHILOS.update_node_data()
 
    data = PHILOS.get_dashboard_data()
    if data == None:
@@ -414,7 +419,6 @@ def dashboard_data():
 def update_theme():
    required = ['token', 'client_pub', 'theme']
    req = request.get_json()
-   print(req)
 
    if not _payload_valid(required, req):
         abort(400)  # Bad Request
@@ -426,6 +430,43 @@ def update_theme():
    else:
    
      PHILOS.theme = req['theme']
+     PHILOS.update_customization()
+     data = PHILOS.get_dashboard_data()
+     if data == None:
+          return jsonify({'error': 'Cannot get dash data'}), 400
+     else:
+          return data, 200
+     
+@app.route('/update_bg_img', methods=['POST'])
+@cross_origin()
+def update_bg_img():
+   required = ['token', 'client_pub', 'bg_img']
+   file = request.files['file']
+   req = request.get_json()
+
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+        
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+     PHILOS.all_file_info()
+
+     if PHILOS.file_exists(file.filename, file.mimetype):
+          PHILOS.update_file_as_logo(file.filename)
+     else:
+          files = _handle_upload(required, request, True)
+          cid = _get_file_cid(file, files)
+
+     if cid != None:
+          PHILOS.bg_img = 'https//127.0.0.1:5000/ipfs/'+cid
+          data = PHILOS.update_node_data()
+   
+     PHILOS.bg_img = PHILOS.bg_img
      PHILOS.update_customization()
      data = PHILOS.get_dashboard_data()
      if data == None:
