@@ -86,6 +86,7 @@ class PhilosMachine(object):
         self.db = None
         self.state_data = None
         self.node_data = None
+        self.customization = None
         self.file_book = None
         self.peer_book = None
         self.stellar_book = None
@@ -100,6 +101,11 @@ class PhilosMachine(object):
         self.view_components = 'new_node'
         self.active_page = 'new_node'
         self.shared_dialogs = 'shared_dialogs'
+
+        #--CUSTOMIZATION----
+        self.theme = 0
+        self.themes = ['default', 'dark', 'light']
+        self.bg_img = None
 
         #-------KEYS--------
         self.session_priv = None
@@ -487,6 +493,7 @@ class PhilosMachine(object):
     def do_initialize(self):
         self._update_node_data(os.path.join(self.static_path, 'hvym_logo.png'), self._dirs.appname, self._dirs.appauthor, self.node_contract)
         self._update_state_data()
+        self._update_customization()
         return True
 
     @property
@@ -501,6 +508,7 @@ class PhilosMachine(object):
         self._create_stellar_keypair_from_seed(seed)
         self._create_root_token()
         self._update_state_data()
+        self._update_customization()
         self.active_page = 'establish'
         self.logged_in = True
         self._custom_qr_code(self.stellar_keypair.public_key, './static/stellar_logo.png', './static/stellar_wallet_qr.png', STELLAR_BG_RGB, STELLAR_FG_RGB )
@@ -518,6 +526,7 @@ class PhilosMachine(object):
         self.view_components = 'dashboard'
         self.active_page = 'authorize'
         self._update_state_data()
+        self._update_customization()
         return True
 
     def do_redeem(self):
@@ -556,6 +565,12 @@ class PhilosMachine(object):
         self._update_table_doc(self.state_data, data)
         self.db.close()
 
+    def _update_customization(self):
+        self._open_db()
+        data = { 'current_theme': self.theme, 'themes': self.themes, 'bg_img': self.bg_img }
+        self._update_table_doc(self.customization, data)
+        self.db.close()
+
     def _update_node_data(self, logo_url, name, descriptor, node_contract):
         self.logo_url = logo_url
         self.node_name = name
@@ -577,11 +592,19 @@ class PhilosMachine(object):
         self.db = TinyDB(encryption_key=self.master_key, path=self.db_path, storage=tae.EncryptedJSONStorage)
         self.state_data = self.db.table('state_data')
         self.node_data = self.db.table('node_data')
+        self.customization = self.db.table('customization')
         self.file_book= self.db.table('file_book')
         self.peer_book= self.db.table('peer_book')
         self.stellar_book= self.db.table('stellar_book')
         self.namespaces= self.db.table('namespaces')
 
+    def get_customization(self):
+        result = None
+        self._open_db()
+        result = self.customization.all()
+        self.db.close()
+
+        return result
 
     def _open_wallet(self):
         print('open wallet')
@@ -822,14 +845,16 @@ class PhilosMachine(object):
             return None
         
     def get_dashboard_data(self):
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True}
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'customization': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True}
         if self.DEBUG:
             #If DEBUG we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}
             repo = {'RepoSize': "0.1", 'StorageMax':"9000", 'usedPercentage': 0.01}
             self._open_db()
             files_list = self.file_book.all()
+            customization = self.customization.all()
             self.db.close()
+            result['customization'] = customization[0]
             result['stats'] = stats
             result['repo'] = repo
             result['file_list'] = files_list
@@ -839,6 +864,7 @@ class PhilosMachine(object):
             stats_response = self.get_stats('bw')
             repo_response = self.ipfs_repo_stats()
             files_list = self.file_book.all()
+            customization = self.customization.all()
             peer_id_response = self.get_peer_id()
             self.db.close()
 
@@ -856,6 +882,9 @@ class PhilosMachine(object):
                 del repo['RepoPath']
                 del repo['Version']
                 result['repo'] = repo
+
+            if customization != None:
+                result['customization'] = customization[0]
 
             if files_list != None:
                 result['file_list'] = files_list

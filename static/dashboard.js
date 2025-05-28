@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'repo': {}, 'stats': null, 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'customization': {}, 'repo': {}, 'stats': null, 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
 window.dash.SESSION_KEYS = 'PHILOS_SESSION';
 window.dash.NODE = 'PHILOS_NODE';
 window.dash.AUTHORIZED = false;
@@ -226,14 +226,7 @@ document.addEventListener('init', function(event) {
     //Element rendering methods:
     window.rndr.nodeInfo = function(repo_size, storage_max, percentage){
 
-
         let _updateElem = function(clone, elem, repo_size, storage_max, percentage){
-            console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            console.log(elem)
-            console.log(repo_size)
-            console.log(storage_max)
-            console.log(percentage)
-            console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             clone.querySelector('#'+elem+'-repo-size').innerHTML = " "+repo_size+" mb";
             clone.querySelector('#'+elem+'-storage-max').innerHTML= " "+storage_max+" mb";
             clone.querySelector('#'+elem+'-repo-graph').setAttribute('value', percentage);
@@ -312,8 +305,17 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('settings-info', _updateElem, multiaddress, url);
     };
 
-    window.rndr.settingsAppearance = function(){
-        window.rndr.RENDER_ELEM('settings-appearance');
+    window.rndr.settingsAppearance = function(selected_theme, themes, bg_img){
+
+        let _updateElem = function(clone, elem, selected_theme, themes, bg_img){
+            let sel = clone.querySelector('#'+elem+'-select');
+            sel.setAttribute('select-id', selected_theme);
+            for (let i = 0; i < themes.length; i++) {
+                sel.firstChild.insertAdjacentHTML('beforeend', '<option value="'+themes[i]+'">'+themes[i]+'</option>')
+            }
+        }
+
+        window.rndr.RENDER_ELEM('settings-appearance', _updateElem, selected_theme, themes, bg_img);
     };
 
     window.rndr.peerListItems = function(peerList){
@@ -343,7 +345,11 @@ document.addEventListener('init', function(event) {
 
     window.rndr.settings = function(){
         window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.location.host);
-        window.rndr.settingsAppearance();
+        window.rndr.settingsAppearance(window.dash.data.customization.current_theme, window.dash.data.customization.themes, window.dash.data.customization.bg_img);
+
+        document.querySelector('#settings-appearance-select').onchange = function  (event) {
+            console.log(event.target.selectedIndex)
+        };
     }
 
 

@@ -252,7 +252,11 @@ def authorize():
    else:
         PHILOS.set_client_session_pub(data['client_pub'])
         PHILOS.authorized()
-        return jsonify({'name': PHILOS.node_name, 'descriptor': PHILOS.node_descriptor, 'logo': PHILOS.logo_url, 'nonce': PHILOS.auth_nonce, 'file_list': PHILOS.get_files(), 'expires': str(PHILOS.session_ends), 'authorized': True}), 200
+        data = PHILOS.get_dashboard_data()
+        if data == None:
+          return jsonify({'error': 'Cannot get dash data'}), 400
+        else:
+          return data, 200
    
 
 @app.route('/authorized', methods=['POST'])
@@ -272,8 +276,6 @@ def authorized():
         raise Unauthorized()  # Unauthorized
    else:
      data = PHILOS.get_dashboard_data()
-     print('!!!!!!!!!!!!!!!!!')
-     print(data)
      if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
      else:
