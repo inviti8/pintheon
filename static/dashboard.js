@@ -243,6 +243,11 @@ const theme_updated = (data) => {
 
 };
 
+const copy_peer_id = () => {
+    let multiaddress = document.querySelector('#settings-info-multiaddress').value;
+    fn.copyToClipboard(multiaddress);
+};
+
 document.addEventListener('init', function(event) {
     let page = event.target;
 
@@ -323,6 +328,7 @@ document.addEventListener('init', function(event) {
         let _updateElem = function(clone, elem, multiaddress, url){
             clone.querySelector('#'+elem+'-multiaddress').value = multiaddress;
             clone.querySelector('#'+elem+'-gateway-url').value = url;
+            clone.querySelector('#'+elem+'-copy-peer-id').setAttribute('onclick', 'copy_peer_id()');
         }
 
         window.rndr.RENDER_ELEM('settings-info', _updateElem, multiaddress, url);
