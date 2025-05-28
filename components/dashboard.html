@@ -49,7 +49,7 @@
                     <H3>STATS</H3>
                   </header>
                   <div class="content">
-                    <div style="width:100%;">
+                    <div class="center-both" width:100%;">
                       <ons-list class="stat-ul" style="width:30%; height:200px;">
                         <ons-list-header>GENERATOR</ons-list-header>
                         <ons-list-item modifier="nodivider" style="width:100%;" >
@@ -78,7 +78,7 @@
                   <div class="content">
                     <div class="content_top">
                       <p>
-                          <ons-search-input id="file-search" class="dash-input"  placeholder="Search" onchange="fn.filterItems(this.value)"></ons-search-input>
+                          <ons-search-input id="file-search" class="dash-input"  placeholder="Search" onchange="fn.filterItems(this.value)" modifier="material"></ons-search-input>
                       </p> 
                     </div>  
                     <ons-list  id="file-list-main">
@@ -111,8 +111,11 @@
               <br />
               <ons-col width="80%">
                 <ons-card class="" modifier="outlined" style="height:200px;">
+                  <header>
+                    <H3>SETTINGS</H3>
+                  </header>
                   <div class="content center-both">
-                    <div style="width:100%;">
+                    <div class="center-both" style="width:100%;">
 
                       <ons-lazy-repeat id="settings-info"></ons-lazy-repeat>
                       <ons-lazy-repeat id="settings-appearance"></ons-lazy-repeat>

@@ -217,7 +217,6 @@ const dash_updated = (node) => {
 const settings_updated = (node) => {
     _updateDashData(node);
     window.fn.pushPage('settings', node, window.rndr.settings);
-    
 };
 
 const update_theme = async (theme) => {
@@ -365,7 +364,7 @@ document.addEventListener('init', function(event) {
         console.log(window.dash)
         
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
-        window.rndr.nodeCardHeader(window.dash.data['logo'], window.dash.data.name, window.dash.data.descriptor);
+        window.rndr.nodeCardHeader(window.dash.data.logo, window.dash.data.name, window.dash.data.descriptor);
         window.rndr.nodeInfo(window.dash.data.repo.RepoSize, window.dash.data.repo.StorageMax, window.dash.data.repo.usedPercentage);
         window.rndr.networkTraffic('100', '99');
         window.rndr.fileListItems(window.dash.data.file_list);
