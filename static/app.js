@@ -112,6 +112,19 @@ document.addEventListener('init', function(event) {
         }
     };
 
+    window.fn.filterItems = function(searchTerm) {
+        console.log('filterItems!!!', searchTerm);
+        var itemList = document.getElementById("file-list-main");
+        var items = Array.from(itemList.children);
+
+        items.forEach(function(item) {
+          // console.info(item)
+          var itemText = item.textContent.toLowerCase();
+          var showItem = searchTerm === "" || itemText.includes(searchTerm.toLowerCase());
+          item.style.display = showItem ? "block" : "none";
+        });
+    };
+
     window.fn.validateAllInputsAndCall = function(confirmMsg, failMsg, callback, ...args) {
         const inputs = document.querySelectorAll('input,  select, textarea');
         let result = true;
