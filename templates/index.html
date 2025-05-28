@@ -8,6 +8,11 @@
   <script src="{{ url_for('static', filename='onsenui.min.js') }}"></script>
   <script src="{{ url_for('static', filename='stellar-sdk.min.js') }}"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/approvejs/3.1.2/approve.min.js"></script>
+  <style>
+    .page--full_bg__background {
+        background: url("{{ bg_img }}");
+    }
+  </style>
 </head>
 <body>
   <ons-navigator swipeable id="Nav" page="{{page}}.html"></ons-navigator>
@@ -54,6 +59,7 @@
     window.icons.EPS = "{{ url_for('static', filename='eps-file.png') }}";
     window.icons.DLL = "{{ url_for('static', filename='dll-file.png') }}";
     window.icons.AVI = "{{ url_for('static', filename='avi-file.png') }}";
+    
     if("{{session_data.generator_pub}}"!="None"){
       window.constants.SERVER_GENERATOR_PUBLIC_KEY = await importServerPub("{{session_data.generator_pub}}");
       console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
@@ -78,6 +84,19 @@
 
     console.log( window.constants.CLIENT_PUBLIC_KEY )
   </script>
+  {% if bg_img is not none %}
+  <script type="module">
+
+    window.constants.HAS_BG_IMG = true;
+    
+  </script>
+  {% else %}
+  <script type="module">
+
+    window.constants.HAS_BG_IMG = false;
+
+  </script>
+  {% endif %}
   <script src="{{ url_for('static', filename='app.js') }}"></script>
   <script src="{{js}}"></script>
   <script src="{{shared_dialogs_js}}"></script>

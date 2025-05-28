@@ -80,6 +80,7 @@ class PhilosMachine(object):
         self.node_name = None
         self.node_descriptor = None
         self.node_meta_data = None
+        self.url_host = None
 
         #-------DB--------
         self.db_path = db_path
@@ -181,10 +182,11 @@ class PhilosMachine(object):
     def set_seed_cipher(self, seedCipher):
         self._seed_cipher = seedCipher
 
-    def set_node_data(self, name, descriptor, metadata):
+    def set_node_data(self, name, descriptor, metadata, host):
         self.node_name = name
         self.node_descriptor = descriptor
         self.node_meta_data = metadata
+        self.url_host = host
         if self.DEBUG:
             self.node_contract = DEBUG_NODE_CONTRACT
         else:

@@ -417,6 +417,9 @@ document.addEventListener('init', function(event) {
 window.fn.pushPage = function(page, node_data, callback = null, ...args) {
     document.querySelector('#Nav').pushPage(page+'.html')
     .then(function(){
+        if(window.constants.HAS_BG_IMG){
+            ons.modifier.add(page, 'full_bg');
+        };
         if(callback){
             callback(...args);
         }

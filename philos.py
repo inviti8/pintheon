@@ -118,7 +118,7 @@ def unauthorized_access(e):
 
 ##ROUTES## 
 @app.route('/admin')
-def home():
+def admin():
    hsh = PHILOS.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
    print(PHILOS.hash_key(hsh))
    m = Macaroon(
@@ -150,13 +150,14 @@ def home():
    logo=PHILOS.logo_url
    customization = PHILOS.get_customization()
    theme = customization['themes'][customization['current_theme']]
+   bg_img = customization['bg_img']
    shared_dialogs=_load_components(PHILOS.shared_dialogs)
    shared_dialogs_js=_load_js(PHILOS.shared_dialogs)
    client_tokens= _load_js('macaroons_js_bundle')
    theme_css = url_for('static', filename=theme+'-theme.css')
    
    session_data = { 'pub': pub, 'generator_pub': PHILOS.node_pub, 'time': PHILOS.session_ends, 'nonce': PHILOS.session_nonce }
-   return render_template(template, page=page, components=components, js=js, logo=logo, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
+   return render_template(template, page=page, components=components, js=js, logo=logo, bg_img=bg_img, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
 
 @app.route('/top_up_stellar')
 def top_up_stellar():
@@ -195,7 +196,7 @@ def reset_init():
      if PHILOS.state == 'establishing':
           PHILOS.init_reset()
           PHILOS.end_session()
-          home()
+          admin()
         
      return jsonify({'authorized': False}), 200
 
@@ -229,7 +230,7 @@ def new_node():
 @app.route('/establish', methods=['POST'])
 @cross_origin()
 def establish():
-   required = ['token', 'client_pub', 'name', 'descriptor', 'meta_data']
+   required = ['token', 'client_pub', 'name', 'descriptor', 'meta_data', 'host']
    data = request.get_json()
    print(data)
 
@@ -243,7 +244,7 @@ def establish():
         raise Unauthorized()  # Unauthorized
 
    else:
-        PHILOS.set_node_data(data['name'], data['descriptor'], data['meta_data'])
+        PHILOS.set_node_data(data['name'], data['descriptor'], data['meta_data'], data['host'])
         PHILOS.established()
         
    return PHILOS.establish_data(), 200
@@ -339,7 +340,7 @@ def update_logo():
         cid = _get_file_cid(file, files)
 
    if cid != None:
-        PHILOS.logo_url = 'https//127.0.0.1:5000/ipfs/'+cid
+        PHILOS.logo_url = PHILOS.url_host+'/ipfs/'+cid
         data = PHILOS.update_node_data()
 
    data = PHILOS.get_dashboard_data()
@@ -440,9 +441,8 @@ def update_theme():
 @app.route('/update_bg_img', methods=['POST'])
 @cross_origin()
 def update_bg_img():
-   required = ['token', 'client_pub', 'bg_img']
+   required = ['token', 'client_pub']
    file = request.files['file']
-   req = request.get_json()
 
    for field in required:
         if field not in request.form:
@@ -463,7 +463,7 @@ def update_bg_img():
           cid = _get_file_cid(file, files)
 
      if cid != None:
-          PHILOS.bg_img = 'https//127.0.0.1:5000/ipfs/'+cid
+          PHILOS.bg_img = PHILOS.url_host+'/ipfs/'+cid
           data = PHILOS.update_node_data()
    
      PHILOS.bg_img = PHILOS.bg_img

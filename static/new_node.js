@@ -77,7 +77,8 @@ const establish = async () => {
         'client_pub': window.constants.CLIENT_PUBLIC_KEY,
         'name': document.querySelector('#node-name').value,
         'descriptor': document.querySelector('#node-descriptor').value,
-        'meta_data': document.querySelector('#node-meta-data').value
+        'meta_data': document.querySelector('#node-meta-data').value,
+        'host': window.location.host
     };
 
     window.fn.call(body, '/establish', established);
