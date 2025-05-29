@@ -22,7 +22,7 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PHILOS = PhilosMachine(static_path=STATIC_PATH, db_path=DB_PATH, debug=True)
+PHILOS = PhilosMachine(static_path=STATIC_PATH, db_path=DB_PATH, debug=True, fake_ipfs=True)
 PHILOS.initialize()
 
 ##UTILITIES###
@@ -443,6 +443,7 @@ def update_theme():
 def update_bg_img():
    required = ['token', 'client_pub']
    file = request.files['file']
+   cid = None
 
    for field in required:
         if field not in request.form:
@@ -456,8 +457,12 @@ def update_bg_img():
    else:
      PHILOS.all_file_info()
 
+     print(file.mimetype)
+
      if PHILOS.file_exists(file.filename, file.mimetype):
-          PHILOS.update_file_as_bg_img(file.filename)
+          print('HERE!!!')
+          files = PHILOS.update_file_as_bg_img(file.filename)
+          cid = _get_file_cid(file, files)
      else:
           files = _handle_upload(required=required, request=request, is_bg_img=True)
           cid = _get_file_cid(file, files)
@@ -466,7 +471,32 @@ def update_bg_img():
           PHILOS.bg_img = PHILOS.url_host+'/ipfs/'+cid
           data = PHILOS.update_node_data()
    
-     PHILOS.bg_img = PHILOS.bg_img
+     PHILOS.update_customization()
+     data = PHILOS.get_dashboard_data()
+     if data == None:
+          return jsonify({'error': 'Cannot get dash data'}), 400
+     else:
+          return data, 200
+     
+@app.route('/remove_bg_img', methods=['POST'])
+@cross_origin()
+def remove_bg_img():
+   required = ['token', 'client_pub']
+
+
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+        
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+   
+     PHILOS.remove_file_as_bg_img()
+     PHILOS.bg_img = None
      PHILOS.update_customization()
      data = PHILOS.get_dashboard_data()
      if data == None:

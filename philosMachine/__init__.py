@@ -54,13 +54,18 @@ OPUS_MAINNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
 DEBUG_SEED = "mobile isolate scale vendor salt coconut arrest reject rude coyote penalty what cargo dog success deal virus unable wet gravity appear load volume wise"
 DEBUG_NODE_CONTRACT = "CDZ6NQWAFLP5GLMZGZ4LIG5CYSRQRP2CFCFLME6KW42RYJVKH6C7D6BC"
 DEBUG_URL_HOST = 'http://127.0.0.1:5000'
+FAKE_IPFS_HOST = 'https://sapphire-giant-butterfly-891.mypinata.cloud'
+FAKE_IPFS_FILE1 = 'bafkreigrdnc7ln2tobatstvb75434ocyzjz7fnb25um7xvlbmb4m7pb7gq'
+FAKE_IPFS_FILE2 = 'QmXGtmbaTrZazLuHoJfzT4MPsBZzsdnCLzvTKQrfjxE7bY'
+FAKE_IPFS_FILE3 = 'QmPRrLUmA5sFDYXLF654YdX1DmBBvTWwTwkokugbGYCDGJ'
+FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
 
 class PhilosMachine(object):
 
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
-    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', debug = False):
+    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', debug = False, fake_ipfs=False):
 
         self.uid = str(uuid.uuid4())
         self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIzaWRlbnRpZmllciBQSElMT1NfTEFVTkNIX1RPS0VOCjAwMmZzaWduYXR1cmUgm2DPFKM5bRmCSPqmBaFOVeUEliIy3fPs_ngrdloMYFcK'
@@ -135,6 +140,7 @@ class PhilosMachine(object):
 
         #--------DEBUG--------------
         self.DEBUG = debug
+        self.FAKE_IPFS = fake_ipfs
 
         self._client_node_pub = None
         self._client_session_pub = None
@@ -191,6 +197,8 @@ class PhilosMachine(object):
         if self.DEBUG:
             self.node_contract = DEBUG_NODE_CONTRACT
             self.url_host = DEBUG_URL_HOST
+            if self.FAKE_IPFS:
+                self.url_host = FAKE_IPFS_HOST
         else:
             self.node_contract = self.deploy_node_token(name, descriptor)
 
@@ -766,6 +774,14 @@ class PhilosMachine(object):
         self.db.close()
 
         return all_file_info
+    
+    def remove_file_as_bg_img(self):
+        self._open_db()
+        self.file_book.update({'IsBgImg': False})
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
 
     def all_file_info(self):
         self._open_db()
@@ -784,62 +800,85 @@ class PhilosMachine(object):
                 return jsonify({'error': 'stats not available.'}), 400
 
     def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False):
-        url = f'{self.ipfs_endpoint}/add'
-
-        files = {
-            'file': (
-                file_name,  # Set a dummy filename for directory parts
-                file_data,
-                    'application/x-directory' if isinstance(file_data, dict) else 'application/octet-stream'
-            )
-        }
-
-        params = {
-            'quiet': 'false',
-            'quieter': 'false',
-            'silent': 'false',
-            'progress': 'false',
-            'trickle': 'false',
-            'only-hash': 'false',
-            'wrap-with-directory': 'false',
-            'chunker': 'size-262144',
-            'raw-leaves': 'false',
-            'nocopy': 'false',
-            'fscache': 'false',
-            'cid-version': '0',
-            'hash': 'sha2-256',
-            'inline': 'false',
-            'inline-limit': '32',
-            'pin': 'true'
-        }
-
-        response = requests.post(url, files=files, params=params)
-
-        if response.status_code == 200:
-            ipfs_data = response.json()
-            # print('ipfs res : ',ipfs_data)
-            cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
-            if cid != None:
-                
-                file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img}
-                self._open_db()
-                file = Query()
-
-                if is_logo:
-                    self.file_book.update({'IsLogo': False})
-
-                if is_bg_img:
-                    self.file_book.update({'IsBgImg': False})
-
-                self.file_book.insert(file_info)
-
-                all_file_info = self.file_book.all()
-                self.db.close()
-
-                return all_file_info
+        if self.FAKE_IPFS:
+            return self.create_fake_ipfs_data()
         else:
-            return None
+            url = f'{self.ipfs_endpoint}/add'
+
+            files = {
+                'file': (
+                    file_name,  # Set a dummy filename for directory parts
+                    file_data,
+                        'application/x-directory' if isinstance(file_data, dict) else 'application/octet-stream'
+                )
+            }
+
+            params = {
+                'quiet': 'false',
+                'quieter': 'false',
+                'silent': 'false',
+                'progress': 'false',
+                'trickle': 'false',
+                'only-hash': 'false',
+                'wrap-with-directory': 'false',
+                'chunker': 'size-262144',
+                'raw-leaves': 'false',
+                'nocopy': 'false',
+                'fscache': 'false',
+                'cid-version': '0',
+                'hash': 'sha2-256',
+                'inline': 'false',
+                'inline-limit': '32',
+                'pin': 'true'
+            }
+
+            response = requests.post(url, files=files, params=params)
+
+            if response.status_code == 200:
+                ipfs_data = response.json()
+                # print('ipfs res : ',ipfs_data)
+                cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
+                if cid != None:
+                    
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img}
+                    self._open_db()
+                    file = Query()
+
+                    if is_logo:
+                        self.file_book.update({'IsLogo': False})
+
+                    if is_bg_img:
+                        self.file_book.update({'IsBgImg': False})
+
+                    self.file_book.insert(file_info)
+
+                    all_file_info = self.file_book.all()
+                    self.db.close()
+
+                    return all_file_info
+            else:
+                return None
         
+    def create_fake_ipfs_data(self):
+        names = ['oro_logo_3.svg', 'hvym.png', 'LazerEyeWillie.png']
+        types = ['image/svg+xml', 'image/png', 'image/png']
+        logo = [False, True, False]
+        bg_img = [False, False, False]
+
+        idx = 0
+        self._open_db()
+        File = Query()
+        for hash in FAKE_IPFS_FILES:
+            self.file_book.remove(File.CID == hash)
+            file_info = {'Name':names[idx], 'Type': types[idx], 'Hash':hash, 'CID':hash, 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx]}
+            self.file_book.insert(file_info)
+            idx+=1
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
+
+    
     def add_cid_to_ipns(self, cid, name=None):
         url = f'{self.ipfs_endpoint}/name/publish?arg={cid}&key=self'
         if name != None:
@@ -867,8 +906,8 @@ class PhilosMachine(object):
             return None
         
     def get_dashboard_data(self):
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'customization': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True}
-        if self.DEBUG:
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True}
+        if self.DEBUG or self.FAKE_IPFS:
             #If DEBUG we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}
             repo = {'RepoSize': "0.1", 'StorageMax':"9000", 'usedPercentage': 0.01}

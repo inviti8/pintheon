@@ -128,7 +128,7 @@
              </ons-col>
              <ons-col width="100%">
                 <ons-card modifier="default outlined">
-                  <div class="content"><ons-button modifier="large" id="upload-button" ripple>ADD PEER</ons-button></div>
+                  <div class="content"><ons-button modifier="large" id="aettings-add-peer-button" ripple>ADD PEER</ons-button></div>
                   <div class="content">
                     <ons-list  id="file-list-main">
                       <ons-list-header>PEER LIST</ons-list-header>
@@ -288,9 +288,11 @@
       <ons-list-item style="width:100%;" >
             <header class="center-both">
               <pre><span class="list-item__subtitle">bg image:   </span></pre>
-              <span><ons-button id="settings-appearance-bg-button" class="can-callback" ripple>UPLOAD
+              <span>
+              <ons-button id="settings-appearance-bg-button" class="can-callback" ripple>UPLOAD
                 <input type="file" id="settings-appearance-bg-input" style="display: none;">
               </ons-button>
+              <ons-button id="settings-appearance-remove-bg-button" class="can-callback" ripple disabled>REMOVE</ons-button>
             </span>
             </header>
       </ons-list-item>
@@ -308,4 +310,18 @@
         </ons-button>
       </div>
     </ons-list-item>
+  </template>
+
+   <template id="upload-bg-img-dialog.html">
+    <ons-dialog id="upload-bg-img-dialog" modifier="outlined" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <p class="dialog-p">UPDATE BACKGROUND IMAGE</p>
+        <p class="dialog-p">Select a file to upload:</p>
+        <p>
+          <ons-button id="upload-bg-img-dialog-button" class="can-callback" ripple>UPLOAD
+            <input type="file" id="upload-bg-img-dialog-input" style="display: none;">
+          </ons-button>
+        </p>
+      </div>
+    </ons-dialog>
   </template>

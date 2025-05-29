@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'customization': {}, 'repo': {}, 'stats': null, 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
 window.dash.SESSION_KEYS = 'PHILOS_SESSION';
 window.dash.NODE = 'PHILOS_NODE';
 window.dash.AUTHORIZED = false;
@@ -242,15 +242,72 @@ const theme_updated = (data) => {
 
 };
 
+const upload_bg_img_dlg = async (callback) => {
+    window.dlg.showLoadFileDlg('upload-bg-img-dialog', callback, false, [], 'FILE');
+};
+
+const update_bg_img = async (file) => {
+
+    const session = _getSessionData();
+
+    if(file){
+        const formData = new FormData()
+
+        formData.append('token', session.token.serialize());
+        formData.append('client_pub', session.pub);
+        formData.append('file', file);
+        await window.fn.uploadFile(file, formData, '/update_bg_img', bg_img_updated);
+    };
+};
+
+const bg_img_updated = (node_data) => {
+
+    console.log(node_data)
+    _updateDashData(node_data);
+    window.rndr.dashboard();
+    window.location.reload();
+
+};
+
+const remove_bg = async () => {
+    const session = _getSessionData();
+    const formData = new FormData()
+
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+        
+    await window.fn.removeBg(formData, '/remove_bg_img', bg_removed);
+};
+
+const bg_removed = (data) => {
+
+    console.log(data)
+    _updateDashData({ 'customization': data.customization });
+    window.rndr.settings();
+    window.location.reload();
+    window.fn.pushPage('settings', data);
+
+};
+
 const copy_peer_id = () => {
     let multiaddress = document.querySelector('#settings-info-multiaddress').value;
     fn.copyToClipboard(multiaddress);
 };
 
+
 document.addEventListener('init', function(event) {
     let page = event.target;
 
     //Element rendering methods:
+    window.rndr.updateBg = function(){
+        let nav = document.querySelector('#Nav');
+        let currentPage = nav.topPage;
+        if(window.constants.HAS_BG_IMG && !ons.modifier.contains(currentPage, 'full_bg')){
+            ons.modifier.remove(currentPage, 'gradient');
+            ons.modifier.add(currentPage, 'full_bg');
+        };
+    }
+
     window.rndr.nodeInfo = function(repo_size, storage_max, percentage){
 
         let _updateElem = function(clone, elem, repo_size, storage_max, percentage){
@@ -272,13 +329,13 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('network-traffic', _updateElem, incoming, outgoing);
     };
 
-    window.rndr.fileListItems = function(fileList){
+    window.rndr.fileListItems = function(host, fileList){
 
         if(fileList.length===0)
             return;
 
-        let _updateElem = function(clone, i, fileList){
-            let fileUrl = 'https://' + window.location.host + '/ipfs/' + fileList[i]['CID'];
+        let _updateElem = function(clone, i, host, fileList){
+            let fileUrl = host + '/ipfs/' + fileList[i]['CID'];
             let fileType = fileList[i]['Type'];
             let icon = window.icons.UNKNOWN;
 
@@ -317,9 +374,10 @@ document.addEventListener('init', function(event) {
             clone.querySelector('#file-remove').setAttribute('onclick', 'remove_file("' + fileList[i]['CID'] + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
             if (fileList[i]['IsLogo'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-star"></ons-icon>'};
+            if (fileList[i]['IsBgImg'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-photo"></ons-icon>'};
         }
 
-        window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, fileList);
+        window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, host, fileList);
     };
 
     window.rndr.settingsNodeInfo = function(multiaddress, url){
@@ -367,16 +425,30 @@ document.addEventListener('init', function(event) {
         window.rndr.nodeCardHeader(window.dash.data.logo, window.dash.data.name, window.dash.data.descriptor);
         window.rndr.nodeInfo(window.dash.data.repo.RepoSize, window.dash.data.repo.StorageMax, window.dash.data.repo.usedPercentage);
         window.rndr.networkTraffic('100', '99');
-        window.rndr.fileListItems(window.dash.data.file_list);
+        window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list);
 
     };
 
     window.rndr.settings = function(){
         window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.location.host);
         window.rndr.settingsAppearance(window.dash.data.customization.current_theme, window.dash.data.customization.themes, window.dash.data.customization.bg_img);
+        let upload_btn = document.querySelector('#settings-appearance-bg-button');
+        let remove_btn = document.querySelector('#settings-appearance-remove-bg-button');
+
+        if(window.constants.HAS_BG_IMG){
+            remove_btn.disabled = false;
+        };
 
         document.querySelector('#settings-appearance-select').onchange = function  (event) {
             update_theme(event.target.selectedIndex);
+        };
+
+        upload_btn.onclick = function  (event) {
+            upload_bg_img_dlg(update_bg_img);
+        };
+
+        remove_btn.onclick = function  (event) {
+            remove_bg();
         };
     }
 
@@ -412,15 +484,14 @@ document.addEventListener('init', function(event) {
             dash_data(dash_updated);
         };
     };
+
+    window.rndr.updateBg();
 });
 
 window.fn.pushPage = function(page, node_data, callback = null, ...args) {
-    document.querySelector('#Nav').pushPage(page+'.html')
+    let nav = document.querySelector('#Nav');
+    nav.pushPage(page+'.html')
     .then(function(){
-        if(window.constants.HAS_BG_IMG){
-            ons.modifier.remove(page, 'gradient');
-            ons.modifier.add(page, 'full_bg');
-        };
         if(callback){
             callback(...args);
         }
