@@ -375,6 +375,12 @@ document.addEventListener('init', function(event) {
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
             if (fileList[i]['IsLogo'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-star"></ons-icon>'};
             if (fileList[i]['IsBgImg'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-photo"></ons-icon>'};
+            if(fileList[i]['ContractID'].length > 0){
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="center-both" modifier="outline" onclick="send_file_token('+fileList[i]['CID']+')"><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
+            }else{
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="tokenize-button" class="center-both" modifier="outline" onclick="tokenize_file('+fileList[i]['CID']+')"><ons-icon icon="fa-cube"></ons-icon> tokenize</ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="center-both" modifier="outline" onclick="send_file_token('+fileList[i]['CID']+')" disabled><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
+            }
         }
 
         window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, host, fileList);

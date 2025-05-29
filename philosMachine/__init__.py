@@ -840,9 +840,8 @@ class PhilosMachine(object):
                 cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
                 if cid != None:
                     
-                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img}
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img}
                     self._open_db()
-                    file = Query()
 
                     if is_logo:
                         self.file_book.update({'IsLogo': False})
@@ -870,7 +869,7 @@ class PhilosMachine(object):
         File = Query()
         for hash in FAKE_IPFS_FILES:
             self.file_book.remove(File.CID == hash)
-            file_info = {'Name':names[idx], 'Type': types[idx], 'Hash':hash, 'CID':hash, 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx]}
+            file_info = {'Name':names[idx], 'Type': types[idx], 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx]}
             self.file_book.insert(file_info)
             idx+=1
         all_file_info = self.file_book.all()
