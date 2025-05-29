@@ -96,10 +96,10 @@ class PhilosMachine(object):
 
         #-------IPFS--------
         self.ipfs_daemon = ipfs_daemon
-        self.ipfs_endpoint = 'http://127.0.0.1:5001/api/v0'
+        self.ipfs_endpoint = self.ipfs_daemon+'/api/v0'
 
         #-------VIEWS--------
-        self.view_template = 'index.html'
+        self.view_template = 'admin.html'
         self.view_components = 'new_node'
         self.active_page = 'new_node'
         self.shared_dialogs = 'shared_dialogs'

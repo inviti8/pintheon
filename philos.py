@@ -162,7 +162,7 @@ def admin():
 @app.route('/top_up_stellar')
 def top_up_stellar():
    PHILOS.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
-   template = 'index_top_up.html'
+   template = 'top_up.html'
    page = 'top_up'
    js=_load_js('top_up')
    qr=PHILOS.stellar_wallet_qr
