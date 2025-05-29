@@ -336,7 +336,7 @@ def update_logo():
    if PHILOS.file_exists(file.filename, file.mimetype):
           PHILOS.update_file_as_logo(file.filename)
    else:
-        files = _handle_upload(required, request, True)
+        files = _handle_upload(required=required, request=request, is_logo=True)
         cid = _get_file_cid(file, files)
 
    if cid != None:
@@ -457,9 +457,9 @@ def update_bg_img():
      PHILOS.all_file_info()
 
      if PHILOS.file_exists(file.filename, file.mimetype):
-          PHILOS.update_file_as_logo(file.filename)
+          PHILOS.update_file_as_bg_img(file.filename)
      else:
-          files = _handle_upload(required, request, True)
+          files = _handle_upload(required=required, request=request, is_bg_img=True)
           cid = _get_file_cid(file, files)
 
      if cid != None:

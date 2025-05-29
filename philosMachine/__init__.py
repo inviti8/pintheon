@@ -53,6 +53,7 @@ OPUS_MAINNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
 
 DEBUG_SEED = "mobile isolate scale vendor salt coconut arrest reject rude coyote penalty what cargo dog success deal virus unable wet gravity appear load volume wise"
 DEBUG_NODE_CONTRACT = "CDZ6NQWAFLP5GLMZGZ4LIG5CYSRQRP2CFCFLME6KW42RYJVKH6C7D6BC"
+DEBUG_URL_HOST = 'http://127.0.0.1:5000'
 
 
 class PhilosMachine(object):
@@ -189,6 +190,7 @@ class PhilosMachine(object):
         self.url_host = host
         if self.DEBUG:
             self.node_contract = DEBUG_NODE_CONTRACT
+            self.url_host = DEBUG_URL_HOST
         else:
             self.node_contract = self.deploy_node_token(name, descriptor)
 
@@ -548,7 +550,7 @@ class PhilosMachine(object):
     def update_node_data(self):
         print('Update node data...')
         self._open_db()
-        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'node_contract':self.node_contract, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
+        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'url_host':self.url_host, 'node_contract':self.node_contract, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
         self._update_table_doc(self.node_data, data)
         print(self.node_data.all())
         self.db.close()
@@ -738,7 +740,6 @@ class PhilosMachine(object):
         return result
 
     def update_file_as_logo(self, file_name):
-        result = False
         self._open_db()
         file = Query()
         record = self.file_book.get(file.Name == file_name)
@@ -746,7 +747,6 @@ class PhilosMachine(object):
         if record != None and record['IsLogo'] == False:
             self.file_book.update({'IsLogo': False})
             self.file_book.update({'IsLogo': True}, file.Name == file_name)
-            result = True
 
         all_file_info = self.file_book.all()
         self.db.close()
@@ -754,7 +754,6 @@ class PhilosMachine(object):
         return all_file_info
     
     def update_file_as_bg_img(self, file_name):
-        result = False
         self._open_db()
         file = Query()
         record = self.file_book.get(file.Name == file_name)
@@ -762,7 +761,6 @@ class PhilosMachine(object):
         if record != None and record['IsBgImg'] == False:
             self.file_book.update({'IsBgImg': False})
             self.file_book.update({'IsBgImg': True}, file.Name == file_name)
-            result = True
 
         all_file_info = self.file_book.all()
         self.db.close()
