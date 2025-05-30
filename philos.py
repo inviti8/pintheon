@@ -370,6 +370,29 @@ def remove_file():
         else:
             return ipfs_response
         
+@app.route('/tokenize_file', methods=['POST'])
+@cross_origin()
+def tokenize_file():
+   required = ['token', 'client_pub', 'cid']
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        file_data = PHILOS.file_data_from_cid(request.form['cid'])
+        contract_id = PHILOS.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PHILOS.url_hosts)
+        data = PHILOS.update_file_contract_id(request.form['cid'], contract_id)
+
+        if data == None:
+                return jsonify({'error': 'File data not updated'}), 400
+        else:
+            return data
+        
 @app.route('/add_to_namespace', methods=['POST'])
 @cross_origin()
 def add_to_namespace():

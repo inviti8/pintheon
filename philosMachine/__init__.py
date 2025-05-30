@@ -19,7 +19,6 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
-from stellar_sdk import Keypair
 from pymacaroons import Macaroon, Verifier
 import hashlib
 import hashlib, binascii
@@ -415,6 +414,17 @@ class PhilosMachine(object):
          token = self._bind_ipfs_token(token_id)
          return self._token_balance(token)
     
+    def ipfs_token_mint(self, token_id, recieving_address, amount):
+         token = self._bind_ipfs_token(token_id)
+         return token.mint(recieving_address, amount)
+    
+    def ipfs_custodial_mint(self, token_id, amount):
+        return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key.public_key, amount)
+    
+    def ipfs_token_send(self, token_id, recieving_address, amount):
+         token = self._bind_ipfs_token(token_id)
+         token.transfer_from(spender=self.stellar_keypair.public_key.public_key, from_=self.stellar_keypair.public_key.public_key, to=recieving_address, amount=amount, signer=self.stellar_keypair)
+    
     def _bind_ipfs_token(self, token_id):
          return IPFS_Token(token_id, self.stellar_server, self.NETWORK_PASSPHRASE)
     
@@ -778,6 +788,23 @@ class PhilosMachine(object):
     def remove_file_as_bg_img(self):
         self._open_db()
         self.file_book.update({'IsBgImg': False})
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
+    
+    def file_data_from_cid(self, cid):
+        self._open_db()
+        file = Query()
+        file_data = self.file_book.get(file.CID==cid)
+        self.db.close()
+
+        return file_data
+    
+    def update_file_contract_id(self, cid, contract_id):
+        self._open_db()
+        file = Query()
+        self.file_book.update({'ContractID': contract_id}, file.CID == cid)
         all_file_info = self.file_book.all()
         self.db.close()
 
