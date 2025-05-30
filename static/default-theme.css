@@ -150,6 +150,10 @@
   --outline-color-faint: hsla(301, 100%, 50%, 0.24);
 }
 
+a {
+  color: var(--button-quiet-color);
+}
+
 .page--gradient__background {
   background: radial-gradient(circle,rgb(36, 23, 38) 0%, rgb(43, 31, 48) 50%, rgb(50, 34, 56) 100%);
 }
