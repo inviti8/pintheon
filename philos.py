@@ -393,6 +393,29 @@ def tokenize_file():
         else:
             return data
         
+@app.route('/send_file_token', methods=['POST'])
+@cross_origin()
+def send_file_token():
+   required = ['token', 'client_pub', 'cid', 'amount', 'to_address']
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        file_data = PHILOS.file_data_from_cid(request.form['cid'])
+        if request.form['amount'] > 0 and len(file_data['ContractID']) > 0:
+          data = PHILOS.ipfs_token_send(file_data['ContractID'], request.form['to_address'], request.form['amount'])
+
+          if data == None:
+                    return jsonify({'error': 'File data not updated'}), 400
+          else:
+               return data
+        
 @app.route('/add_to_namespace', methods=['POST'])
 @cross_origin()
 def add_to_namespace():
