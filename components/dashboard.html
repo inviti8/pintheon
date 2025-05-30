@@ -124,20 +124,20 @@
                   </div>
                 </ons-card>
               </ons-col>
-            <ons-row>
-             </ons-col>
-             <ons-col width="100%">
+            <!-- <ons-row>
+             </ons-col> -->
+             <!-- <ons-col width="100%">
                 <ons-card modifier="default outlined">
                   <div class="content"><ons-button modifier="large" id="aettings-add-peer-button" ripple>ADD PEER</ons-button></div>
                   <div class="content">
-                    <ons-list  id="file-list-main">
-                      <ons-list-header>PEER LIST</ons-list-header>
+                    <ons-list  id="file-list-main"> -->
+                      <!-- <ons-list-header>PEER LIST</ons-list-header> -->
                       <!-- <ons-lazy-repeat id="file-list-items"></ons-lazy-repeat> -->
-                    </ons-list>
+                    <!-- </ons-list>
                   </div>
               </ons-card>
-             </ons-col>
-           </ons-row>
+             </ons-col> -->
+           <!-- </ons-row> -->
             </div>
         </div>
       </div>
@@ -264,7 +264,7 @@
   </template>
 
   <template id="settings-info-template">
-    <ons-list class="stat-ul" style="width:40%; height:200px;">
+    <ons-list class="stat-ul" style="width:60%; height:200px;">
       <ons-list-header>NODE INFO</ons-list-header>
       <ons-list-item style="width:100%;" >
             <header class="center-both">
@@ -278,14 +278,21 @@
       <ons-list-item style="width:100%;" >
             <header class="center-both">
               <pre><span class="list-item__subtitle">gateway:   </span></pre>
-              <span><ons-input class="dash-input" id="settings-info-gateway-url" modifier="large" value="127.0.0.1:9500" float></ons-input></span>
+              <span>
+                <ons-input class="dash-input" id="settings-info-gateway-url" modifier="large" value="127.0.0.1:9500" float></ons-input>
+              </span>
+              <span>
+                <ons-button modifier="quiet" id="settings-info-update-gateway" class="can-callback" ripple>
+                  <ons-icon icon="fa-wrench"></ons-icon>
+                </ons-button>
+              </span>
             </header>
       </ons-list-item>
     </ons-list>
   </template>
 
   <template id="settings-appearance-template">
-    <ons-list class="stat-ul" style="width:50%; height:200px;">
+    <ons-list class="stat-ul" style="width:40%; height:200px;">
       <ons-list-header>APPEARANCE</ons-list-header>
       <ons-list-item style="width:100%;" >
             <header class="center-both">
@@ -300,10 +307,13 @@
             <header class="center-both">
               <pre><span class="list-item__subtitle">bg image:   </span></pre>
               <span>
-              <ons-button id="settings-appearance-bg-button" class="can-callback" ripple>UPLOAD
+              <ons-button modifier="quiet" id="settings-appearance-bg-button" class="can-callback" ripple>
                 <input type="file" id="settings-appearance-bg-input" style="display: none;">
+                <ons-icon icon="fa-plus"></ons-icon>
               </ons-button>
-              <ons-button id="settings-appearance-remove-bg-button" class="can-callback" ripple disabled>REMOVE</ons-button>
+              <ons-button modifier="quiet" id="settings-appearance-remove-bg-button" class="can-callback" ripple disabled>
+                <ons-icon icon="fa-remove"></ons-icon>
+              </ons-button>
             </span>
             </header>
       </ons-list-item>

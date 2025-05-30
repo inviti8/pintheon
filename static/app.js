@@ -274,8 +274,41 @@ document.addEventListener('init', function(event) {
         })
     };
 
+    window.fn.updateGateway = async (formData, endpoint, callback, method='POST') => {
+        ons.notification.confirm('Update Gateway url?')
+        .then(function(yes) {
+            if(yes){
+                window.dlg.show('loading-dialog');
+                fetch(endpoint, {
+                    method: method,
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        window.dlg.hide('loading-dialog');
+                        window.dlg.show('fail-dialog');
+                        throw new Error('bg image removal failed');
+                    }
+                })
+                .then(data => {
+                    console.log('Server response:', data);
+                    window.dlg.hide('loading-dialog');
+                    callback(data);
+                })
+                .catch(error => {
+                    window.dlg.hide('loading-dialog');
+                    console.error('Error updating gateway:', error);
+                });
+
+            };
+
+        })
+    };
+
     window.fn.removeBg = async (formData, endpoint, callback, method='POST') => {
-        ons.notification.confirm('Are remove the background image?')
+        ons.notification.confirm('Remove the background image?')
         .then(function(yes) {
             if(yes){
                 window.dlg.show('loading-dialog');

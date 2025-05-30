@@ -331,7 +331,6 @@ def upload():
 def update_logo():
    required = ['token', 'client_pub']
    file = request.files['file']
-   PHILOS.all_file_info()
 
    if PHILOS.file_exists(file.filename, file.mimetype):
           PHILOS.update_file_as_logo(file.filename)
@@ -348,6 +347,36 @@ def update_logo():
         return jsonify({'error': 'Cannot get dash data'}), 400
    else:
         return data, 200
+   
+@app.route('/update_gateway', methods=['POST'])
+@cross_origin()
+def update_gateway():
+   required = ['token', 'client_pub', 'gateway']
+   host = request.form['gateway']
+
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+        
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        
+     PHILOS.url_host = host
+     
+     if '/ipfs/' in PHILOS.logo_url:
+         cid = PHILOS.logo_url.split('/ipfs/')[-1]
+         PHILOS.logo_url = PHILOS.url_host+'/ipfs/'+cid
+         PHILOS.update_node_data()
+     
+     data = PHILOS.get_dashboard_data()
+     if data == None:
+          return jsonify({'error': 'Cannot get dash data'}), 400
+     else:
+          return data, 200
 
 @app.route('/remove_file', methods=['POST'])
 @cross_origin()

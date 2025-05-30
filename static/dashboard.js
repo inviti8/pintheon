@@ -219,6 +219,27 @@ const settings_updated = (node) => {
     window.fn.pushPage('settings', node, window.rndr.settings);
 };
 
+const update_gateway = async (gateway) => {
+
+    const session = _getSessionData();
+
+    const formData = new FormData();
+
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('gateway', gateway);
+    await window.fn.updateGateway(formData, '/update_gateway', gateway_updated);
+};
+
+const gateway_updated = (node_data) => {
+
+    console.log(node_data)
+    _updateDashData(node_data);
+    window.rndr.settings();
+    //window.location.reload();
+
+};
+
 const update_theme = async (theme) => {
 
     const session = _getSessionData();
@@ -251,7 +272,7 @@ const update_bg_img = async (file) => {
     const session = _getSessionData();
 
     if(file){
-        const formData = new FormData()
+        const formData = new FormData();
 
         formData.append('token', session.token.serialize());
         formData.append('client_pub', session.pub);
@@ -436,8 +457,11 @@ document.addEventListener('init', function(event) {
     };
 
     window.rndr.settings = function(){
-        window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.location.host);
+        window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.dash.data.host);
         window.rndr.settingsAppearance(window.dash.data.customization.current_theme, window.dash.data.customization.themes, window.dash.data.customization.bg_img);
+        let gateway = document.querySelector('#settings-info-gateway-url');
+        let update_gateway_btn = document.querySelector('#settings-info-update-gateway');
+        let theme_select = document.querySelector('#settings-appearance-select');
         let upload_btn = document.querySelector('#settings-appearance-bg-button');
         let remove_btn = document.querySelector('#settings-appearance-remove-bg-button');
 
@@ -445,15 +469,19 @@ document.addEventListener('init', function(event) {
             remove_btn.disabled = false;
         };
 
-        document.querySelector('#settings-appearance-select').onchange = function  (event) {
+        update_gateway_btn.onclick = function (){
+            update_gateway(gateway.value);
+        };
+
+        theme_select.onchange = function  (event) {
             update_theme(event.target.selectedIndex);
         };
 
-        upload_btn.onclick = function  (event) {
+        upload_btn.onclick = function  () {
             upload_bg_img_dlg(update_bg_img);
         };
 
-        remove_btn.onclick = function  (event) {
+        remove_btn.onclick = function  () {
             remove_bg();
         };
     }
