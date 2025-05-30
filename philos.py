@@ -414,13 +414,17 @@ def tokenize_file():
         raise Unauthorized()  # Unauthorized
    else:
         file_data = PHILOS.file_data_from_cid(request.form['cid'])
-        contract_id = PHILOS.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PHILOS.url_hosts)
-        data = PHILOS.update_file_contract_id(request.form['cid'], contract_id)
-
-        if data == None:
-                return jsonify({'error': 'File data not updated'}), 400
+        if len(file_data['ContractID']) > 0:
+            return jsonify({'error': 'File already tokenized'}), 400
         else:
-            return data
+          contract_id = PHILOS.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PHILOS.url_host)
+          PHILOS.update_file_contract_id(request.form['cid'], contract_id)
+          data = PHILOS.get_dashboard_data()
+
+          if data == None:
+                    return jsonify({'error': 'File data not updated'}), 400
+          else:
+               return data
         
 @app.route('/send_file_token', methods=['POST'])
 @cross_origin()

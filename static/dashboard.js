@@ -200,6 +200,27 @@ const remove_file = async (cid) => {
     };
 };
 
+const tokenize_file = async (cid) => {
+
+    const session = _getSessionData();
+
+    const formData = new FormData()
+
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('cid', cid);
+    await window.fn.tokenizeFile(formData, '/tokenize_file', file_tokenized);
+};
+
+const file_tokenized = (node_data) => {
+    console.log('TOKENIZED!!!!')
+    console.log(node_data)
+    console.log('TOKENIZED!!!!')
+    _updateDashData(node_data);
+    window.rndr.dashboard();
+
+};
+
 const dash_data = async (callback) => {
     const session = _getSessionData();
     const formData = new FormData()
@@ -394,13 +415,14 @@ document.addEventListener('init', function(event) {
             clone.querySelector('.file_url').textContent = fileList[i]['CID'];
             clone.querySelector('#file-remove').setAttribute('onclick', 'remove_file("' + fileList[i]['CID'] + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
-            if (fileList[i]['IsLogo'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-star"></ons-icon>'};
-            if (fileList[i]['IsBgImg'] == true){clone.querySelector('.logo').innerHTML = '<ons-icon class="right" icon="fa-photo"></ons-icon>'};
+            if (fileList[i]['IsLogo'] == true){clone.querySelector('.logo').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-star"></ons-icon>');};
+            if (fileList[i]['IsBgImg'] == true){clone.querySelector('.logo').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-photo"></ons-icon>');};
             if(fileList[i]['ContractID'].length > 0){
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="center-both" modifier="outline" onclick="send_file_token('+fileList[i]['CID']+')"><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
+                clone.querySelector('.logo').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-diamond"></ons-icon>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="center-both" modifier="outline" onclick="send_file_token( '+"'"+fileList[i]['CID']+"'"+' )"><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
             }else{
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="tokenize-button" class="center-both" modifier="outline" onclick="tokenize_file('+fileList[i]['CID']+')"><ons-icon icon="fa-cube"></ons-icon> tokenize</ons-button>');
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="center-both" modifier="outline" onclick="send_file_token('+fileList[i]['CID']+')" disabled><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="tokenize-button" class="center-both" modifier="outline" onclick="tokenize_file( '+"'"+fileList[i]['CID']+"'"+' )"><ons-icon icon="fa-diamond"></ons-icon> tokenize</ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="center-both" modifier="outline" onclick="send_file_token( '+"'"+fileList[i]['CID']+"'"+' )" disabled><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
             }
         }
 

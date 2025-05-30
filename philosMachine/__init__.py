@@ -406,7 +406,7 @@ class PhilosMachine(object):
         return tx.result().address
 
     def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash="NONE"):
-        tx = self.hvym_collective.deploy_ipfs_token(caller=self.stellar_keypair.public_key.public_key, name=name, ipfs_hash=ipfs_hash, file_type=file_type, gateways=gateways, _ipns_hash=_ipns_hash, source=self.stellar_keypair.public_key.public_key, signer=self.stellar_keypair.public_key)
+        tx = self.hvym_collective.deploy_ipfs_token(caller=self.stellar_keypair.public_key, name=name, ipfs_hash=ipfs_hash, file_type=file_type, gateways=gateways, _ipns_hash=_ipns_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
         tx.sign_and_submit()
         return tx.result().address
     
@@ -510,6 +510,9 @@ class PhilosMachine(object):
          for balance in self.stellar_account['balances']:
             print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
 
+    def stellar_account_balances(self):
+        self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
+        return self.stellar_account['balances']
 
     @property
     def do_initialize(self):
