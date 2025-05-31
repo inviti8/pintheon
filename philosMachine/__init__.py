@@ -416,14 +416,14 @@ class PhilosMachine(object):
     
     def ipfs_token_mint(self, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
-         return token.mint(recieving_address, amount, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+         token.mint(recieving_address, amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair).sign_and_submit()
     
     def ipfs_custodial_mint(self, token_id, amount):
-        return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
+        self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
     
     def ipfs_token_send(self, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
-         token.transfer_from(spender=self.stellar_keypair.public_key, from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount, signer=self.stellar_keypair)
+         token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair).sign_and_submit()
     
     def _bind_ipfs_token(self, token_id):
          return IPFS_Token(token_id, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
