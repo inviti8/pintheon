@@ -177,10 +177,12 @@
     <ons-dialog id="tokenize-file-dialog" cancelable>
       <div style="text-align: center; padding: 10px;">
         <ons-list  style="width:100%;">
-          <ons-list-header>CREATE FILE TOKEN</ons-list-header>
+          <ons-list-header><ons-icon class="right" icon="fa-diamond"></ons-icon>__CREATE FILE TOKEN</ons-list-header>
           <ons-list-item class="node-data-card-header-list-item">
             <div class="fab-container left"> 
-              <img id="tokenize-file-dialog-img" class="list-item__thumbnail" src="">
+              <span class="left">
+                <img id="tokenize-file-dialog-img" class="list-item__thumbnail" modifier="file-thumb" src="">
+              </span>
             </div>
             <div class="center">
               <span id="tokenize-file-dialog-name" class="list-item__title"></span><span id="tokenize-file-dialog-descriptor"  class="list-item__subtitle"></span>
@@ -205,10 +207,12 @@
     <ons-dialog id="send-file-token-dialog" cancelable>
       <div style="width:400px; text-align: center;">
         <ons-list  style="width:100%;">
-          <ons-list-header>SEND FILE TOKEN</ons-list-header>
+          <ons-list-header><ons-icon class="right" icon="fa-paper-plane"></ons-icon>__SEND FILE TOKEN</ons-list-header>
           <ons-list-item class="node-data-card-header-list-item">
-            <div class="fab-container left"> 
-              <img id="send-file-token-dialog-img" class="list-item__thumbnail" src="">
+            <div class="fab-container left">
+              <span class="left">
+                <img id="send-file-token-dialog-img" class="list-item__thumbnail" modifier="file-thumb" src="">
+              </span>
             </div>
             <div class="center">
               <span id="send-file-token-dialog-name" class="list-item__title"></span><span id="send-file-token-dialog-descriptor"  class="list-item__subtitle"></span>
@@ -284,10 +288,8 @@
 
   <template id="file-list-items-template">
     <ons-list-item expandable ripple>
-
       <div class="fab-container left">
-        <span class="logo left"> </span>
-        <img id="file-list-item-icon" class="list-item__thumbnail" modifier="file-thumb" src="">
+        <span class="left"><img id="file-list-item-icon" class="list-item__thumbnail" modifier="file-thumb" src=""></span>
       </div>
       <div class="center">
         <span id="file-list-item-name" class="list-item__title"><p class="truncate"></p></span>
@@ -295,7 +297,10 @@
       <div class="center">
         <ons-list modifier="noborder no-color">
           <header class="center-both">
-            <ons-list-item><span class="file-name"></span></ons-list-item>
+            <ons-list-item>
+              <span class="special_icon left"></span>
+              <span class="file-name"></span>
+            </ons-list-item>
           </header>
           <header class="center-both">
             <ons-list-item><span class=""><a class="file_url truncate" href=""></a></span></ons-list-item>
