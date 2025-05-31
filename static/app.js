@@ -240,10 +240,13 @@ document.addEventListener('init', function(event) {
         });
     };
 
-    window.fn.confirmedCall = async (confirm_msg, error_msg, formData, endpoint, callback, method='POST', loadingDlg=true) => {
+    window.fn.confirmedCall = async (confirm_msg, error_msg, formData, endpoint, callback, method='POST', loadingDlg=false, hideDlg=undefined) => {
         ons.notification.confirm(confirm_msg)
         .then(function(yes) {
             if(yes){
+                if(hideDlg){
+                    window.dlg.hide('loading-dialog');
+                };
                 window.fn.formCall(error_msg, formData, endpoint, callback, method, loadingDlg);
             };
         })
@@ -287,8 +290,8 @@ document.addEventListener('init', function(event) {
 
     };
 
-    window.fn.tokenizeFile = async (formData, endpoint, callback, method='POST') => {
-        window.fn.confirmedCall('Tokenize this file?', 'file tokenize failed', formData, endpoint, callback, method);
+    window.fn.tokenizeFile = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {
+        window.fn.confirmedCall('Tokenize this file?', 'file tokenize failed', formData, endpoint, callback, method, true, hideDlg);
     };
 
     window.fn.updateGateway = async (formData, endpoint, callback, method='POST') => {
@@ -300,7 +303,7 @@ document.addEventListener('init', function(event) {
     };
 
     window.fn.dashData = async (formData, endpoint, callback, method='POST') => {
-        window.fn.formCall('Get Dash Data failed', formData, endpoint, callback, method, false);
+        window.fn.formCall('Get Dash Data failed', formData, endpoint, callback, method, false, undefined);
     };
 
     //utils

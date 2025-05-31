@@ -402,7 +402,7 @@ def remove_file():
 @app.route('/tokenize_file', methods=['POST'])
 @cross_origin()
 def tokenize_file():
-   required = ['token', 'client_pub', 'cid']
+   required = ['token', 'client_pub', 'cid', 'allocation']
    for field in required:
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
@@ -417,8 +417,10 @@ def tokenize_file():
         if len(file_data['ContractID']) > 0:
             return jsonify({'error': 'File already tokenized'}), 400
         else:
+          print(request.form['allocation'])
           contract_id = PHILOS.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PHILOS.url_host)
           PHILOS.update_file_contract_id(request.form['cid'], contract_id)
+          PHILOS.ipfs_custodial_mint(contract_id, int(request.form['allocation']))
           data = PHILOS.get_dashboard_data()
 
           if data == None:
@@ -441,8 +443,9 @@ def send_file_token():
         raise Unauthorized()  # Unauthorized
    else:
         file_data = PHILOS.file_data_from_cid(request.form['cid'])
-        if request.form['amount'] > 0 and len(file_data['ContractID']) > 0:
-          data = PHILOS.ipfs_token_send(file_data['ContractID'], request.form['to_address'], request.form['amount'])
+        amount = int(request.form['amount'])
+        if amount > 0 and len(file_data['ContractID']) > 0:
+          data = PHILOS.ipfs_token_send(file_data['ContractID'], request.form['to_address'], amount)
 
           if data == None:
                     return jsonify({'error': 'File data not updated'}), 400

@@ -201,19 +201,19 @@ const remove_file = async (cid) => {
 };
 
 const tokenize_file_prompt = async (name, cid) => {
-    let dlg = window.dlg.showAndRender('tokenize-file-dialog', window.rndr.tokenize_file_dlg, name, cid);
+    window.dlg.showAndRender('tokenize-file-dialog', window.rndr.tokenize_file_dlg, name, cid);
 };
 
 const tokenize_file = async (cid) => {
+    let allocation = document.querySelector('#tokenize-file-dialog-amount').value;
     const session = _getSessionData();
     const formData = new FormData()
-    let allocation = document.querySelector('#tokenize-file-dialog-amount').value;
 
     formData.append('token', session.token.serialize());
     formData.append('client_pub', session.pub);
     formData.append('cid', cid);
     formData.append('allocation', allocation);
-    await window.fn.tokenizeFile(formData, '/tokenize_file', file_tokenized);
+    await window.fn.tokenizeFile(formData, '/tokenize_file', file_tokenized, 'POST', 'tokenize-file-dialog');
 };
 
 const file_tokenized = (node_data) => {
@@ -222,25 +222,23 @@ const file_tokenized = (node_data) => {
     window.rndr.dashboard();
 };
 
-const send_file_token_prompt = async (cid) => {
-    window.dlg.show('send-file-token-dialog', setup_send_file_token_dlg, cid);
-};
-
-const setup_send_file_token_dlg = async (cid) => {
-    let send_btn = document.querySelector('#send-file-token-dialog-button');
-
-    send_btn.onclick = function  () {
-        send_file_token(cid);
-    };
+const send_file_token_prompt = async (name, cid) => {
+    window.dlg.showAndRender('send-file-token-dialog', window.rndr.send_file_token_dlg, name, cid);
 };
 
 const send_file_token = async (cid) => {
+    let amount = document.querySelector('#send-file-token-dialog-amount').value;
+    let to_address = document.querySelector('#send-file-token-dialog-to-address').value;
     const session = _getSessionData();
-    const formData = new FormData()
+    const formData = new FormData();
+    
 
     formData.append('token', session.token.serialize());
     formData.append('client_pub', session.pub);
     formData.append('cid', cid);
+    formData.append('to_address', to_address);
+    formData.append('amount', amount);
+
     await window.fn.tokenizeFile(formData, '/send_file_token', file_token_sent);
 };
 
@@ -549,6 +547,20 @@ document.addEventListener('init', function(event) {
 
         btn.onclick = function () {
             tokenize_file(cid);
+        };
+    };
+
+    window.rndr.send_file_token_dlg = function  (name, cid) {
+        let fileUrl = window.dash.data.host + '/ipfs/' + cid;
+        let img = document.querySelector('#send-file-token-dialog-img');
+        let nameElem = document.querySelector('#send-file-token-dialog-name');;
+        let btn = document.querySelector('#send-file-token-dialog-button');
+
+        img.setAttribute('src', fileUrl);
+        nameElem.textContent = name;
+
+        btn.onclick = function () {
+            send_file_token(cid);
         };
     };
 

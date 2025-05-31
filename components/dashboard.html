@@ -203,21 +203,33 @@
 
   <template id="send-file-token-dialog.html">
     <ons-dialog id="send-file-token-dialog" cancelable>
-      <div style="text-align: center; padding: 10px;">
+      <div style="width:400px; text-align: center;">
         <ons-list  style="width:100%;">
           <ons-list-header>SEND FILE TOKEN</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <div class="fab-container left"> 
+              <img id="send-file-token-dialog-img" class="list-item__thumbnail" src="">
+            </div>
+            <div class="center">
+              <span id="send-file-token-dialog-name" class="list-item__title"></span><span id="send-file-token-dialog-descriptor"  class="list-item__subtitle"></span>
+            </div>
+          </ons-list-item>
           <ons-list-item modifier="nodivider" style="width:100%;" >
               <span>
-                <pre class="">amount:      </pre><ons-input class="" id="send-file-token-dialog-amount" modifier="" value=1 type="number" float></ons-input>
+                <div class="center-both">
+                  <pre class="">amount:      </pre><ons-input class="" id="send-file-token-dialog-amount" modifier="" value=1 type="number" float></ons-input>
+                </div>
               </span>
           </ons-list-item>
           <ons-list-item modifier="nodivider" style="width:100%;" >
             <span>
-              <pre class="">to:      </pre><ons-input class="" id="send-file-token-dialog-to-address" modifier="" placeholder="RECIEVING ADDRESS" float></ons-input>
+              <div class="center-both">
+                 <pre class="">to:      </pre><ons-input class="" id="send-file-token-dialog-to-address" modifier="" placeholder="RECIEVING ADDRESS" float></ons-input> 
+              </div>
             </span>
           </ons-list-item>
           <ons-list-item modifier="nodivider" style="width:100%;" >
-              <ons-button id="send-file-token-dialog-button" class="can-callback" ripple>SEND</ons-button>
+              <ons-button id="send-file-token-dialog-button" class="can-callback" modifier="large" ripple>SEND</ons-button>
           </ons-list-item>
         </ons-list>
       </div>

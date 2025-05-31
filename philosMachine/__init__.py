@@ -54,9 +54,9 @@ DEBUG_SEED = "mobile isolate scale vendor salt coconut arrest reject rude coyote
 DEBUG_NODE_CONTRACT = "CDZ6NQWAFLP5GLMZGZ4LIG5CYSRQRP2CFCFLME6KW42RYJVKH6C7D6BC"
 DEBUG_URL_HOST = 'http://127.0.0.1:5000'
 FAKE_IPFS_HOST = 'https://sapphire-giant-butterfly-891.mypinata.cloud'
-FAKE_IPFS_FILE1 = 'QmessNjznyJMsSLwgMFvdTKHV8hDNnVat9wkFcX3oTpoRK'
-FAKE_IPFS_FILE2 = 'QmVRb8op3eYtUdEpsmEJUy68PnqTX3njB6dQfqvZZ9918w'
-FAKE_IPFS_FILE3 = 'QmQXq9zMNsbcQSXCgvy2Kz3NcRQHPuNwt9h8CnMaNpu9f8'
+FAKE_IPFS_FILE1 = 'QmUDprGyryABigB9vrB6bugtZJrHZwf3nPkhxmdn2WPkP8'
+FAKE_IPFS_FILE2 = 'QmZvnswx9JtABdtvji7y3BV9BmQSvH2Z4rVFt3VskMhRWe'
+FAKE_IPFS_FILE3 = 'QmWPq7bo9AppXjmzB7MLg3u97nmyTCBoAKh26WWPbEoQLr'
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
 
@@ -416,24 +416,24 @@ class PhilosMachine(object):
     
     def ipfs_token_mint(self, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
-         return token.mint(recieving_address, amount)
+         return token.mint(recieving_address, amount, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
     
     def ipfs_custodial_mint(self, token_id, amount):
-        return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key.public_key, amount)
+        return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
     
     def ipfs_token_send(self, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
-         token.transfer_from(spender=self.stellar_keypair.public_key.public_key, from_=self.stellar_keypair.public_key.public_key, to=recieving_address, amount=amount, signer=self.stellar_keypair)
+         token.transfer_from(spender=self.stellar_keypair.public_key, from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount, signer=self.stellar_keypair)
     
     def _bind_ipfs_token(self, token_id):
-         return IPFS_Token(token_id, self.stellar_server, self.NETWORK_PASSPHRASE)
+         return IPFS_Token(token_id, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
     
     def _token_balance(self, token):
-         tx = token.balance(id=self.stellar_keypair.public_key.public_key, source=self.stellar_keypair.public_key.public_key, signer=self.stellar_keypair)
+         tx = token.balance(id=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          return tx.result()
     
     def _token_symbol(self, token):
-         tx = token.symbol(self.stellar_keypair.public_key.public_key)
+         tx = token.symbol(self.stellar_keypair.public_key)
          return tx.result()
     
     def _custom_qr_code(self, data, cntrImg, out_url, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
@@ -889,7 +889,7 @@ class PhilosMachine(object):
                 return None
         
     def create_fake_ipfs_data(self):
-        names = ['LazerEyeWillie.png', 'hvym-3d-logo6.png', 'folder.png']
+        names = ['LazerEyeWillieYellow.png', 'LazerEyeWillieGreen.png', 'LazerEyeWillieRed.png']
         types = ['image/png', 'image/png', 'image/png']
         logo = [False, True, False]
         bg_img = [False, False, False]
