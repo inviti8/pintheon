@@ -72,6 +72,28 @@ const _fileLoaderInputChangeCallback = function(id, input, callback){
 
 };
 
+window.dlg.showAndRender = function(id, renderCallback, ...args) {
+    let dialog = document.getElementById(id);
+
+    if (dialog) {
+        dialog.show();
+        if(renderCallback){
+          renderCallback(...args);
+        };
+      
+    } else {
+      ons.createElement(id+'.html', { append: true })
+        .then(function(dialog) {
+          if(renderCallback){
+            renderCallback(...args);
+          };
+            dialog.show();
+          });
+      }
+
+    return dialog;
+};
+
 window.dlg.show = function(id, callback, ...args) {
     let dialog = document.getElementById(id);
 

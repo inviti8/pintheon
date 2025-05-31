@@ -54,9 +54,9 @@ DEBUG_SEED = "mobile isolate scale vendor salt coconut arrest reject rude coyote
 DEBUG_NODE_CONTRACT = "CDZ6NQWAFLP5GLMZGZ4LIG5CYSRQRP2CFCFLME6KW42RYJVKH6C7D6BC"
 DEBUG_URL_HOST = 'http://127.0.0.1:5000'
 FAKE_IPFS_HOST = 'https://sapphire-giant-butterfly-891.mypinata.cloud'
-FAKE_IPFS_FILE1 = 'bafkreigrdnc7ln2tobatstvb75434ocyzjz7fnb25um7xvlbmb4m7pb7gq'
-FAKE_IPFS_FILE2 = 'QmXGtmbaTrZazLuHoJfzT4MPsBZzsdnCLzvTKQrfjxE7bY'
-FAKE_IPFS_FILE3 = 'QmPRrLUmA5sFDYXLF654YdX1DmBBvTWwTwkokugbGYCDGJ'
+FAKE_IPFS_FILE1 = 'QmessNjznyJMsSLwgMFvdTKHV8hDNnVat9wkFcX3oTpoRK'
+FAKE_IPFS_FILE2 = 'QmVRb8op3eYtUdEpsmEJUy68PnqTX3njB6dQfqvZZ9918w'
+FAKE_IPFS_FILE3 = 'QmQXq9zMNsbcQSXCgvy2Kz3NcRQHPuNwt9h8CnMaNpu9f8'
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
 
@@ -889,8 +889,8 @@ class PhilosMachine(object):
                 return None
         
     def create_fake_ipfs_data(self):
-        names = ['oro_logo_3.svg', 'hvym.png', 'LazerEyeWillie.png']
-        types = ['image/svg+xml', 'image/png', 'image/png']
+        names = ['LazerEyeWillie.png', 'hvym-3d-logo6.png', 'folder.png']
+        types = ['image/png', 'image/png', 'image/png']
         logo = [False, True, False]
         bg_img = [False, False, False]
 

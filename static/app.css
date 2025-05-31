@@ -55,6 +55,12 @@ header {
 .scale-on-hover:hover {
   transform: scale(1.025);
 }
+.scale-on-hover-icon {
+  transition: transform .75s ease;
+}
+.scale-on-hover-icon:hover {
+  transform: scale(1.2);
+}
 .lighten-on-hover {
   transition: filter .75s ease;
 }

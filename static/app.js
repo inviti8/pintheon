@@ -208,6 +208,47 @@ document.addEventListener('init', function(event) {
      
     };
 
+    window.fn.formCall = async (error_msg, formData, endpoint, callback, method='POST', loadingDlg=true) => {
+        if(loadingDlg){
+            window.dlg.show('loading-dialog');
+        };
+        
+        fetch(endpoint, {
+            method: method,
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                if(loadingDlg){
+                    window.dlg.hide('loading-dialog');
+                };
+                return response.json();
+            } else {
+                window.dlg.show('fail-dialog');
+                throw new Error(error_msg);
+            }
+        })
+        .then(data => {
+            console.log('Server response:', data);
+            callback(data);
+        })
+        .catch(error => {
+            if(loadingDlg){
+                window.dlg.hide('loading-dialog');
+            };
+            console.error(error_msg, error);
+        });
+    };
+
+    window.fn.confirmedCall = async (confirm_msg, error_msg, formData, endpoint, callback, method='POST', loadingDlg=true) => {
+        ons.notification.confirm(confirm_msg)
+        .then(function(yes) {
+            if(yes){
+                window.fn.formCall(error_msg, formData, endpoint, callback, method, loadingDlg);
+            };
+        })
+    };
+
     window.fn.uploadFile = async (file, formData, endpoint, callback, method='POST') => {
         window.dlg.show('loading-dialog');
 
@@ -239,163 +280,28 @@ document.addEventListener('init', function(event) {
         };
 
         reader.readAsArrayBuffer(file);
-    }
+    };
 
     window.fn.removeFile = async (formData, endpoint, callback, method='POST') => {
-        ons.notification.confirm('Are you sure you want to delete this file?')
-        .then(function(yes) {
-            if(yes){
-                window.dlg.show('loading-dialog');
-                fetch(endpoint, {
-                    method: method,
-                    body: formData
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        window.dlg.hide('loading-dialog');
-                        window.dlg.show('fail-dialog');
-                        throw new Error('File upload failed');
-                    }
-                })
-                .then(data => {
-                    console.log('Server response:', data);
-                    window.dlg.hide('loading-dialog');
-                    callback(data);
-                })
-                .catch(error => {
-                    window.dlg.hide('loading-dialog');
-                    console.error('Error removing file:', error);
-                });
+        window.fn.confirmedCall('Are you sure you want to delete this file?', 'Error removing file', formData, endpoint, callback, method);
 
-            };
-
-        })
     };
 
     window.fn.tokenizeFile = async (formData, endpoint, callback, method='POST') => {
-        ons.notification.confirm('Tokenize this file?')
-        .then(function(yes) {
-            if(yes){
-                window.dlg.show('loading-dialog');
-                fetch(endpoint, {
-                    method: method,
-                    body: formData
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        window.dlg.hide('loading-dialog');
-                        window.dlg.show('fail-dialog');
-                        throw new Error('file tokenize failed');
-                    }
-                })
-                .then(data => {
-                    console.log('Server response:', data);
-                    window.dlg.hide('loading-dialog');
-                    callback(data);
-                })
-                .catch(error => {
-                    window.dlg.hide('loading-dialog');
-                    console.error('Error tokenizing file:', error);
-                });
-
-            };
-
-        })
+        window.fn.confirmedCall('Tokenize this file?', 'file tokenize failed', formData, endpoint, callback, method);
     };
 
     window.fn.updateGateway = async (formData, endpoint, callback, method='POST') => {
-        ons.notification.confirm('Update Gateway url?')
-        .then(function(yes) {
-            if(yes){
-                window.dlg.show('loading-dialog');
-                fetch(endpoint, {
-                    method: method,
-                    body: formData
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        window.dlg.hide('loading-dialog');
-                        window.dlg.show('fail-dialog');
-                        throw new Error('bg image removal failed');
-                    }
-                })
-                .then(data => {
-                    console.log('Server response:', data);
-                    window.dlg.hide('loading-dialog');
-                    callback(data);
-                })
-                .catch(error => {
-                    window.dlg.hide('loading-dialog');
-                    console.error('Error updating gateway:', error);
-                });
-
-            };
-
-        })
+        window.fn.confirmedCall('Update Gateway url?', 'Error updating gateway', formData, endpoint, callback, method);
     };
 
     window.fn.removeBg = async (formData, endpoint, callback, method='POST') => {
-        ons.notification.confirm('Remove the background image?')
-        .then(function(yes) {
-            if(yes){
-                window.dlg.show('loading-dialog');
-                fetch(endpoint, {
-                    method: method,
-                    body: formData
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        window.dlg.hide('loading-dialog');
-                        window.dlg.show('fail-dialog');
-                        throw new Error('bg image removal failed');
-                    }
-                })
-                .then(data => {
-                    console.log('Server response:', data);
-                    window.dlg.hide('loading-dialog');
-                    callback(data);
-                })
-                .catch(error => {
-                    window.dlg.hide('loading-dialog');
-                    console.error('Error removing file:', error);
-                });
-
-            };
-
-        })
+        window.fn.confirmedCall('Remove the background image?', 'bg image removal failed', formData, endpoint, callback, method);
     };
 
     window.fn.dashData = async (formData, endpoint, callback, method='POST') => {
-        fetch(endpoint, {
-                    method: method,
-                    body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                window.dlg.show('fail-dialog');
-                throw new Error('Get Dash Data failed');
-            }
-        })
-        .then(data => {
-            console.log('Server response:', data);
-            callback(data);
-        })
-        .catch(error => {
-            window.dlg.hide('loading-dialog');
-            console.error('Error getting dash data:', error);
-        });
+        window.fn.formCall('Get Dash Data failed', formData, endpoint, callback, method, false);
     };
-    
 
     //utils
     window.fn.copyToClipboard = function(text) {

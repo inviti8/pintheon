@@ -173,6 +173,57 @@
     </ons-dialog>
   </template>
 
+    <template id="tokenize-file-dialog.html">
+    <ons-dialog id="tokenize-file-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list  style="width:100%;">
+          <ons-list-header>CREATE FILE TOKEN</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <div class="fab-container left"> 
+              <img id="tokenize-file-dialog-img" class="list-item__thumbnail" src="">
+            </div>
+            <div class="center">
+              <span id="tokenize-file-dialog-name" class="list-item__title"></span><span id="tokenize-file-dialog-descriptor"  class="list-item__subtitle"></span>
+            </div>
+          </ons-list-item>
+            <ons-list-item modifier="nodivider" style="width:100%;" >
+              <span>
+                <div class="center-both">
+                  <pre>initial allocation:              </pre><ons-input class="" id="tokenize-file-dialog-amount" modifier="" value=1000 type="number" float></ons-input>
+                </div>
+              </span>
+            </ons-list-item>
+            <ons-list-item modifier="nodivider" style="width:100%;" >
+              <ons-button id="tokenize-file-dialog-button" class="can-callback" modifier="large" ripple>TOKENIZE</ons-button>
+            </ons-list-item>
+          </ons-list>
+      </div>
+    </ons-dialog>
+  </template>
+
+  <template id="send-file-token-dialog.html">
+    <ons-dialog id="send-file-token-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list  style="width:100%;">
+          <ons-list-header>SEND FILE TOKEN</ons-list-header>
+          <ons-list-item modifier="nodivider" style="width:100%;" >
+              <span>
+                <pre class="">amount:      </pre><ons-input class="" id="send-file-token-dialog-amount" modifier="" value=1 type="number" float></ons-input>
+              </span>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;" >
+            <span>
+              <pre class="">to:      </pre><ons-input class="" id="send-file-token-dialog-to-address" modifier="" placeholder="RECIEVING ADDRESS" float></ons-input>
+            </span>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;" >
+              <ons-button id="send-file-token-dialog-button" class="can-callback" ripple>SEND</ons-button>
+          </ons-list-item>
+        </ons-list>
+      </div>
+    </ons-dialog>
+  </template>
+
   <template id="node-info-template">
     <ons-list class="stat-ul" style="width:30%; height:200px;">
       <ons-list-header>NODE INFO</ons-list-header>
@@ -232,10 +283,10 @@
       <div class="center">
         <ons-list modifier="noborder no-color">
           <header class="center-both">
-            <ons-list-item><span class="">File Hash: <a class="file_url truncate" href=""></a></span></ons-list-item>
+            <ons-list-item><span class="file-name"></span></ons-list-item>
           </header>
           <header class="center-both">
-            <ons-list-item> Size: <span class="file-size"></span></ons-list-item>
+            <ons-list-item><span class=""><a class="file_url truncate" href=""></a></span></ons-list-item>
           </header>
         </ons-list>
       </div>
@@ -247,13 +298,13 @@
           </ons-list-item>
           <ons-list-item>
             <div class="right">
-              <ons-button modifier="quiet" onclick="" id="copy-file-url">
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-file-url">
                 <ons-icon icon="fa-link"></ons-icon>
               </ons-button>
-              <ons-button modifier="quiet" onclick="" id="copy-file-url">
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-file-url">
                 <ons-icon icon="fa-clipboard"></ons-icon>
               </ons-button>
-              <ons-button modifier="quiet" onclick="" id="file-remove">
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="file-remove">
                 <ons-icon icon="fa-remove"></ons-icon>
               </ons-button>
             </div>
@@ -270,7 +321,7 @@
             <header class="center-both">
               <pre><span class="list-item__subtitle">id:   </span></pre>
               <span ><ons-input class="dash-input" id="settings-info-multiaddress" modifier="large" placeholder="Multiaddress"  style="width:80%;"></ons-input>
-                <ons-button modifier="quiet" onclick="" id="settings-info-copy-peer-id">
+                <ons-button modifier="quiet" onclick="" id="settings-info-copy-peer-id" class="scale-on-hover-icon">
                 <ons-icon icon="fa-clipboard"></ons-icon>
               </ons-button></span>
             </header>
@@ -282,7 +333,7 @@
                 <ons-input class="dash-input" id="settings-info-gateway-url" modifier="large" value="127.0.0.1:9500" float></ons-input>
               </span>
               <span>
-                <ons-button modifier="quiet" id="settings-info-update-gateway" class="can-callback" ripple>
+                <ons-button modifier="quiet" id="settings-info-update-gateway" class="scale-on-hover-icon can-callback" ripple>
                   <ons-icon icon="fa-wrench"></ons-icon>
                 </ons-button>
               </span>
@@ -307,11 +358,11 @@
             <header class="center-both">
               <pre><span class="list-item__subtitle">bg image:   </span></pre>
               <span>
-              <ons-button modifier="quiet" id="settings-appearance-bg-button" class="can-callback" ripple>
+              <ons-button modifier="quiet" id="settings-appearance-bg-button" class="scale-on-hover-icon can-callback" ripple>
                 <input type="file" id="settings-appearance-bg-input" style="display: none;">
                 <ons-icon icon="fa-plus"></ons-icon>
               </ons-button>
-              <ons-button modifier="quiet" id="settings-appearance-remove-bg-button" class="can-callback" ripple disabled>
+              <ons-button modifier="quiet" id="settings-appearance-remove-bg-button" class="scale-on-hover-icon can-callback" ripple disabled>
                 <ons-icon icon="fa-remove"></ons-icon>
               </ons-button>
             </span>

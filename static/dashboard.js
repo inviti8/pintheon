@@ -200,25 +200,54 @@ const remove_file = async (cid) => {
     };
 };
 
+const tokenize_file_prompt = async (name, cid) => {
+    let dlg = window.dlg.showAndRender('tokenize-file-dialog', window.rndr.tokenize_file_dlg, name, cid);
+};
+
 const tokenize_file = async (cid) => {
-
     const session = _getSessionData();
+    const formData = new FormData()
+    let allocation = document.querySelector('#tokenize-file-dialog-amount').value;
 
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('cid', cid);
+    formData.append('allocation', allocation);
+    await window.fn.tokenizeFile(formData, '/tokenize_file', file_tokenized);
+};
+
+const file_tokenized = (node_data) => {
+    console.log(node_data)
+    _updateDashData(node_data);
+    window.rndr.dashboard();
+};
+
+const send_file_token_prompt = async (cid) => {
+    window.dlg.show('send-file-token-dialog', setup_send_file_token_dlg, cid);
+};
+
+const setup_send_file_token_dlg = async (cid) => {
+    let send_btn = document.querySelector('#send-file-token-dialog-button');
+
+    send_btn.onclick = function  () {
+        send_file_token(cid);
+    };
+};
+
+const send_file_token = async (cid) => {
+    const session = _getSessionData();
     const formData = new FormData()
 
     formData.append('token', session.token.serialize());
     formData.append('client_pub', session.pub);
     formData.append('cid', cid);
-    await window.fn.tokenizeFile(formData, '/tokenize_file', file_tokenized);
+    await window.fn.tokenizeFile(formData, '/send_file_token', file_token_sent);
 };
 
-const file_tokenized = (node_data) => {
-    console.log('TOKENIZED!!!!')
+const file_token_sent = (node_data) => {
     console.log(node_data)
-    console.log('TOKENIZED!!!!')
     _updateDashData(node_data);
     window.rndr.dashboard();
-
 };
 
 const dash_data = async (callback) => {
@@ -378,7 +407,9 @@ document.addEventListener('init', function(event) {
 
         let _updateElem = function(clone, i, host, fileList){
             let fileUrl = host + '/ipfs/' + fileList[i]['CID'];
+            let fileName = fileList[i]['Name'];
             let fileType = fileList[i]['Type'];
+            let cid = fileList[i]['CID']
             let icon = window.icons.UNKNOWN;
 
             if(fileType.includes('image')){
@@ -409,20 +440,19 @@ document.addEventListener('init', function(event) {
             console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
 
             clone.querySelector('#file-list-item-icon').src = icon;
-            clone.querySelector('.truncate').textContent = fileList[i]['Name'];
-            clone.querySelector('.file-size').textContent = fileList[i]['Size'];
+            clone.querySelector('.file-name').textContent = fileName;
             clone.querySelector('.file_url').href = fileUrl;
-            clone.querySelector('.file_url').textContent = fileList[i]['CID'];
-            clone.querySelector('#file-remove').setAttribute('onclick', 'remove_file("' + fileList[i]['CID'] + '")');
+            clone.querySelector('.file_url').textContent = cid;
+            clone.querySelector('#file-remove').setAttribute('onclick', 'remove_file("' + cid + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
             if (fileList[i]['IsLogo'] == true){clone.querySelector('.logo').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-star"></ons-icon>');};
             if (fileList[i]['IsBgImg'] == true){clone.querySelector('.logo').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-photo"></ons-icon>');};
             if(fileList[i]['ContractID'].length > 0){
                 clone.querySelector('.logo').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-diamond"></ons-icon>');
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="center-both" modifier="outline" onclick="send_file_token( '+"'"+fileList[i]['CID']+"'"+' )"><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )"><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
             }else{
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="tokenize-button" class="center-both" modifier="outline" onclick="tokenize_file( '+"'"+fileList[i]['CID']+"'"+' )"><ons-icon icon="fa-diamond"></ons-icon> tokenize</ons-button>');
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="center-both" modifier="outline" onclick="send_file_token( '+"'"+fileList[i]['CID']+"'"+' )" disabled><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="tokenize-button" class="scale-on-hover center-both" modifier="outline" onclick="tokenize_file_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )"><ons-icon icon="fa-diamond"></ons-icon> tokenize</ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )" disabled><ons-icon icon="fa-paper-plane"></ons-icon></ons-button>');
             }
         }
 
@@ -507,6 +537,20 @@ document.addEventListener('init', function(event) {
             remove_bg();
         };
     }
+
+    window.rndr.tokenize_file_dlg = function  (name, cid) {
+        let fileUrl = window.dash.data.host + '/ipfs/' + cid;
+        let img = document.querySelector('#tokenize-file-dialog-img');
+        let nameElem = document.querySelector('#tokenize-file-dialog-name');
+        let btn = document.querySelector('#tokenize-file-dialog-button');
+
+        img.setAttribute('src', fileUrl);
+        nameElem.textContent = name;
+
+        btn.onclick = function () {
+            tokenize_file(cid);
+        };
+    };
 
 
     if (page.id === 'authorize') {
