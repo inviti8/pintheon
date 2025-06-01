@@ -218,6 +218,9 @@ const tokenize_file = async (cid) => {
 
 const file_tokenized = (node_data) => {
     console.log(node_data)
+    if(node_data.transaction_data.successful){
+        console.log('TOKEN MINTED!!!')
+    }
     _updateDashData(node_data);
     window.rndr.dashboard();
 };
@@ -239,13 +242,13 @@ const send_file_token = async (cid) => {
     formData.append('to_address', to_address);
     formData.append('amount', amount);
 
-    await window.fn.tokenizeFile(formData, '/send_file_token', file_token_sent);
+    await window.fn.sendFileToken(formData, '/send_file_token', file_token_sent, 'POST', 'send-file-token-dialog');
 };
 
 const file_token_sent = (node_data) => {
     console.log(node_data)
-    _updateDashData(node_data);
-    window.rndr.dashboard();
+    //_updateDashData(node_data);
+    //window.rndr.dashboard();
 };
 
 const dash_data = async (callback) => {

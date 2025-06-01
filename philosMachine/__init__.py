@@ -56,9 +56,9 @@ DEBUG_SEED = "mobile isolate scale vendor salt coconut arrest reject rude coyote
 DEBUG_NODE_CONTRACT = "CDZ6NQWAFLP5GLMZGZ4LIG5CYSRQRP2CFCFLME6KW42RYJVKH6C7D6BC"
 DEBUG_URL_HOST = 'http://127.0.0.1:5000'
 FAKE_IPFS_HOST = 'https://sapphire-giant-butterfly-891.mypinata.cloud'
-FAKE_IPFS_FILE1 = 'QmUDprGyryABigB9vrB6bugtZJrHZwf3nPkhxmdn2WPkP8'
-FAKE_IPFS_FILE2 = 'QmZvnswx9JtABdtvji7y3BV9BmQSvH2Z4rVFt3VskMhRWe'
-FAKE_IPFS_FILE3 = 'QmWPq7bo9AppXjmzB7MLg3u97nmyTCBoAKh26WWPbEoQLr'
+FAKE_IPFS_FILE1 = 'QmW2obZmcu6tUsZ15ZSfZHzGnqQ6WGiqQbGnhatDztwc3n'
+FAKE_IPFS_FILE2 = 'QmSdzeGNHaqtobbEYECj1JEteoEWFhSsf1vhZTPDP1LtPV'
+FAKE_IPFS_FILE3 = 'QmNnnQRNnveaA23nbtr9whJ6RZbtUpkWiJF2Uegg3zappa'
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
 
@@ -418,19 +418,43 @@ class PhilosMachine(object):
          return self._token_balance(token)
     
     def ipfs_token_mint(self, token_id, recieving_address, amount):
+         transaction = {'hash': None, 'successful': False}
          token = self._bind_ipfs_token(token_id)
          tx = token.mint(recieving_address, amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          tx.sign()
-         return self.soroban_server.send_transaction(tx)
+         send_transaction = self.soroban_server.send_transaction(tx)
+         while True:
+            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+            time.sleep(3)
+
+         if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+            transaction['hash'] = send_transaction.hash
+            transaction['successful'] = True
+
+         return transaction
     
     def ipfs_custodial_mint(self, token_id, amount):
         return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
     
     def ipfs_token_send(self, token_id, recieving_address, amount):
+         transaction = {'hash': None, 'successful': False}
          token = self._bind_ipfs_token(token_id)
          tx = token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          tx.sign()
-         return self.soroban_server.send_transaction(tx)
+         send_transaction = self.soroban_server.send_transaction(tx)
+         while True:
+            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+            time.sleep(3)
+
+         if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+            transaction['hash'] = send_transaction.hash
+            transaction['successful'] = True
+
+         return transaction
     
     def wait_for_stellar_transaction(self, transaction):
         transaction = {'hash': None, 'successful': False}
@@ -910,7 +934,7 @@ class PhilosMachine(object):
                 return None
         
     def create_fake_ipfs_data(self):
-        names = ['LazerEyeWillieYellow.png', 'LazerEyeWillieGreen.png', 'LazerEyeWillieRed.png']
+        names = ['oro_logo_red.png', 'oro_logo_peach.png', 'oro_logo_purple.png']
         types = ['image/png', 'image/png', 'image/png']
         logo = [False, True, False]
         bg_img = [False, False, False]

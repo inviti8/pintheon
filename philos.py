@@ -420,8 +420,7 @@ def tokenize_file():
           print(request.form['allocation'])
           contract_id = PHILOS.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PHILOS.url_host)
           PHILOS.update_file_contract_id(request.form['cid'], contract_id)
-          transaction = PHILOS.ipfs_custodial_mint(contract_id, int(request.form['allocation']))
-          transaction_data = PHILOS.wait_for_stellar_transaction(transaction)
+          transaction_data = PHILOS.ipfs_custodial_mint(contract_id, int(request.form['allocation']))
           data = PHILOS.get_dashboard_data()
           data['transaction_data'] = transaction_data
 
@@ -447,8 +446,7 @@ def send_file_token():
         file_data = PHILOS.file_data_from_cid(request.form['cid'])
         amount = int(request.form['amount'])
         if amount > 0 and len(file_data['ContractID']) > 0:
-          transaction = PHILOS.ipfs_token_send(file_data['ContractID'], request.form['to_address'], amount)
-          transaction_data = PHILOS.wait_for_stellar_transaction(transaction)
+          transaction_data = PHILOS.ipfs_token_send(file_data['ContractID'], request.form['to_address'], amount)
           data = PHILOS.get_dashboard_data()
           data['transaction_data'] = transaction_data
 

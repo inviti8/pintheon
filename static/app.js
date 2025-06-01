@@ -245,7 +245,7 @@ document.addEventListener('init', function(event) {
         .then(function(yes) {
             if(yes){
                 if(hideDlg){
-                    window.dlg.hide('loading-dialog');
+                    window.dlg.hide(hideDlg);
                 };
                 window.fn.formCall(error_msg, formData, endpoint, callback, method, loadingDlg);
             };
@@ -292,6 +292,10 @@ document.addEventListener('init', function(event) {
 
     window.fn.tokenizeFile = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {
         window.fn.confirmedCall('Tokenize this file?', 'file tokenize failed', formData, endpoint, callback, method, true, hideDlg);
+    };
+
+    window.fn.sendFileToken = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {
+        window.fn.confirmedCall('Send file token?', 'token transfer failed', formData, endpoint, callback, method, true, hideDlg);
     };
 
     window.fn.updateGateway = async (formData, endpoint, callback, method='POST') => {
