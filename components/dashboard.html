@@ -76,6 +76,7 @@
              <ons-col width="100%">
                 <ons-card modifier="default outlined">
                   <H3>FILES</H3>
+                  <ons-button id="debug-button" style="margin: 20px;" onclick="window.dlg.show('transaction-confirmed-dialog')" >DEBUG</ons-button>
                   <div class="content"><ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button></div>
                   <div class="content">
                     <div class="content_top">
@@ -171,6 +172,23 @@
             <input type="file" id="upload-file-dialog-input" style="display: none;">
           </ons-button>
         </p>
+      </div>
+    </ons-dialog>
+  </template>
+
+    <template id="transaction-confirmed-dialog.html">
+    <ons-dialog id="transaction-confirmed-dialog" cancelable>
+      <div style="width:300px; padding: 10px;">
+        <span class="list-item__title center-both"><ons-icon class="center-both" icon="fa-check-circle"></ons-icon>TRANSACTION CONFIRMED</span>
+        <div class="center-both" style="text-align: center; padding: 5px;">
+          <p id="transaction-confirmed-dialog-description">file tokenenized on blockchain</p>
+        </div>
+        <div class="center-both" style="text-align: center; padding: 5px;">
+          <span><a class="truncate" id="transaction-confirmed-dialog-url" href="https://stellar.expert/explorer/testnet/tx/d992842faa51995f0cedba8bc45be620c13e54e360662eaaabc06cedcca46957" >view transaction</a></span>
+        </div>
+        <div class="center-both" style="text-align: center; padding: 10px;">
+          <ons-button class="center-both" id="transaction-confirmed-dialog-dialog-button" modifier="large" onclick="window.dlg.hide('transaction-confirmed-dialog')" ripple>OK</ons-button>
+        </div>
       </div>
     </ons-dialog>
   </template>

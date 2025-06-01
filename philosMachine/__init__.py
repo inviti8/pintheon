@@ -122,6 +122,9 @@ class PhilosMachine(object):
         self.node_pub = None
 
         #-------STELLAR--------
+        self.block_explorer = "https://stellar.expert/explorer"
+        self.testnet_transaction = "/testnet/tx/"
+        self.mainnet_transaction = "/public/tx/"
         self.soroban_rpc_url = "https://soroban-testnet.stellar.org:443"
         self.stellar_server = Server("https://horizon-testnet.stellar.org")
         self.soroban_server = SorobanServer(self.soroban_rpc_url)
@@ -439,7 +442,7 @@ class PhilosMachine(object):
         return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
     
     def ipfs_token_send(self, token_id, recieving_address, amount):
-         transaction = {'hash': None, 'successful': False}
+         transaction = {'hash': None, 'successful': False, 'transaction_url': None}
          token = self._bind_ipfs_token(token_id)
          tx = token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          tx.sign()
@@ -453,6 +456,7 @@ class PhilosMachine(object):
          if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
             transaction['hash'] = send_transaction.hash
             transaction['successful'] = True
+            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
 
          return transaction
     
