@@ -33,12 +33,14 @@ from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
 from qrcode.image.styles.colormasks import SolidFillColorMask
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
 from PIL import Image, ImageDraw
-from stellar_sdk import Keypair, Network, Server
+from stellar_sdk import Keypair, Network, Server, SorobanServer, soroban_rpc, scval
+from stellar_sdk import xdr as stellar_xdr
 from .hvym_collective_bindings import Client as Collective
 from .opus_bindings import Client as Opus
 from .ipfs_token_bindings import Client as IPFS_Token
 import json
 import requests
+import time
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
@@ -122,6 +124,7 @@ class PhilosMachine(object):
         #-------STELLAR--------
         self.soroban_rpc_url = "https://soroban-testnet.stellar.org:443"
         self.stellar_server = Server("https://horizon-testnet.stellar.org")
+        self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.COLLECTIVE_ID = COLLECTIVE_TESTNET
         self.OPUS_ID = OPUS_TESTNET
         self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
@@ -416,14 +419,32 @@ class PhilosMachine(object):
     
     def ipfs_token_mint(self, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
-         token.mint(recieving_address, amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair).sign_and_submit()
+         tx = token.mint(recieving_address, amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+         tx.sign()
+         return self.soroban_server.send_transaction(tx)
     
     def ipfs_custodial_mint(self, token_id, amount):
-        self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
+        return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
     
     def ipfs_token_send(self, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
-         token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair).sign_and_submit()
+         tx = token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+         tx.sign()
+         return self.soroban_server.send_transaction(tx)
+    
+    def wait_for_stellar_transaction(self, transaction):
+        transaction = {'hash': None, 'successful': False}
+        while True:
+            get_transaction_data = self.soroban_server.get_transaction(transaction.hash)
+            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+            time.sleep(3)
+
+        if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+            transaction['hash'] = get_transaction_data.hash
+            transaction['successful'] = True
+
+        return transaction
     
     def _bind_ipfs_token(self, token_id):
          return IPFS_Token(token_id, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
@@ -935,7 +956,7 @@ class PhilosMachine(object):
             return None
         
     def get_dashboard_data(self):
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True}
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None}
         if self.DEBUG or self.FAKE_IPFS:
             #If DEBUG we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}
