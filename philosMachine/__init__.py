@@ -138,6 +138,9 @@ class PhilosMachine(object):
         self.opus = Opus(self.OPUS_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.stellar_logo_img = None
         self.stellar_wallet_qr = None
+        self.stellar_logo_light = None
+        self.stellar_logo_dark = None
+        self.stellar_logo = None
         
          #-------PRIVATE VARS--------
         self._generator_token = None
@@ -421,7 +424,7 @@ class PhilosMachine(object):
          return self._token_balance(token)
     
     def ipfs_token_mint(self, token_id, recieving_address, amount):
-         transaction = {'hash': None, 'successful': False}
+         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
          token = self._bind_ipfs_token(token_id)
          tx = token.mint(recieving_address, amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          tx.sign()
@@ -435,6 +438,7 @@ class PhilosMachine(object):
          if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
             transaction['hash'] = send_transaction.hash
             transaction['successful'] = True
+            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
 
          return transaction
     
@@ -442,7 +446,7 @@ class PhilosMachine(object):
         return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
     
     def ipfs_token_send(self, token_id, recieving_address, amount):
-         transaction = {'hash': None, 'successful': False, 'transaction_url': None}
+         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
          token = self._bind_ipfs_token(token_id)
          tx = token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          tx.sign()
@@ -562,6 +566,11 @@ class PhilosMachine(object):
     def stellar_account_balances(self):
         self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
         return self.stellar_account['balances']
+    
+    def stellar_set_logos(self, light_logo, dark_logo):
+        self.stellar_logo_light = light_logo
+        self.stellar_logo_dark = dark_logo
+        self.stellar_logo = self.stellar_logo_light
 
     @property
     def do_initialize(self):
@@ -641,7 +650,12 @@ class PhilosMachine(object):
 
     def _update_customization(self):
         self._open_db()
-        data = { 'current_theme': self.theme, 'themes': self.themes, 'bg_img': self.bg_img }
+        if self.theme == 2:
+            self.stellar_logo = self.stellar_logo_dark
+        else:
+            self.stellar_logo = self.stellar_logo_light
+
+        data = { 'current_theme': self.theme, 'themes': self.themes, 'bg_img': self.bg_img, 'logo': self.stellar_logo }
         self._update_table_doc(self.customization, data)
         self.db.close()
 

@@ -220,9 +220,10 @@ const file_tokenized = (node_data) => {
     console.log(node_data)
     if(node_data.transaction_data.successful){
         console.log('TOKEN MINTED!!!')
-    }
-    _updateDashData(node_data);
-    window.rndr.dashboard();
+        window.dlg.showAndRender('transaction-confirmed-dialog', window.rndr.file_tokenize_transaction_dlg, node_data.transaction_data);
+    }else{
+        ons.notification.alert('Transaction Failed');
+    };
 };
 
 const send_file_token_prompt = async (name, cid) => {
@@ -247,8 +248,12 @@ const send_file_token = async (cid) => {
 
 const file_token_sent = (node_data) => {
     console.log(node_data)
-    //_updateDashData(node_data);
-    //window.rndr.dashboard();
+    if(node_data.transaction_data.successful){
+        console.log('TOKEN SENT!!!')
+        window.dlg.showAndRender('transaction-confirmed-dialog', window.rndr.send_token_transaction_dlg, node_data.transaction_data);
+    }else{
+        ons.notification.alert('Transaction Failed');
+    };
 };
 
 const dash_data = async (callback) => {
@@ -292,8 +297,6 @@ const gateway_updated = (node_data) => {
 };
 
 const update_theme = async (theme) => {
-
-    const session = _getSessionData();
 
     const body = {
         'token': window.constants.SESSION_TOKEN.serialize(),
@@ -401,12 +404,12 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('network-traffic', _updateElem, incoming, outgoing);
     };
 
-    window.rndr.fileListItems = function(host, fileList){
+    window.rndr.fileListItems = function(host, fileList, logo){
 
         if(fileList.length===0)
             return;
 
-        let _updateElem = function(clone, i, host, fileList){
+        let _updateElem = function(clone, i, host, fileList, logo){
             let fileUrl = host + '/ipfs/' + fileList[i]['CID'];
             let fileName = fileList[i]['Name'];
             let fileType = fileList[i]['Type'];
@@ -441,6 +444,7 @@ document.addEventListener('init', function(event) {
             console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
 
             clone.querySelector('#file-list-item-icon').src = icon;
+            clone.querySelector('#file-list-item-stellar-logo').src = logo;
             clone.querySelector('.file-name').textContent = fileName;
             clone.querySelector('.file_url').href = fileUrl;
             clone.querySelector('.file_url').textContent = cid;
@@ -457,7 +461,7 @@ document.addEventListener('init', function(event) {
             }
         }
 
-        window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, host, fileList);
+        window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, host, fileList, logo);
     };
 
     window.rndr.settingsNodeInfo = function(multiaddress, url){
@@ -505,7 +509,7 @@ document.addEventListener('init', function(event) {
         window.rndr.nodeCardHeader(window.dash.data.logo, window.dash.data.name, window.dash.data.descriptor);
         window.rndr.nodeInfo(window.dash.data.repo.RepoSize, window.dash.data.repo.StorageMax, window.dash.data.repo.usedPercentage);
         window.rndr.networkTraffic('100', '99');
-        window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list);
+        window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
 
     };
 
@@ -565,6 +569,26 @@ document.addEventListener('init', function(event) {
         btn.onclick = function () {
             send_file_token(cid);
         };
+    };
+
+    window.rndr.file_tokenize_transaction_dlg = function  (transaction) {
+        let fileUrl = window.dash.customization.stellar_logo;
+        let transactionUrl = document.querySelector('#transaction-confirmed-dialog-url');
+        let logo = document.querySelector('#transaction-confirmed-dialog-logo');
+        let description= document.querySelector('#transaction-confirmed-dialog-description');;
+        transactionUrl.href = transaction.transaction_url;
+        logo.src = fileUrl;
+        description.textContent = "File tokenized on Stellar Blockchain.";
+    };
+
+    window.rndr.send_token_transaction_dlg = function  (transaction) {
+        let fileUrl = window.dash.customization.stellar_logo;
+        let transactionUrl = document.querySelector('#transaction-confirmed-dialog-url');
+        let logo = document.querySelector('#transaction-confirmed-dialog-logo');
+        let description= document.querySelector('#transaction-confirmed-dialog-description');;
+        transactionUrl.href = transaction.transaction_url;
+        logo.src = fileUrl;
+        description.textContent = "Token sent, and confirmed on the Stellar Blockchain.";
     };
 
 

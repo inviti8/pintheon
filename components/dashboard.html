@@ -177,14 +177,14 @@
   </template>
 
     <template id="transaction-confirmed-dialog.html">
-    <ons-dialog id="transaction-confirmed-dialog" cancelable>
+    <ons-dialog class="dialog-content" id="transaction-confirmed-dialog" modifier="outlined" cancelable>
       <div style="width:300px; padding: 10px;">
-        <span class="list-item__title center-both"><ons-icon class="center-both" icon="fa-check-circle"></ons-icon>TRANSACTION CONFIRMED</span>
+        <span class="list-item__title center-both"><img style="width: 24px; height: 24px;" id="transaction-confirmed-dialog-icon" src="/static/stellar_logo_light.png"></img>TRANSACTION CONFIRMED</span>
         <div class="center-both" style="text-align: center; padding: 5px;">
-          <p id="transaction-confirmed-dialog-description">file tokenenized on blockchain</p>
+          <p id="transaction-confirmed-dialog-description"></p>
         </div>
         <div class="center-both" style="text-align: center; padding: 5px;">
-          <span><a class="truncate" id="transaction-confirmed-dialog-url" href="https://stellar.expert/explorer/testnet/tx/d992842faa51995f0cedba8bc45be620c13e54e360662eaaabc06cedcca46957" >view transaction</a></span>
+          <span><a class="truncate" id="transaction-confirmed-dialog-url" href="" >view transaction</a></span>
         </div>
         <div class="center-both" style="text-align: center; padding: 10px;">
           <ons-button class="center-both" id="transaction-confirmed-dialog-dialog-button" modifier="large" onclick="window.dlg.hide('transaction-confirmed-dialog')" ripple>OK</ons-button>
@@ -330,6 +330,10 @@
 
       <div class="expandable-content">
         <ons-list modifier="default">
+          <ons-list-header><img style="width: 24px; height: 24px;" id="file-list-item-stellar-logo" src=""></ons-list-header>
+          <ons-list-item>
+            <div id="file-list-items-balance" class="center"> Balance: 0</div>
+          </ons-list-item>
           <ons-list-item>
             <div id="file-list-items-token-buttons" class="center"></div>
           </ons-list-item>
