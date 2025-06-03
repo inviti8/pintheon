@@ -65,8 +65,14 @@
                           </ons-col>
                         </ons-list-item>
                       </ons-list>
+                      <ons-list class="stat-ul" style="width:30%; height:200px;">
+                        <ons-list>
+                          <ons-list-header>TOKENS</ons-list-header>
+                          <ons-lazy-repeat id="token-list-items"></ons-lazy-repeat>
+                        </ons-list>
+                      </ons-list>
+                      
                       <ons-lazy-repeat id="node-info"></ons-lazy-repeat>
-                      <ons-lazy-repeat id="network-traffic"></ons-lazy-repeat>
                     </div>  
                   </div>
                 </ons-card>
@@ -305,26 +311,24 @@
     </ons-list>
   </template>
 
-    <template id="token-info-template">
-    <ons-list class="stat-ul" style="width:25%; height:200px;">
-      <ons-list-header><img style="width: 24px; height: 24px;" id="token-info-stellar-logo" src="">TOKENS</ons-list-header>
-      <ons-list-item modifier="nodivider" style="width:100%;" >
-        <header>
-          <div class="center">
-             <ons-icon icon="fa-cloud-download"  modifier="material"></ons-icon>
-              <span id="token-info-kbs-incoming" class="list-item__subtitle">100 </span>
+  <template id="token-list-items-template">
+    <ons-list-item modifier="nodivider" style="width:100%;" >
+        <div class="fab-container left">
+          <span class="left" style="display: inline-block;"><img id="token-list-item-icon" class="list-item__thumbnail" modifier="file-thumb" src=""></span>
+        </div>
+        <div class="fab-container left">
+          <span class="left"><img id="token-list-item-icon" class="list-item__thumbnail" modifier="file-thumb" src=""></span>
+        </div>
+        <div class="center">
+          <span id="token-list-item-name" class="list-item__title"><p class="truncate"></p></span>
+          <div style="display: inline-block;">
+            <span id="token-list-item-balance"  class="list-item__subtitle"></span>
+            <span class="right"><ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="token-list-item-send"><ons-icon icon="fa-paper-plane"></ons-icon></ons-button></span>
           </div>
-        </header>
+          
+          
+        </div>
       </ons-list-item>
-      <ons-list-item modifier="nodivider" style="width:100%;" >
-        <header>
-          <div class="center">
-              <ons-icon icon="fa-cloud-upload"  modifier="material"></ons-icon>
-              <span  id="token-info-kbs-outgoing" class="list-item__subtitle">100 </span>
-          </div>
-        </header>
-      </ons-list-item>
-    </ons-list>
   </template>
   
 
@@ -354,7 +358,7 @@
         <ons-list modifier="default">
           <ons-list-header><img style="width: 24px; height: 24px;" id="file-list-item-stellar-logo" src=""></ons-list-header>
           <ons-list-item>
-            <div id="file-list-items-balance" class="center"> Balance: 0</div>
+            <div class="center"> Balance:<pre>  </pre><span id="file-list-item-balance"></span></div>
           </ons-list-item>
           <ons-list-item>
             <div id="file-list-items-token-buttons" class="center"></div>

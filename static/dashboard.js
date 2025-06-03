@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
 window.dash.SESSION_KEYS = 'PHILOS_SESSION';
 window.dash.NODE = 'PHILOS_NODE';
 window.dash.AUTHORIZED = false;
@@ -394,6 +394,30 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('node-info', _updateElem, repo_size, storage_max, percentage);
     };
 
+    window.rndr.tokenInfo = function(tokenList){
+
+        let _updateElem = function(clone, i, tokenList){
+            if(tokenList[i]==undefined)
+                return;
+
+            console.log(tokenList[i])
+            let name = tokenList[i]['Name'];
+            let icon = tokenList[i]['Logo'];
+            let balance = tokenList[i]['Balance'];
+            let tokenId = tokenList[i]['TokenId'];
+
+
+            clone.querySelector('#token-list-item-icon').src = icon;
+            clone.querySelector('#token-list-item-name').textContent = name;
+            clone.querySelector('#token-list-item-balance').textContent = balance;
+            clone.querySelector('#token-list-item-send').setAttribute('onclick', 'send_token("' + tokenId + '")');
+
+        }
+
+        //window.rndr.RENDER_ELEM('token-info', _updateElem, logo);
+        window.rndr.RENDER_LIST('token-list-items', tokenList, _updateElem, tokenList);
+    };
+
     window.rndr.networkTraffic = function(incoming, outgoing){
 
         let _updateElem = function(clone, elem, incoming, outgoing){
@@ -414,6 +438,7 @@ document.addEventListener('init', function(event) {
             let fileName = fileList[i]['Name'];
             let fileType = fileList[i]['Type'];
             let cid = fileList[i]['CID']
+            let balance = fileList[i]['Balance']
             let icon = window.icons.UNKNOWN;
 
             if(fileType.includes('image')){
@@ -445,6 +470,7 @@ document.addEventListener('init', function(event) {
 
             clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('#file-list-item-stellar-logo').src = logo;
+            clone.querySelector('#file-list-item-balance').textContent = balance;
             clone.querySelector('.file-name').textContent = fileName;
             clone.querySelector('.file_url').href = fileUrl;
             clone.querySelector('.file_url').textContent = cid;
@@ -508,7 +534,8 @@ document.addEventListener('init', function(event) {
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
         window.rndr.nodeCardHeader(window.dash.data.logo, window.dash.data.name, window.dash.data.descriptor);
         window.rndr.nodeInfo(window.dash.data.repo.RepoSize, window.dash.data.repo.StorageMax, window.dash.data.repo.usedPercentage);
-        window.rndr.networkTraffic('100', '99');
+        window.rndr.tokenInfo(window.dash.data.token_info);
+        //window.rndr.networkTraffic('100', '99');
         window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
 
     };

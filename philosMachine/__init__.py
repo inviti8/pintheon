@@ -47,8 +47,10 @@ HVYM_FG_RGB = (175, 232, 197)
 STELLAR_BG_RGB = (135, 133, 83)
 STELLAR_FG_RGB = (0, 0, 0)
 
+XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
 COLLECTIVE_TESTNET = 'CDHXRJOXX3MTMQX5245YR75DJNY4RBNRXEDXIWVVEUGSSE7HUHMZEQOR'
 OPUS_TESTNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
+XLM_MAINNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
 COLLECTIVE_MAINNET = 'CDHXRJOXX3MTMQX5245YR75DJNY4RBNRXEDXIWVVEUGSSE7HUHMZEQOR'
 OPUS_MAINNET = 'CDRBT7QDBPQ57GRY4WM6BP6FZM43M5ENNZX5O7P23Y4WVJWGGIHFUHPN'
 
@@ -129,6 +131,7 @@ class PhilosMachine(object):
         self.soroban_rpc_url = "https://soroban-testnet.stellar.org:443"
         self.stellar_server = Server("https://horizon-testnet.stellar.org")
         self.soroban_server = SorobanServer(self.soroban_rpc_url)
+        self.XLM_ID = XLM_TESTNET
         self.COLLECTIVE_ID = COLLECTIVE_TESTNET
         self.OPUS_ID = OPUS_TESTNET
         self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
@@ -398,6 +401,14 @@ class PhilosMachine(object):
     def opus_balance(self):
         return self._token_balance(self.opus)
     
+    def opus_send(self, recieving_address, amount):
+         tx = self._token_send(self, self.opus, recieving_address, amount, self.opus_logo)
+         current_balance = self.opus_balance()
+         if current_balance != None:
+            self._update_token_book_balance(self.OPUS_ID, current_balance)
+
+         return tx
+    
     def collective_symbol(self):
         tx = self.hvym_collective.symbol(self.stellar_keypair.public_key)
         return tx.result()
@@ -425,10 +436,56 @@ class PhilosMachine(object):
     def ipfs_token_balance(self, token_id):
          token = self._bind_ipfs_token(token_id)
          return self._token_balance(token)
-    
-    def ipfs_token_mint(self, token_id, recieving_address, amount):
-         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
+
+    def ipfs_token_mint(self, cid, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
+         tx = self._token_mint(token, recieving_address, amount, self.stellar_logo)
+         current_balance = self._token_balance(token_id)
+         if current_balance != None:
+            self._update_file_balance(cid, current_balance)
+
+         return tx
+    
+    def ipfs_custodial_mint(self, token_id, amount):
+        return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
+    
+    def ipfs_token_send(self, cid, token_id, recieving_address, amount):
+         token = self._bind_ipfs_token(token_id)
+         tx = self._token_send(token, recieving_address, amount, self.stellar_logo)
+         current_balance = self._token_balance(token_id)
+         if current_balance != None:
+            self._update_file_balance(cid, current_balance)
+
+         return tx
+    
+    def _bind_ipfs_token(self, token_id):
+         return IPFS_Token(token_id, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
+    
+    def _token_balance(self, token):
+         tx = token.balance(id=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+         return tx.result()
+    
+    def _token_send(self, token, recieving_address, amount, logo):
+         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': logo}
+         amount = amount * 10**7
+         tx = token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+         tx.sign()
+         send_transaction = self.soroban_server.send_transaction(tx)
+         while True:
+            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+            time.sleep(3)
+
+         if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+            transaction['hash'] = send_transaction.hash
+            transaction['successful'] = True
+            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+
+         return transaction
+    
+    def _token_mint(self, token, recieving_address, amount, logo):
+         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': logo}
          tx = token.mint(recieving_address, amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          tx.sign()
          send_transaction = self.soroban_server.send_transaction(tx)
@@ -445,70 +502,40 @@ class PhilosMachine(object):
 
          return transaction
     
-    def ipfs_custodial_mint(self, token_id, amount):
-        return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
-    
-    def ipfs_token_send(self, token_id, recieving_address, amount):
-         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
-         token = self._bind_ipfs_token(token_id)
-         tx = token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-         tx.sign()
-         send_transaction = self.soroban_server.send_transaction(tx)
-         while True:
-            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
-            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
-                    break
-            time.sleep(3)
-
-         if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
-            transaction['hash'] = send_transaction.hash
-            transaction['successful'] = True
-            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
-
-         return transaction
-    
-    def wait_for_stellar_transaction(self, transaction):
-        transaction = {'hash': None, 'successful': False}
-        while True:
-            get_transaction_data = self.soroban_server.get_transaction(transaction.hash)
-            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
-                    break
-            time.sleep(3)
-
-        if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
-            transaction['hash'] = get_transaction_data.hash
-            transaction['successful'] = True
-
-        return transaction
-    
-    def _bind_ipfs_token(self, token_id):
-         return IPFS_Token(token_id, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
-    
-    def _token_balance(self, token):
-         tx = token.balance(id=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-         return tx.result()
-    
     def _token_symbol(self, token):
          tx = token.symbol(self.stellar_keypair.public_key)
          return tx.result()
     
-    def _initialize_token_book_data(self, token_id, name, balance):
-        data = {'Name': name, 'TokenId': token_id, 'Balance': balance}
-        self._open_db()
-        self.token_book.insert(data)
-        all_file_info = self.file_book.all()
-        self.db.close()
+    def _initialize_token_book_data(self):
+        xlm_balance = self.stellar_xlm_balance()
+        opus_balance = self.opus_balance()
 
-        return all_file_info
+        xlm_data = {'Name': 'xlm', 'TokenId': self.XLM_ID, 'Balance': xlm_balance, 'Logo': self.stellar_logo}
+        opus_data = {'Name': 'opus', 'TokenId': self.OPUS_ID, 'Balance': opus_balance, 'Logo': self.opus_logo}
+        self._open_db()
+        self.token_book.insert(xlm_data)
+        self.token_book.insert(opus_data)
+        self.db.close()
     
     def _update_token_book_balance(self, token_id, balance):
         self._open_db()
-        file = Query()
-        self.file_book.update({'Balance': balance}, file.TokenId == token_id)
-        all_file_info = self.file_book.all()
+        token = Query()
+        self.token_book.update({'Balance': balance}, token.TokenId == token_id)
+        all_token_info = self.token_book.all()
         self.db.close()
 
-        return all_file_info
+        return all_token_info
+    
+    def _get_token_book_balance(self, token_id):
+        balance = None
+        self._open_db()
+        token = Query()
+        data = self.token_book.search( token.TokenId == token_id)
+        if data != None:
+            balance = data['Balance']
+        self.db.close()
+
+        return balance
     
     def _custom_qr_code(self, data, cntrImg, out_url, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
         qr = qrcode.QRCode(
@@ -584,6 +611,14 @@ class PhilosMachine(object):
          for balance in self.stellar_account['balances']:
             print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
 
+    def stellar_xlm_balance(self):
+        xlm_balance = 0
+        for balance in self.stellar_account['balances']:
+            if balance['asset_type'] == 'native':
+                xlm_balance = balance['balance']
+
+        return xlm_balance
+
     def stellar_account_balances(self):
         self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
         return self.stellar_account['balances']
@@ -612,6 +647,7 @@ class PhilosMachine(object):
         self._create_stellar_keypair_from_seed(seed)
         self._create_root_token()
         self._update_state_data()
+        self._initialize_token_book_data()
         self._update_customization()
         self.active_page = 'establish'
         self.logged_in = True
@@ -1029,7 +1065,7 @@ class PhilosMachine(object):
             return None
         
     def get_dashboard_data(self):
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None}
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None}
         if self.DEBUG or self.FAKE_IPFS:
             #If DEBUG we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}
@@ -1037,8 +1073,10 @@ class PhilosMachine(object):
             self._open_db()
             files_list = self.file_book.all()
             customization = self.customization.all()
+            token_info = self.token_book.all()
             self.db.close()
             result['customization'] = customization[0]
+            result['token_info'] = token_info
             result['stats'] = stats
             result['repo'] = repo
             result['file_list'] = files_list
@@ -1049,6 +1087,7 @@ class PhilosMachine(object):
             repo_response = self.ipfs_repo_stats()
             files_list = self.file_book.all()
             customization = self.customization.all()
+            token_info = self.token_book.all()
             peer_id_response = self.get_peer_id()
             self.db.close()
 
@@ -1069,6 +1108,9 @@ class PhilosMachine(object):
 
             if customization != None:
                 result['customization'] = customization[0]
+
+            if token_info != None:
+                result['token_info'] = token_info
 
             if files_list != None:
                 result['file_list'] = files_list
