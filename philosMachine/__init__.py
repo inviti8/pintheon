@@ -397,7 +397,7 @@ class PhilosMachine(object):
     
     def token_send(self, token_id, recieving_address, amount):
          token = Opus(token_id, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
-         tx = self._token_send(self, self.opus, recieving_address, amount, token_id)
+         tx = self._token_send(token, recieving_address, amount, token_id)
          current_balance = self._token_balance(token)
          if current_balance != None:
             self._update_token_book_balance(self.OPUS_ID, current_balance)

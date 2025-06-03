@@ -478,7 +478,7 @@ def send_token():
    else:
         amount = int(request.form['amount'])
         if amount > 0 :
-          transaction_data = PHILOS.ipfs_send(request.form['token_id'], request.form['to_address'], amount)
+          transaction_data = PHILOS.token_send(request.form['token_id'], request.form['to_address'], amount)
           data = PHILOS.get_dashboard_data()
           data['transaction_data'] = transaction_data
 
