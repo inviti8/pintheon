@@ -99,6 +99,7 @@ class PhilosMachine(object):
         self.peer_book = None
         self.stellar_book = None
         self.namespaces = None
+        self.token_book = None
 
         #-------IPFS--------
         self.ipfs_daemon = ipfs_daemon
@@ -141,6 +142,8 @@ class PhilosMachine(object):
         self.stellar_logo_light = None
         self.stellar_logo_dark = None
         self.stellar_logo = None
+        self.opus_logo = None
+        self.boros_logo = None
         
          #-------PRIVATE VARS--------
         self._generator_token = None
@@ -489,6 +492,24 @@ class PhilosMachine(object):
          tx = token.symbol(self.stellar_keypair.public_key)
          return tx.result()
     
+    def _initialize_token_book_data(self, token_id, name, balance):
+        data = {'Name': name, 'TokenId': token_id, 'Balance': balance}
+        self._open_db()
+        self.token_book.insert(data)
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
+    
+    def _update_token_book_balance(self, token_id, balance):
+        self._open_db()
+        file = Query()
+        self.file_book.update({'Balance': balance}, file.TokenId == token_id)
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
+    
     def _custom_qr_code(self, data, cntrImg, out_url, back_color=HVYM_BG_RGB, front_color=HVYM_FG_RGB):
         qr = qrcode.QRCode(
             version=1,
@@ -655,7 +676,7 @@ class PhilosMachine(object):
         else:
             self.stellar_logo = self.stellar_logo_light
 
-        data = { 'current_theme': self.theme, 'themes': self.themes, 'bg_img': self.bg_img, 'logo': self.stellar_logo }
+        data = { 'current_theme': self.theme, 'themes': self.themes, 'bg_img': self.bg_img, 'logo': self.stellar_logo, 'opus_logo': self.opus_logo, 'boros_logo': self.boros_logo }
         self._update_table_doc(self.customization, data)
         self.db.close()
 
@@ -684,6 +705,7 @@ class PhilosMachine(object):
         self.file_book= self.db.table('file_book')
         self.peer_book= self.db.table('peer_book')
         self.stellar_book= self.db.table('stellar_book')
+        self.token_book= self.db.table('token_book')
         self.namespaces= self.db.table('namespaces')
 
     def get_customization(self):
@@ -875,6 +897,15 @@ class PhilosMachine(object):
         self.db.close()
 
         return all_file_info
+    
+    def update_file_balance(self, cid, balance):
+        self._open_db()
+        file = Query()
+        self.file_book.update({'Balance': balance}, file.CID == cid)
+        all_file_info = self.file_book.all()
+        self.db.close()
+
+        return all_file_info
 
     def all_file_info(self):
         self._open_db()
@@ -933,7 +964,7 @@ class PhilosMachine(object):
                 cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
                 if cid != None:
                     
-                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img}
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0}
                     self._open_db()
 
                     if is_logo:
@@ -962,7 +993,7 @@ class PhilosMachine(object):
         File = Query()
         for hash in FAKE_IPFS_FILES:
             self.file_book.remove(File.CID == hash)
-            file_info = {'Name':names[idx], 'Type': types[idx], 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx]}
+            file_info = {'Name':names[idx], 'Type': types[idx], 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0}
             self.file_book.insert(file_info)
             idx+=1
         all_file_info = self.file_book.all()

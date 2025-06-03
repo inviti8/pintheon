@@ -137,11 +137,14 @@ def admin():
        
    PHILOS.logo_url = url_for('static', filename='hvym_logo.png')
    PHILOS.stellar_logo_url = url_for('static', filename='stellar_logo.png')
-   light_logo = url_for('static', filename='stellar_logo_light.png')
-   dark_logo = url_for('static', filename='stellar_logo_dark.png')
+   stellar_light_logo = url_for('static', filename='stellar_logo_light.png')
+   stellar_dark_logo = url_for('static', filename='stellar_logo_dark.png')
+
    if PHILOS.stellar_logo == None:
-     PHILOS.stellar_set_logos(light_logo, dark_logo)
+     PHILOS.stellar_set_logos(stellar_light_logo, stellar_dark_logo)
    PHILOS.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
+   PHILOS.opus_logo = url_for('static', filename='opus.png')
+   PHILOS.boros_logo = url_for('static', filename='boros.png')
 
    pub = PHILOS.session_pub
    if not PHILOS.logged_in:
