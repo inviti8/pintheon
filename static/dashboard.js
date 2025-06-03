@@ -213,14 +213,19 @@ const tokenize_file = async (cid) => {
     formData.append('client_pub', session.pub);
     formData.append('cid', cid);
     formData.append('allocation', allocation);
-    await window.fn.tokenizeFile(formData, '/tokenize_file', file_tokenized, 'POST', 'tokenize-file-dialog');
+    await window.fn.tokenizeFile(formData, '/tokenize_file', transaction_sent, 'POST', 'tokenize-file-dialog');
 };
 
-const file_tokenized = (node_data) => {
+const transaction_sent = async(node_data) => {
     console.log(node_data)
     if(node_data.transaction_data.successful){
-        console.log('TOKEN MINTED!!!')
-        window.dlg.showAndRender('transaction-confirmed-dialog', window.rndr.file_tokenize_transaction_dlg, node_data.transaction_data);
+        const session = _getSessionData();
+        const formData = new FormData()
+
+        formData.append('token', session.token.serialize());
+        formData.append('client_pub', session.pub)
+        window.dlg.showAndRender('transaction-confirmed-dialog', window.rndr.send_token_transaction_dlg, node_data.transaction_data);
+        await window.fn.formCall('get dashboard data failed', formData, '/dashboard_data', dash_updated, 'POST', false);
     }else{
         ons.notification.alert('Transaction Failed');
     };
@@ -243,17 +248,27 @@ const send_file_token = async (cid) => {
     formData.append('to_address', to_address);
     formData.append('amount', amount);
 
-    await window.fn.sendFileToken(formData, '/send_file_token', file_token_sent, 'POST', 'send-file-token-dialog');
+    await window.fn.sendFileToken(formData, '/send_file_token', transaction_sent, 'POST', 'send-file-token-dialog');
 };
 
-const file_token_sent = (node_data) => {
-    console.log(node_data)
-    if(node_data.transaction_data.successful){
-        console.log('TOKEN SENT!!!')
-        window.dlg.showAndRender('transaction-confirmed-dialog', window.rndr.send_token_transaction_dlg, node_data.transaction_data);
-    }else{
-        ons.notification.alert('Transaction Failed');
-    };
+const send_token_prompt = async (name, token_id, logo) => {
+    window.dlg.showAndRender('send-token-dialog', window.rndr.send_token_dlg, name, token_id, logo);
+};
+
+const send_token = async (name, token_id) => {
+    let amount = document.querySelector('#send-token-dialog-amount').value;
+    let to_address = document.querySelector('#send-token-dialog-to-address').value;
+    const session = _getSessionData();
+    const formData = new FormData();
+    
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('name', name);
+    formData.append('token_id', token_id);
+    formData.append('to_address', to_address);
+    formData.append('amount', amount);
+
+    await window.fn.sendFileToken(formData, '/send_token', transaction_sent, 'POST', 'send-token-dialog');
 };
 
 const dash_data = async (callback) => {
@@ -400,21 +415,18 @@ document.addEventListener('init', function(event) {
             if(tokenList[i]==undefined)
                 return;
 
-            console.log(tokenList[i])
             let name = tokenList[i]['Name'];
-            let icon = tokenList[i]['Logo'];
+            let logo = tokenList[i]['Logo'];
             let balance = tokenList[i]['Balance'];
             let tokenId = tokenList[i]['TokenId'];
 
-
-            clone.querySelector('#token-list-item-icon').src = icon;
+            clone.querySelector('#token-list-item-icon').src = logo;
             clone.querySelector('#token-list-item-name').textContent = name;
             clone.querySelector('#token-list-item-balance').textContent = balance;
-            clone.querySelector('#token-list-item-send').setAttribute('onclick', 'send_token("' + tokenId + '")');
+            clone.querySelector('#token-list-item-send').setAttribute('onclick', 'send_token_prompt("' + name + '","' + tokenId + '","' + logo + '")');
 
         }
 
-        //window.rndr.RENDER_ELEM('token-info', _updateElem, logo);
         window.rndr.RENDER_LIST('token-list-items', tokenList, _updateElem, tokenList);
     };
 
@@ -598,8 +610,21 @@ document.addEventListener('init', function(event) {
         };
     };
 
+    window.rndr.send_token_dlg = function  (name, token_id, logo) {
+        let img = document.querySelector('#send-token-dialog-img');
+        let nameElem = document.querySelector('#send-token-dialog-name');;
+        let btn = document.querySelector('#send-token-dialog-button');
+
+        img.setAttribute('src', logo);
+        nameElem.textContent = name;
+
+        btn.onclick = function () {
+            send_token(name, token_id);
+        };
+    };
+
     window.rndr.file_tokenize_transaction_dlg = function  (transaction) {
-        let fileUrl = window.dash.customization.stellar_logo;
+        let fileUrl = window.dash.data.customization.stellar_logo;
         let transactionUrl = document.querySelector('#transaction-confirmed-dialog-url');
         let logo = document.querySelector('#transaction-confirmed-dialog-logo');
         let description= document.querySelector('#transaction-confirmed-dialog-description');;
@@ -609,9 +634,9 @@ document.addEventListener('init', function(event) {
     };
 
     window.rndr.send_token_transaction_dlg = function  (transaction) {
-        let fileUrl = window.dash.customization.stellar_logo;
+        let fileUrl = window.dash.data.customization.logo;
         let transactionUrl = document.querySelector('#transaction-confirmed-dialog-url');
-        let logo = document.querySelector('#transaction-confirmed-dialog-logo');
+        let logo = document.querySelector('#transaction-confirmed-dialog-icon');
         let description= document.querySelector('#transaction-confirmed-dialog-description');;
         transactionUrl.href = transaction.transaction_url;
         logo.src = fileUrl;

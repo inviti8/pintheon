@@ -58,9 +58,9 @@ DEBUG_SEED = "mobile isolate scale vendor salt coconut arrest reject rude coyote
 DEBUG_NODE_CONTRACT = "CDZ6NQWAFLP5GLMZGZ4LIG5CYSRQRP2CFCFLME6KW42RYJVKH6C7D6BC"
 DEBUG_URL_HOST = 'http://127.0.0.1:5000'
 FAKE_IPFS_HOST = 'https://sapphire-giant-butterfly-891.mypinata.cloud'
-FAKE_IPFS_FILE1 = 'QmW2obZmcu6tUsZ15ZSfZHzGnqQ6WGiqQbGnhatDztwc3n'
-FAKE_IPFS_FILE2 = 'QmSdzeGNHaqtobbEYECj1JEteoEWFhSsf1vhZTPDP1LtPV'
-FAKE_IPFS_FILE3 = 'QmNnnQRNnveaA23nbtr9whJ6RZbtUpkWiJF2Uegg3zappa'
+FAKE_IPFS_FILE1 = 'QmSdzeGNHaqtobbEYECj1JEteoEWFhSsf1vhZTPDP1LtPV'
+FAKE_IPFS_FILE2 = 'QmTuCHPZGKM1TrXcQ7in82bHYcthvLb1nLFJpVoXD6YxmC'
+FAKE_IPFS_FILE3 = 'QmSc9NR6uPhtt2P6o7XjTnWtcr1jB9MRGurbt8WGKK1ika'
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
 
@@ -395,6 +395,15 @@ class PhilosMachine(object):
     def establish_data(self):
         return {'node_id': self.uid, 'node_pub': self.node_pub, 'root_token': self.root_token, 'master_key': self.master_key}
     
+    def token_send(self, token_id, recieving_address, amount):
+         token = Opus(token_id, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
+         tx = self._token_send(self, self.opus, recieving_address, amount, token_id)
+         current_balance = self._token_balance(token)
+         if current_balance != None:
+            self._update_token_book_balance(self.OPUS_ID, current_balance)
+
+         return tx
+    
     def opus_symbol(self):
         return self._token_symbol(self.opus)
 
@@ -440,21 +449,21 @@ class PhilosMachine(object):
     def ipfs_token_mint(self, cid, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
          tx = self._token_mint(token, recieving_address, amount, self.stellar_logo)
-         current_balance = self._token_balance(token_id)
+         current_balance = self._token_balance(token)
          if current_balance != None:
-            self._update_file_balance(cid, current_balance)
+            self.update_file_balance(cid, current_balance)
 
          return tx
     
-    def ipfs_custodial_mint(self, token_id, amount):
-        return self.ipfs_token_mint(token_id, self.stellar_keypair.public_key, amount)
+    def ipfs_custodial_mint(self, cid, token_id, amount):
+        return self.ipfs_token_mint(cid, token_id, self.stellar_keypair.public_key, amount)
     
     def ipfs_token_send(self, cid, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
          tx = self._token_send(token, recieving_address, amount, self.stellar_logo)
-         current_balance = self._token_balance(token_id)
+         current_balance = self._token_balance(token)
          if current_balance != None:
-            self._update_file_balance(cid, current_balance)
+            self.update_file_balance(cid, current_balance)
 
          return tx
     
@@ -1019,7 +1028,7 @@ class PhilosMachine(object):
                 return None
         
     def create_fake_ipfs_data(self):
-        names = ['oro_logo_red.png', 'oro_logo_peach.png', 'oro_logo_purple.png']
+        names = ['oro_logo_peach.png', 'oro_logo_red_dark.png', 'oro_logo_green_dark.png']
         types = ['image/png', 'image/png', 'image/png']
         logo = [False, True, False]
         bg_img = [False, False, False]

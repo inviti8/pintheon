@@ -461,6 +461,31 @@ def send_file_token():
                     return jsonify({'error': 'File data not updated'}), 400
           else:
                return data
+          
+@app.route('/send_token', methods=['POST'])
+@cross_origin()
+def send_token():
+   required = ['name', 'token_id', 'client_pub', 'token_id', 'amount', 'to_address']
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        amount = int(request.form['amount'])
+        if amount > 0 :
+          transaction_data = PHILOS.ipfs_send(request.form['token_id'], request.form['to_address'], amount)
+          data = PHILOS.get_dashboard_data()
+          data['transaction_data'] = transaction_data
+
+          if data == None:
+                    return jsonify({'error': 'File data not updated'}), 400
+          else:
+               return data
         
 @app.route('/add_to_namespace', methods=['POST'])
 @cross_origin()
