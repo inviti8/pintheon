@@ -99,7 +99,6 @@ class Member:
 
 class Collective:
     join_fee: int
-    members: List[Member]
     mint_fee: int
     opus_reward: int
     pay_token: Address
@@ -108,14 +107,12 @@ class Collective:
     def __init__(
         self,
         join_fee: int,
-        members: List[Member],
         mint_fee: int,
         opus_reward: int,
         pay_token: Union[Address, str],
         symbol: str,
     ):
         self.join_fee = join_fee
-        self.members = members
         self.mint_fee = mint_fee
         self.opus_reward = opus_reward
         self.pay_token = pay_token
@@ -125,7 +122,6 @@ class Collective:
         return scval.to_struct(
             {
                 "join_fee": scval.to_uint32(self.join_fee),
-                "members": scval.to_vec([e.to_scval() for e in self.members]),
                 "mint_fee": scval.to_uint32(self.mint_fee),
                 "opus_reward": scval.to_uint32(self.opus_reward),
                 "pay_token": scval.to_address(self.pay_token),
@@ -138,7 +134,6 @@ class Collective:
         elements = scval.from_struct(val)
         return cls(
             scval.from_uint32(elements["join_fee"]),
-            [Member.from_scval(e) for e in scval.from_vec(elements["members"])],
             scval.from_uint32(elements["mint_fee"]),
             scval.from_uint32(elements["opus_reward"]),
             scval.from_address(elements["pay_token"]),
@@ -150,7 +145,6 @@ class Collective:
             return NotImplemented
         return (
             self.join_fee == other.join_fee
-            and self.members == other.members
             and self.mint_fee == other.mint_fee
             and self.opus_reward == other.opus_reward
             and self.pay_token == other.pay_token
@@ -161,7 +155,6 @@ class Collective:
         return hash(
             (
                 self.join_fee,
-                self.members,
                 self.mint_fee,
                 self.opus_reward,
                 self.pay_token,
@@ -251,11 +244,11 @@ class Client(ContractClient):
         submit_timeout: int = 30,
         simulate: bool = True,
         restore: bool = True,
-    ) -> AssembledTransaction[Member]:
+    ) -> AssembledTransaction[None]:
         return self.invoke(
             "join",
             [scval.to_address(caller)],
-            parse_result_xdr_fn=lambda v: Member.from_scval(v),
+            parse_result_xdr_fn=lambda _: None,
             source=source,
             signer=signer,
             base_fee=base_fee,
@@ -372,31 +365,6 @@ class Client(ContractClient):
             "opus_reward",
             [],
             parse_result_xdr_fn=lambda v: scval.from_int128(v),
-            source=source,
-            signer=signer,
-            base_fee=base_fee,
-            transaction_timeout=transaction_timeout,
-            submit_timeout=submit_timeout,
-            simulate=simulate,
-            restore=restore,
-        )
-
-    def members(
-        self,
-        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
-        signer: Optional[Keypair] = None,
-        base_fee: int = 100,
-        transaction_timeout: int = 300,
-        submit_timeout: int = 30,
-        simulate: bool = True,
-        restore: bool = True,
-    ) -> AssembledTransaction[List[Member]]:
-        return self.invoke(
-            "members",
-            [],
-            parse_result_xdr_fn=lambda v: [
-                Member.from_scval(e) for e in scval.from_vec(v)
-            ],
             source=source,
             signer=signer,
             base_fee=base_fee,
@@ -571,6 +539,61 @@ class Client(ContractClient):
             restore=restore,
         )
 
+    def publish_file(
+        self,
+        caller: Union[Address, str],
+        ipfs_hash: bytes,
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransaction[None]:
+        return self.invoke(
+            "publish_file",
+            [scval.to_address(caller), scval.to_string(ipfs_hash)],
+            parse_result_xdr_fn=lambda _: None,
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    def publish_encrypted_share(
+        self,
+        caller: Union[Address, str],
+        recipient: Union[Address, str],
+        ipfs_hash: bytes,
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransaction[None]:
+        return self.invoke(
+            "publish_encrypted_share",
+            [
+                scval.to_address(caller),
+                scval.to_address(recipient),
+                scval.to_string(ipfs_hash),
+            ],
+            parse_result_xdr_fn=lambda _: None,
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
     def launch_opus(
         self,
         initial_alloc: int,
@@ -727,11 +750,11 @@ class ClientAsync(ContractClientAsync):
         submit_timeout: int = 30,
         simulate: bool = True,
         restore: bool = True,
-    ) -> AssembledTransactionAsync[Member]:
+    ) -> AssembledTransactionAsync[None]:
         return await self.invoke(
             "join",
             [scval.to_address(caller)],
-            parse_result_xdr_fn=lambda v: Member.from_scval(v),
+            parse_result_xdr_fn=lambda _: None,
             source=source,
             signer=signer,
             base_fee=base_fee,
@@ -848,31 +871,6 @@ class ClientAsync(ContractClientAsync):
             "opus_reward",
             [],
             parse_result_xdr_fn=lambda v: scval.from_int128(v),
-            source=source,
-            signer=signer,
-            base_fee=base_fee,
-            transaction_timeout=transaction_timeout,
-            submit_timeout=submit_timeout,
-            simulate=simulate,
-            restore=restore,
-        )
-
-    async def members(
-        self,
-        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
-        signer: Optional[Keypair] = None,
-        base_fee: int = 100,
-        transaction_timeout: int = 300,
-        submit_timeout: int = 30,
-        simulate: bool = True,
-        restore: bool = True,
-    ) -> AssembledTransactionAsync[List[Member]]:
-        return await self.invoke(
-            "members",
-            [],
-            parse_result_xdr_fn=lambda v: [
-                Member.from_scval(e) for e in scval.from_vec(v)
-            ],
             source=source,
             signer=signer,
             base_fee=base_fee,
@@ -1038,6 +1036,61 @@ class ClientAsync(ContractClientAsync):
                 ),
             ],
             parse_result_xdr_fn=lambda v: scval.from_address(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    async def publish_file(
+        self,
+        caller: Union[Address, str],
+        ipfs_hash: bytes,
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransactionAsync[None]:
+        return await self.invoke(
+            "publish_file",
+            [scval.to_address(caller), scval.to_string(ipfs_hash)],
+            parse_result_xdr_fn=lambda _: None,
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    async def publish_encrypted_share(
+        self,
+        caller: Union[Address, str],
+        recipient: Union[Address, str],
+        ipfs_hash: bytes,
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransactionAsync[None]:
+        return await self.invoke(
+            "publish_encrypted_share",
+            [
+                scval.to_address(caller),
+                scval.to_address(recipient),
+                scval.to_string(ipfs_hash),
+            ],
+            parse_result_xdr_fn=lambda _: None,
             source=source,
             signer=signer,
             base_fee=base_fee,
