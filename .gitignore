@@ -6,3 +6,7 @@ __pycache__/axiel.cpython-310.pyc
 __pycache__/
 
 enc_db.json
+
+static/opus_wallet_qr.png
+
+static/stellar_wallet_qr.png

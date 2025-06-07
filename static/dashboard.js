@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PHILOS', 'descriptor': 'XRO Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
 window.dash.SESSION_KEYS = 'PHILOS_SESSION';
 window.dash.NODE = 'PHILOS_NODE';
 window.dash.AUTHORIZED = false;
@@ -251,6 +251,10 @@ const send_file_token = async (cid) => {
     await window.fn.sendFileToken(formData, '/send_file_token', transaction_sent, 'POST', 'send-file-token-dialog');
 };
 
+const recieve_token_prompt = async (qrcode, address) => {
+    window.dlg.showAndRender('recieve-token-dialog', window.rndr.recieve_token_dlg, qrcode, address);
+};
+
 const send_token_prompt = async (name, token_id, logo) => {
     window.dlg.showAndRender('send-token-dialog', window.rndr.send_token_dlg, name, token_id, logo);
 };
@@ -409,7 +413,7 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('node-info', _updateElem, repo_size, storage_max, percentage);
     };
 
-    window.rndr.tokenInfo = function(tokenList){
+    window.rndr.tokenInfo = function(tokenList, address){
 
         let _updateElem = function(clone, i, tokenList){
             if(tokenList[i]==undefined)
@@ -424,6 +428,12 @@ document.addEventListener('init', function(event) {
             clone.querySelector('#token-list-item-name').textContent = name;
             clone.querySelector('#token-list-item-balance').textContent = balance;
             clone.querySelector('#token-list-item-send').setAttribute('onclick', 'send_token_prompt("' + name + '","' + tokenId + '","' + logo + '")');
+            
+            if(name == 'xlm'){
+                clone.querySelector('#token-list-item-recieve').setAttribute('onclick', 'recieve_token_prompt("/static/stellar_wallet_qr.png", "' + address + '")');
+            }else if(name == 'opus'){
+                clone.querySelector('#token-list-item-recieve').setAttribute('onclick', 'recieve_token_prompt("/static/opus_wallet_qr.png", "' + address + '")');
+            };
 
         }
 
@@ -546,7 +556,7 @@ document.addEventListener('init', function(event) {
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
         window.rndr.nodeCardHeader(window.dash.data.logo, window.dash.data.name, window.dash.data.descriptor);
         window.rndr.nodeInfo(window.dash.data.repo.RepoSize, window.dash.data.repo.StorageMax, window.dash.data.repo.usedPercentage);
-        window.rndr.tokenInfo(window.dash.data.token_info);
+        window.rndr.tokenInfo(window.dash.data.token_info, window.dash.data.address);
         //window.rndr.networkTraffic('100', '99');
         window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
 
@@ -620,6 +630,19 @@ document.addEventListener('init', function(event) {
 
         btn.onclick = function () {
             send_token(name, token_id);
+        };
+    };
+
+    window.rndr.recieve_token_dlg = function  (qrcode, address) {
+        let qr = document.querySelector('#recieve-token-dialog-qrcode');
+        let input = document.querySelector('#recieve-token-dialog-address');
+        let btn = document.querySelector('#recieve-token-dialog-copy-address');
+
+        qr.setAttribute('src', qrcode);
+        input.value = address;
+
+        btn.onclick = function () {
+            fn.copyToClipboard(input.value);
         };
     };
 

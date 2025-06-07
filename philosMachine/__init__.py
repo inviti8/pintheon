@@ -44,7 +44,9 @@ import time
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
-STELLAR_BG_RGB = (135, 133, 83)
+OPUS_BG_RGB = (134, 10, 188)
+OPUS_FG_RGB = (202, 132, 2)
+STELLAR_BG_RGB = (255, 255, 255)
 STELLAR_FG_RGB = (0, 0, 0)
 
 XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
@@ -517,7 +519,7 @@ class PhilosMachine(object):
     
     def _initialize_token_book_data(self):
         xlm_balance = self.stellar_xlm_balance()
-        opus_balance = self.opus_balance()
+        opus_balance = float("{:.2f}".format(self.xlm_to_stroops(self.opus_balance())))
 
         xlm_data = {'Name': 'xlm', 'TokenId': self.XLM_ID, 'Balance': xlm_balance, 'Logo': self.stellar_logo}
         opus_data = {'Name': 'opus', 'TokenId': self.OPUS_ID, 'Balance': opus_balance, 'Logo': self.opus_logo}
@@ -625,6 +627,7 @@ class PhilosMachine(object):
         for balance in self.stellar_account['balances']:
             if balance['asset_type'] == 'native':
                 xlm_balance = balance['balance']
+                xlm_balance = float("{:.2f}".format(float(xlm_balance)))
 
         return xlm_balance
 
@@ -636,6 +639,12 @@ class PhilosMachine(object):
         self.stellar_logo_light = light_logo
         self.stellar_logo_dark = dark_logo
         self.stellar_logo = self.stellar_logo_light
+
+    def xlm_to_stroops(self, xlm_amount):
+        return int(xlm_amount * 10_000_000)
+
+    def stroops_to_xlm(self, stroops):
+        return stroops / 10_000_000.0
 
     @property
     def do_initialize(self):
@@ -661,6 +670,7 @@ class PhilosMachine(object):
         self.active_page = 'establish'
         self.logged_in = True
         self._custom_qr_code(self.stellar_keypair.public_key, './static/stellar_logo.png', './static/stellar_wallet_qr.png', STELLAR_BG_RGB, STELLAR_FG_RGB )
+        self._custom_qr_code(self.stellar_keypair.public_key, './static/opus.png', './static/opus_wallet_qr.png', OPUS_BG_RGB, OPUS_FG_RGB )
         return True
     
     @property
@@ -1074,7 +1084,7 @@ class PhilosMachine(object):
             return None
         
     def get_dashboard_data(self):
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None}
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': self.stellar_keypair.public_key, 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None}
         if self.DEBUG or self.FAKE_IPFS:
             #If DEBUG we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}

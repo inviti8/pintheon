@@ -82,7 +82,7 @@
              <ons-col width="100%">
                 <ons-card modifier="default outlined">
                   <H3>FILES</H3>
-                  <ons-button id="debug-button" style="margin: 20px;" onclick="window.dlg.show('transaction-confirmed-dialog')" >DEBUG</ons-button>
+                  <ons-button id="debug-button" style="margin: 20px;" onclick="window.dlg.show('recieve-token-dialog')" >DEBUG</ons-button>
                   <div class="content"><ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button></div>
                   <div class="content">
                     <div class="content_top">
@@ -323,10 +323,14 @@
           <span id="token-list-item-name" class="list-item__title"><p class="truncate"></p></span>
           <div style="display: inline-block;">
             <span id="token-list-item-balance"  class="list-item__subtitle"></span>
-            <span class="right"><ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="token-list-item-send"><ons-icon icon="fa-paper-plane"></ons-icon></ons-button></span>
+            <span class="right"><ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="token-list-item-send">
+              <ons-icon icon="fa-paper-plane"></ons-icon>
+            </ons-button>
+            <span class="right"><ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="token-list-item-recieve">
+              <ons-icon icon="fa-qrcode"></ons-icon>
+            </ons-button>
+          </span>
           </div>
-          
-          
         </div>
       </ons-list-item>
   </template>
@@ -364,6 +368,20 @@
               <ons-button id="send-token-dialog-button" class="can-callback" modifier="large" ripple>SEND</ons-button>
           </ons-list-item>
         </ons-list>
+      </div>
+    </ons-dialog>
+  </template>
+
+  <template id="recieve-token-dialog.html">
+    <ons-dialog id="recieve-token-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <span class="center"><img id="recieve-token-dialog-qrcode" src="" style="max-width: 50%; height: auto;"></span>
+        <span>
+              <ons-input id="recieve-token-dialog-address" modifier="large" value=""  style="width:80%;"></ons-input>
+              <ons-button modifier="quiet" onclick="" id="recieve-token-dialog-copy-address" class="scale-on-hover-icon">
+                <ons-icon icon="fa-clipboard"></ons-icon>
+              </ons-button>
+            </span>
       </div>
     </ons-dialog>
   </template>
