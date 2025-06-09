@@ -66,7 +66,7 @@
                         </ons-list-item>
                       </ons-list>
                       <ons-list class="stat-ul" style="width:30%; height:200px;">
-                        <ons-list>
+                        <ons-list style="overflow:hidden; overflow-y:scroll;">
                           <ons-list-header>TOKENS</ons-list-header>
                           <ons-lazy-repeat id="token-list-items"></ons-lazy-repeat>
                         </ons-list>
@@ -90,7 +90,7 @@
                           <ons-search-input id="file-search" class="dash-input"  placeholder="Search" onchange="fn.filterItems(this.value)" modifier="material"></ons-search-input>
                       </p> 
                     </div>  
-                    <ons-list  id="file-list-main">
+                    <ons-list  id="file-list-main" style="overflow:hidden; overflow-y:scroll;">
                       <ons-list-header>File List</ons-list-header>
                       <ons-lazy-repeat id="file-list-items"></ons-lazy-repeat>
                     </ons-list>

@@ -41,6 +41,7 @@ from .ipfs_token_bindings import Client as IPFS_Token
 import json
 import requests
 import time
+from hvym_stellar import *
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
@@ -140,6 +141,7 @@ class PhilosMachine(object):
         self.BASE_FEE = self.stellar_server.fetch_base_fee()
         self.stellar_account = None
         self.stellar_keypair = None
+        self.stellar_25519_keypair = None
         self.hvym_collective = Collective(self.COLLECTIVE_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.opus = Opus(self.OPUS_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.stellar_logo_img = None
@@ -278,6 +280,10 @@ class PhilosMachine(object):
         
         return result
     
+    def launch_token_valid(self, launch_token):
+        verifier = StellarSharedKeyTokenVerifier(self.stellar_25519_keypair, launch_token)
+        return verifier.valid()
+
     def verify_generator(self, client_generator_pub, client_root_token):
         result = False
         server_mac = Macaroon.deserialize(self.root_token)
@@ -599,8 +605,9 @@ class PhilosMachine(object):
     def _create_stellar_keypair_from_seed(self, seed):
          print('create stellar keypair')
          self.stellar_keypair = Keypair.from_mnemonic_phrase(seed)
+         self.stellar_25519_keypair = Stellar25519KeyPair(self.stellar_keypair)
 
-         keypair = { 'name': self.node_name, 'pub': self.stellar_keypair.public_key, 'priv': self.stellar_keypair.secret }
+         keypair = { 'name': self.node_name, 'pub': self.stellar_keypair.public_key, 'priv': self.stellar_keypair.secret, '25519_pub' : self.stellar_25519_keypair.public_key() }
          self._open_db()
          self.stellar_book.insert(keypair)
          self.db.close()
@@ -616,6 +623,7 @@ class PhilosMachine(object):
          keypair = self.stellar_book.get(doc_id=1)
          self.db.close()
          self.stellar_keypair = Keypair.from_secret(keypair['priv'])
+         self.stellar_25519_keypair = Stellar25519KeyPair(self.stellar_keypair)
          
          self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
 
@@ -1084,7 +1092,7 @@ class PhilosMachine(object):
             return None
         
     def get_dashboard_data(self):
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': self.stellar_keypair.public_key, 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None}
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': self.stellar_keypair.public_key, '25519_pub': self.stellar_25519_keypair.public_key(), 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None}
         if self.DEBUG or self.FAKE_IPFS:
             #If DEBUG we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}
