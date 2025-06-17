@@ -39,7 +39,6 @@ const new_node = async () => {
     const body = {
         'token': window.constants.SESSION_TOKEN.serialize(),
         'client_pub': window.constants.CLIENT_PUBLIC_KEY,
-        'launch_token': await generateLaunchToken(document.querySelector('#launch-key').value),
         'seed_cipher': await generateSharedEncryptedText(document.querySelector('#seed-text').value, window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey),
         'generator_pub': await exportKey(window.fn.generator_keys.publicKey),
     };
@@ -51,7 +50,6 @@ const new_node = async () => {
 const establishing = (data) => {
     window.fn.establish_data = data;
     // document.querySelector('#seed-text').value ="";
-    // document.querySelector('#launch-key').value="";
     window.fn.pushPage('establish')
     console.log("establish : ",data);
 };
@@ -86,14 +84,9 @@ const establish = async () => {
 
 const established = (data) => {
     const seedTxt = document.querySelector('#seed-text');
-    const launchKey = document.querySelector('#launch-key');
     
     if(seedTxt){
         document.querySelector('#seed-text').value ="";
-    };
-
-    if(launchKey){
-        document.querySelector('#launch-key').value="";
     };
     
     console.log("establish : ",data);

@@ -163,9 +163,10 @@ const logo_updated = (node_data) => {
 
 };
 
-const upload_file = async (file) => {
+const upload_file = async (file, encrypted=false) => {
 
     const session = _getSessionData();
+    console.log(encrypted)
 
     if(file){
         const formData = new FormData()

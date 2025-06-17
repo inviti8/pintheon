@@ -189,7 +189,7 @@ def end_session():
    elif not PHILOS.session_active:  # Session must be active
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
@@ -210,7 +210,7 @@ def reset_init():
 @app.route('/new_node', methods=['POST'])
 @cross_origin()
 def new_node():
-   required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']
+   required = ['token', 'client_pub', 'seed_cipher', 'generator_pub']
    data = request.get_json()
 
    print(data)
@@ -221,7 +221,7 @@ def new_node():
    elif not PHILOS.state == 'initialized':  # PHILOS must be initialized
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']) or not PHILOS.verify_launch(data['launch_token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
@@ -317,7 +317,7 @@ def deauthorize():
    elif not PHILOS.session_active:  # Session must be active
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
