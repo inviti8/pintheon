@@ -42,6 +42,7 @@ import json
 import requests
 import time
 from hvym_stellar import *
+import py7zr
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
@@ -74,7 +75,6 @@ class PhilosMachine(object):
     def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', debug = False, fake_ipfs=False):
 
         self.uid = str(uuid.uuid4())
-        self.launch_token = 'MDAwZWxvY2F0aW9uIAowMDIzaWRlbnRpZmllciBQSElMT1NfTEFVTkNIX1RPS0VOCjAwMmZzaWduYXR1cmUgm2DPFKM5bRmCSPqmBaFOVeUEliIy3fPs_ngrdloMYFcK'
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
         self.session_active = False
         self.session_started = None
@@ -134,6 +134,8 @@ class PhilosMachine(object):
         self.soroban_rpc_url = "https://soroban-testnet.stellar.org:443"
         self.stellar_server = Server("https://horizon-testnet.stellar.org")
         self.soroban_server = SorobanServer(self.soroban_rpc_url)
+        self.stellar_initializing_keypair = Keypair.random()
+        self.stellar_initializing_25519_keypair = Stellar25519KeyPair(self.stellar_initializing_keypair)
         self.XLM_ID = XLM_TESTNET
         self.COLLECTIVE_ID = COLLECTIVE_TESTNET
         self.OPUS_ID = OPUS_TESTNET
@@ -263,19 +265,6 @@ class PhilosMachine(object):
             mac.add_first_party_caveat('time < '+ str(self.session_ends))
             
             if mac.signature == client_mac.signature:
-                result = True
-        
-        return result
-    
-    def verify_launch(self, client_launch_token):
-        result = False
-        if self.DEBUG:
-            result = True
-        else:
-            server_mac = Macaroon.deserialize(self.launch_token)
-            client_mac = Macaroon.deserialize(client_launch_token)
-
-            if server_mac.signature == client_mac.signature:
                 result = True
         
         return result
@@ -653,6 +642,25 @@ class PhilosMachine(object):
 
     def stroops_to_xlm(self, stroops):
         return stroops / 10_000_000.0
+    
+    def stellar_shared_archive(self, file, reciever_pub):
+        encrypted_data = None
+        file_data = file.read()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            original_path = os.path.join(temp_dir, file.filename)
+            encrypted_path = os.path.join(temp_dir, f"{file.filename}.7z")
+            sharedKey = StellarSharedKey(self.stellar_25519_keypair, reciever_pub)
+            
+            with open(original_path, 'wb') as f:
+                f.write(file_data)
+            
+            with py7zr.SevenZipFile(encrypted_path, 'w', password=sharedKey.hash_of_shared_secret()) as archive:
+                archive.write(original_path, os.path.basename(original_path))
+            
+            with open(encrypted_path, 'rb') as f:
+                encrypted_data = f.read()
+
+        return encrypted_data
 
     @property
     def do_initialize(self):
@@ -713,7 +721,7 @@ class PhilosMachine(object):
     def update_node_data(self):
         print('Update node data...')
         self._open_db()
-        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'url_host':self.url_host, 'node_contract':self.node_contract, 'master_key':self.master_key, 'launch_token': self.launch_token, 'root_token': self.root_token }
+        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'url_host':self.url_host, 'node_contract':self.node_contract, 'master_key':self.master_key, 'root_token': self.root_token }
         self._update_table_doc(self.node_data, data)
         print(self.node_data.all())
         self.db.close()
@@ -986,7 +994,7 @@ class PhilosMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False):
+    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None):
         if self.FAKE_IPFS:
             return self.create_fake_ipfs_data()
         else:
@@ -1027,7 +1035,7 @@ class PhilosMachine(object):
                 cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
                 if cid != None:
                     
-                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0}
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'RecieverPub':reciever_pub}
                     self._open_db()
 
                     if is_logo:
@@ -1056,7 +1064,7 @@ class PhilosMachine(object):
         File = Query()
         for hash in FAKE_IPFS_FILES:
             self.file_book.remove(File.CID == hash)
-            file_info = {'Name':names[idx], 'Type': types[idx], 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0}
+            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'RecieverPub':None}
             self.file_book.insert(file_info)
             idx+=1
         all_file_info = self.file_book.all()

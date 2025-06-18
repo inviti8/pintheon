@@ -471,3 +471,9 @@ const generateNonceTimestampAuthToken = async (serverPub, clientPriv, identifier
         throw err;  // Re-throw the error so it can be caught where this function is called.
     }
 };
+
+const generateRandomStellarKeypair = () => {
+    const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+    
+    return StellarSdk.Keypair.fromRawEd25519Seed(Buffer.from(randomBytes));
+};

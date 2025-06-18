@@ -45,7 +45,7 @@ def _payload_valid(fields, data):
 
    return result
 
-def _handle_upload(required, request, is_logo=False, is_bg_img=False):
+def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False):
     if 'file' not in request.files:
         return "No file uploaded", 400
      
@@ -60,7 +60,15 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False):
             return "Missing or empty value for field: {}".format(field), 400
 
     file_data = file.read()
-    ipfs_response = PHILOS.add_file_to_ipfs(file_name=file.filename, file_type=file.mimetype, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img)
+    file_name = file.filename
+    reciever_pub = None
+
+    if encrypted:
+        reciever_pub = request.form['reciever_pub']
+        file_data = PHILOS.stellar_shared_archive(file, reciever_pub)
+        file_name = f"{file.filename}.7z",
+
+    ipfs_response = PHILOS.add_file_to_ipfs(file_name=file_name, file_type=file.mimetype, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -189,7 +197,7 @@ def end_session():
    elif not PHILOS.session_active:  # Session must be active
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
@@ -210,7 +218,7 @@ def reset_init():
 @app.route('/new_node', methods=['POST'])
 @cross_origin()
 def new_node():
-   required = ['token', 'client_pub', 'launch_token', 'seed_cipher', 'generator_pub']
+   required = ['token', 'client_pub', 'seed_cipher', 'generator_pub']
    data = request.get_json()
 
    print(data)
@@ -221,7 +229,7 @@ def new_node():
    elif not PHILOS.state == 'initialized':  # PHILOS must be initialized
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']) or not PHILOS.verify_launch(data['launch_token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
@@ -317,7 +325,7 @@ def deauthorize():
    elif not PHILOS.session_active:  # Session must be active
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']):  # client must send valid launch token
+   elif not PHILOS.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
@@ -331,7 +339,11 @@ def deauthorize():
 @cross_origin()
 def upload():
    required = ['token', 'client_pub']
-   return _handle_upload(required, request)
+   encrypted = request.form['encrypted']
+   print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+   print(encrypted)
+   print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+   return _handle_upload(required, request, False, False, encrypted)
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()

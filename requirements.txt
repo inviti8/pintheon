@@ -36,7 +36,7 @@ frozenlist==1.5.0
 gunicorn==23.0.0
 h11==0.14.0
 hexbytes==1.2.1
-hvym_stellar==0.1
+hvym_stellar==0.2
 idna==3.10
 importlib_metadata==8.6.1
 importlib_resources==6.5.2
@@ -60,6 +60,7 @@ platformdirs==4.3.6
 propcache==0.3.1
 psutil==7.0.0
 ptyprocess==0.7.0
+py7zr==1.0.0
 pybcj==1.0.6
 pycparser==2.22
 pycryptodome==3.21.0

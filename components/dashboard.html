@@ -168,11 +168,42 @@
     </ons-dialog>
   </template>
 
-  <template id="upload-file-dialog.html">
+  <template id="upload-logo-dialog.html">
+    <ons-dialog id="upload-logo-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <p class="dialog-p">UPLOAD LOGO</p>
+        <p class="dialog-p">Select a file to upload:</p>
+        <p>
+          <ons-button id="upload-logo-dialog-button" class="can-callback" ripple>UPLOAD
+            <input type="file" id="upload-logo-dialog-input" style="display: none;">
+          </ons-button>
+        </p>
+      </div>
+    </ons-dialog>
+  </template>
+
+    <template id="upload-file-dialog.html">
     <ons-dialog id="upload-file-dialog" cancelable>
       <div style="text-align: center; padding: 10px;">
-        <p class="dialog-p">UPLOAD FILE</p>
-        <p class="dialog-p">Select a file to upload:</p>
+        <ons-list id="upload-file-dialog-settings">
+          <ons-list-item class="upload-file-dialog-list-item">
+            <div class="fab-container left"> 
+              <ons-icon id="upload-file-dialog-lock-icon" size="30px" class="list-item__thumbnail" icon="fa-unlock"></ons-icon>
+            </div>
+            <div class="center">
+              <span class="list-item__title"><ons-switch id="upload-file-dialog-encrypt-toggle"></ons-switch></span>
+            </div>
+          </ons-list-item>
+          <ons-list-item id="upload-file-dialog-key" class="upload-file-dialog-list-item" expandable disabled>
+            <div class="expandable-content">
+              <div class="center">
+                <span class="list-item__title">
+                  <ons-input id="upload-file-dialog-key-input" modifier="underbar" placeholder="Reciever Public Key" float></ons-input>
+                </span>
+              </div>
+            </div>
+          </ons-list-item>
+        </ons-list>
         <p>
           <ons-button id="upload-file-dialog-button" class="can-callback" ripple>UPLOAD
             <input type="file" id="upload-file-dialog-input" style="display: none;">
