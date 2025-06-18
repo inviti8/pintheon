@@ -45,7 +45,7 @@ def _payload_valid(fields, data):
 
    return result
 
-def _handle_upload(required, request, is_logo=False, is_bg_img=False):
+def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False):
     if 'file' not in request.files:
         return "No file uploaded", 400
      
@@ -60,7 +60,15 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False):
             return "Missing or empty value for field: {}".format(field), 400
 
     file_data = file.read()
-    ipfs_response = PHILOS.add_file_to_ipfs(file_name=file.filename, file_type=file.mimetype, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img)
+    file_name = file.filename
+    reciever_pub = None
+
+    if encrypted:
+        reciever_pub = request.form['reciever_pub']
+        file_data = PHILOS.stellar_shared_archive(file, reciever_pub)
+        file_name = f"{file.filename}.7z",
+
+    ipfs_response = PHILOS.add_file_to_ipfs(file_name=file_name, file_type=file.mimetype, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -331,7 +339,11 @@ def deauthorize():
 @cross_origin()
 def upload():
    required = ['token', 'client_pub']
-   return _handle_upload(required, request)
+   encrypted = request.form['encrypted']
+   print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+   print(encrypted)
+   print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+   return _handle_upload(required, request, False, False, encrypted)
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()

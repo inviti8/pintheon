@@ -60,6 +60,7 @@ platformdirs==4.3.6
 propcache==0.3.1
 psutil==7.0.0
 ptyprocess==0.7.0
+py7zr==1.0.0
 pybcj==1.0.6
 pycparser==2.22
 pycryptodome==3.21.0

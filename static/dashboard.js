@@ -164,8 +164,8 @@ const logo_updated = (node_data) => {
 };
 
 const upload_file = async (file, encrypted=false) => {
-
     const session = _getSessionData();
+    let upload = true;
     console.log(encrypted)
 
     if(file){
@@ -174,7 +174,19 @@ const upload_file = async (file, encrypted=false) => {
         formData.append('token', session.token.serialize());
         formData.append('client_pub', session.pub);
         formData.append('file', file);
-        await window.fn.uploadFile(file, formData, '/upload', file_updated);
+        formData.append('encrypted', encrypted);
+
+        if(encrypted){
+            const key_input = document.querySelector('#upload-file-dialog-key-input');
+            formData.append('reciever_pub', key_input.value);
+            if(key_input.value.length==0){
+                upload=false;
+            };
+        };
+        
+        if(upload){
+            await window.fn.uploadFile(file, formData, '/upload', file_updated);
+        };
     };
 };
 

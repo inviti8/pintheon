@@ -126,15 +126,14 @@ window.dlg.showLoadFileDlg = function(id, callback, encrypted=false, pruneKeys=[
         const lock = document.querySelector('#'+id+'-lock-icon');
         const tgl = document.querySelector('#'+id+'-encrypt-toggle');
         const key = document.querySelector('#'+id+'-key');
-        let encrypted = false;
+        const key_input = document.querySelector('#'+id+'-key-input');
 
         if(fileType==='JSON'){
           _jsonFileLoaderInputChangeCallback(id, input, encrypted, pruneKeys, callback);
         } else if(fileType==='FILE'){
           if(lock != undefined){
             tgl.addEventListener('change', function(){
-              encrypted = tgl.checked;
-              if(encrypted){
+              if(tgl.checked){
                 lock.setAttribute('icon','fa-lock');
                 key.removeAttribute('disabled');
                 key.showExpansion();
@@ -143,9 +142,8 @@ window.dlg.showLoadFileDlg = function(id, callback, encrypted=false, pruneKeys=[
                 key.setAttribute('disabled', true);
                 key.hideExpansion();
               }
+              _fileLoaderInputChangeCallback(id, input, callback, tgl.checked);
             });
-
-            _fileLoaderInputChangeCallback(id, input, callback, encrypted);
           }
         };
 
