@@ -740,7 +740,13 @@ document.addEventListener('init', function(event) {
     } else if (page.id === 'dashboard') {
 
         document.querySelector('#deauthorize-button').onclick = function () {
-            deauthorize();
+            ons.notification.confirm('Are you sure you want to logout?')
+            .then(function(yes) {
+                if(yes){
+                    deauthorize();
+                };
+            })
+            
         };
 
         document.querySelector('#update-logo-button').onclick = function () {
