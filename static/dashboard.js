@@ -167,7 +167,6 @@ const upload_file = async (file, id=undefined) => {
     const session = _getSessionData();
     let upload = true;
     const tgl = document.querySelector('#'+id+'-encrypt-toggle');
-    const key_input = document.querySelector('#'+id+'-key-input');
 
     if(file){
         const formData = new FormData()
@@ -176,7 +175,7 @@ const upload_file = async (file, id=undefined) => {
         formData.append('client_pub', session.pub);
 
         if(tgl != undefined && tgl.checked){
-            const key_input = document.querySelector('#upload-file-dialog-key-input');
+            const key_input = document.querySelector('#'+id+'-key-input');
             formData.append('encrypted', tgl.checked);
             formData.append('reciever_pub', key_input.value);
             if(key_input.value.length==0){
@@ -527,6 +526,12 @@ document.addEventListener('init', function(event) {
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="tokenize-button" class="scale-on-hover center-both" modifier="outline" onclick="tokenize_file_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )"><ons-icon icon="fa-diamond"></ons-icon>_tokenize</ons-button>');
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )" disabled><ons-icon icon="fa-paper-plane"></ons-icon>_send</ons-button>');
             }
+
+            if(fileList[i]['Encrypted']){
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
+            }else{
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_encrypted_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
+            };
         }
 
         window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, host, fileList, logo);

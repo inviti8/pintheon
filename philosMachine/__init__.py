@@ -439,6 +439,16 @@ class PhilosMachine(object):
         tx.sign_and_submit()
         return tx.result().address
     
+    def publish_file(self, ipfs_hash):
+        tx = self.hvym_collective.publish_file(caller=self.stellar_keypair.public_key, ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+        tx.sign_and_submit()
+        return tx.result()
+    
+    def publish_encrypted_file(self, recipient, ipfs_hash):
+        tx = self.hvym_collective.publish_encrypted_share(caller=self.stellar_keypair.public_key, recipient=recipient, ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+        tx.sign_and_submit()
+        return tx.result()
+    
     def ipfs_token_balance(self, token_id):
          token = self._bind_ipfs_token(token_id)
          return self._token_balance(token)
