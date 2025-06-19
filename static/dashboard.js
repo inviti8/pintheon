@@ -163,29 +163,36 @@ const logo_updated = (node_data) => {
 
 };
 
-const upload_file = async (file, encrypted=false) => {
+const upload_file = async (file, id=undefined) => {
     const session = _getSessionData();
     let upload = true;
-    console.log(encrypted)
+    const tgl = document.querySelector('#'+id+'-encrypt-toggle');
+    const key_input = document.querySelector('#'+id+'-key-input');
 
     if(file){
         const formData = new FormData()
 
         formData.append('token', session.token.serialize());
         formData.append('client_pub', session.pub);
-        formData.append('file', file);
-        formData.append('encrypted', encrypted);
 
-        if(encrypted){
+        if(tgl != undefined && tgl.checked){
             const key_input = document.querySelector('#upload-file-dialog-key-input');
+            formData.append('encrypted', tgl.checked);
             formData.append('reciever_pub', key_input.value);
             if(key_input.value.length==0){
                 upload=false;
             };
-        };
+        }else{
+            formData.append('encrypted', false);
+            formData.append('reciever_pub', "");
+        }
+
+        formData.append('file', file);
         
         if(upload){
             await window.fn.uploadFile(file, formData, '/upload', file_updated);
+        }else{
+            window.dlg.show('fail-dialog');
         };
     };
 };

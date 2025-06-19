@@ -63,7 +63,7 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
     file_name = file.filename
     reciever_pub = None
 
-    if encrypted:
+    if encrypted == True:
         reciever_pub = request.form['reciever_pub']
         file_data = PHILOS.stellar_shared_archive(file, reciever_pub)
         file_name = f"{file.filename}.7z",
