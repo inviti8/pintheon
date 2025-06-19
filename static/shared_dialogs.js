@@ -132,18 +132,20 @@ window.dlg.showLoadFileDlg = function(id, callback, encrypted=false, pruneKeys=[
           _jsonFileLoaderInputChangeCallback(id, input, encrypted, pruneKeys, callback);
         } else if(fileType==='FILE'){
 
-          tgl.addEventListener('change', function(){
-              if(tgl.checked){
-                lock.setAttribute('icon','fa-lock');
-                key.removeAttribute('disabled');
-                key.showExpansion();
-              }else{
-                lock.setAttribute('icon','fa-unlock');
-                key.setAttribute('disabled', true);
-                key.hideExpansion();
-              }
-              dialog.setAttribute('encrypted', tgl.checked);
-          });
+          if(tgl != undefined){
+            tgl.addEventListener('change', function(){
+                if(tgl.checked){
+                  lock.setAttribute('icon','fa-lock');
+                  key.removeAttribute('disabled');
+                  key.showExpansion();
+                }else{
+                  lock.setAttribute('icon','fa-unlock');
+                  key.setAttribute('disabled', true);
+                  key.hideExpansion();
+                }
+                dialog.setAttribute('encrypted', tgl.checked);
+            });
+          };
 
           _fileLoaderInputChangeCallback(id, input, callback, id);
 
