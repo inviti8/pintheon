@@ -498,6 +498,31 @@ def send_token():
                     return jsonify({'error': 'File data not updated'}), 400
           else:
                return data
+          
+@app.route('/publish_file', methods=['POST'])
+@cross_origin()
+def publish_file():
+   required = ['name', 'cid', 'client_pub', 'token', 'encrypted', 'reciever_pub']
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+
+   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+        encrypted = request.form['encrypted']
+        cid = request.form['cid']
+        print(encrypted)
+        if encrypted is True:
+            reciever_pub = request.form['reciever_pub']
+            tx = PHILOS.publish_encrypted_file(reciever_pub, cid)
+            return jsonify({'published': True, 'transaction': tx}), 200
+        else:
+            tx = PHILOS.publish_file(cid)
+            return jsonify({'published': True, 'transaction': tx}), 200
         
 @app.route('/add_to_namespace', methods=['POST'])
 @cross_origin()

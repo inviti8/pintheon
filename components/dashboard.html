@@ -297,6 +297,29 @@
     </ons-dialog>
   </template>
 
+  <template id="publish-file-dialog.html">
+    <ons-dialog id="publish-file-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list  style="width:100%;">
+          <ons-list-header><ons-icon class="right" icon="fa-bolt"></ons-icon>__PUBLISH FILE</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <div class="fab-container left">
+              <span class="left">
+                <img id="publish-file-dialog-img" class="list-item__thumbnail" modifier="file-thumb" src="">
+              </span>
+            </div>
+            <div class="center">
+              <span id="publish-file-dialog-name" class="list-item__title"></span><span id="publish-file-dialog-descriptor"  class="list-item__subtitle"></span>
+            </div>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;" >
+              <ons-button id="publish-file-dialog-button" class="can-callback" modifier="large" ripple>PUBLISH</ons-button>
+          </ons-list-item>
+        </ons-list>
+      </div>
+    </ons-dialog>
+  </template>
+
   <template id="node-info-template">
     <ons-list class="stat-ul" style="width:30%; height:200px;">
       <ons-list-header>NODE INFO</ons-list-header>
@@ -444,7 +467,7 @@
         <ons-list modifier="default">
           <ons-list-header><img style="width: 24px; height: 24px;" id="file-list-item-stellar-logo" src=""></ons-list-header>
           <ons-list-item>
-            <div class="center"> Balance:<pre>  </pre><span id="file-list-item-balance"></span></div>
+            <div class="center"><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
           </ons-list-item>
           <ons-list-item>
             <div id="file-list-items-token-buttons" class="center"></div>

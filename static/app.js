@@ -298,6 +298,10 @@ document.addEventListener('init', function(event) {
         window.fn.confirmedCall('Send file token?', 'token transfer failed', formData, endpoint, callback, method, true, hideDlg);
     };
 
+    window.fn.publishFile = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {
+        window.fn.confirmedCall('Publish file?', 'publish failed', formData, endpoint, callback, method, true, hideDlg);
+    };
+
     window.fn.updateGateway = async (formData, endpoint, callback, method='POST') => {
         window.fn.confirmedCall('Update Gateway url?', 'Error updating gateway', formData, endpoint, callback, method);
     };

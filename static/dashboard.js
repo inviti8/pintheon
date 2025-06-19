@@ -250,8 +250,20 @@ const transaction_sent = async(node_data) => {
     };
 };
 
-const send_file_token_prompt = async (name, cid) => {
-    window.dlg.showAndRender('send-file-token-dialog', window.rndr.send_file_token_dlg, name, cid);
+const file_published = async(response) => {
+
+    if(response.published){
+        ons.notification.toast('File Data Published on Chain', {
+            timeout: 2000
+        });
+    }else{
+        ons.notification.alert('Publish Failed');
+    };
+
+};
+
+const send_file_token_prompt = async (name, cid, icon) => {
+    window.dlg.showAndRender('send-file-token-dialog', window.rndr.send_file_token_dlg, name, cid, icon);
 };
 
 const send_file_token = async (cid) => {
@@ -292,6 +304,25 @@ const send_token = async (name, token_id) => {
     formData.append('amount', amount);
 
     await window.fn.sendFileToken(formData, '/send_token', transaction_sent, 'POST', 'send-token-dialog');
+};
+
+const publish_file_token_prompt = async (name, cid, icon, encrypted, reciever_pub=undefined) => {
+    window.dlg.showAndRender('publish-file-dialog', window.rndr.publish_file_token_dlg, name, cid, icon, encrypted, reciever_pub);
+};
+
+const publish_file = async (name, cid, encrypted, reciever_pub) => {
+
+    const session = _getSessionData();
+    const formData = new FormData();
+    
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('name', name);
+    formData.append('cid', cid);
+    formData.append('encrypted', encrypted);
+    formData.append('reciever_pub', reciever_pub);
+
+    await window.fn.publishFile(formData, '/publish_file', file_published, 'POST', 'publish-file-dialog');
 };
 
 const dash_data = async (callback) => {
@@ -480,6 +511,8 @@ document.addEventListener('init', function(event) {
             let fileType = fileList[i]['Type'];
             let cid = fileList[i]['CID']
             let balance = fileList[i]['Balance']
+            let encrypted = fileList[i]['Encrypted']
+            let reciever_pub = fileList[i]['RecieverPub']
             let icon = window.icons.UNKNOWN;
 
             if(fileType.includes('image')){
@@ -512,6 +545,12 @@ document.addEventListener('init', function(event) {
             clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('#file-list-item-stellar-logo').src = logo;
             clone.querySelector('#file-list-item-balance').textContent = balance;
+            clone.querySelector('#file-list-item-encrypted').textContent = encrypted;
+            if(reciever_pub != null){
+                clone.querySelector('#file-list-item-reciever-pub').textContent = reciever_pub;
+            }else{
+                clone.querySelector('#file-list-item-reciever-pub').textContent = 'N/A';
+            }
             clone.querySelector('.file-name').textContent = fileName;
             clone.querySelector('.file_url').href = fileUrl;
             clone.querySelector('.file_url').textContent = cid;
@@ -521,16 +560,16 @@ document.addEventListener('init', function(event) {
             if (fileList[i]['IsBgImg'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-photo"></ons-icon>');};
             if(fileList[i]['ContractID'].length > 0){
                 clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-diamond"></ons-icon>');
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )"><ons-icon icon="fa-paper-plane"></ons-icon>_send</ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+' )"><ons-icon icon="fa-paper-plane"></ons-icon>_send</ons-button>');
             }else{
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="tokenize-button" class="scale-on-hover center-both" modifier="outline" onclick="tokenize_file_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )"><ons-icon icon="fa-diamond"></ons-icon>_tokenize</ons-button>');
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )" disabled><ons-icon icon="fa-paper-plane"></ons-icon>_send</ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+' )" disabled><ons-icon icon="fa-paper-plane"></ons-icon>_send</ons-button>');
             }
 
             if(fileList[i]['Encrypted']){
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+', '+true+', '+"'"+reciever_pub+"'"+', )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
             }else{
-                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_encrypted_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+', '+false+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
             };
         }
 
@@ -631,17 +670,29 @@ document.addEventListener('init', function(event) {
         };
     };
 
-    window.rndr.send_file_token_dlg = function  (name, cid) {
-        let fileUrl = window.dash.data.host + '/ipfs/' + cid;
+    window.rndr.send_file_token_dlg = function  (name, cid, icon) {
         let img = document.querySelector('#send-file-token-dialog-img');
         let nameElem = document.querySelector('#send-file-token-dialog-name');;
         let btn = document.querySelector('#send-file-token-dialog-button');
 
-        img.setAttribute('src', fileUrl);
+        img.setAttribute('src', icon);
         nameElem.textContent = name;
 
         btn.onclick = function () {
             send_file_token(cid);
+        };
+    };
+
+    window.rndr.publish_file_token_dlg = function  (name, cid, icon, encrypted, reciever_pub) {
+        let img = document.querySelector('#publish-file-dialog-img');
+        let nameElem = document.querySelector('#publish-file-dialog-name');;
+        let btn = document.querySelector('#publish-file-dialog-button');
+
+        img.setAttribute('src', icon);
+        nameElem.textContent = name;
+
+        btn.onclick = function () {
+            publish_file(name, cid, encrypted, reciever_pub);
         };
     };
 

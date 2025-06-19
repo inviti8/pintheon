@@ -451,7 +451,7 @@ class PhilosMachine(object):
     
     def ipfs_token_balance(self, token_id):
          token = self._bind_ipfs_token(token_id)
-         return self._token_balance(token)
+         return self._token_balance(token) / 10
 
     def ipfs_token_mint(self, cid, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
