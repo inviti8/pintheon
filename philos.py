@@ -515,14 +515,21 @@ def publish_file():
    else:
         encrypted = request.form['encrypted']
         cid = request.form['cid']
-        print(encrypted)
+        data = None
         if encrypted is True:
             reciever_pub = request.form['reciever_pub']
-            tx = PHILOS.publish_encrypted_file(reciever_pub, cid)
-            return jsonify({'published': True, 'transaction': tx}), 200
+            transaction_data = PHILOS.publish_encrypted_file(reciever_pub, cid)
+            data = PHILOS.get_dashboard_data()
+            data['transaction_data'] = transaction_data
         else:
-            tx = PHILOS.publish_file(cid)
-            return jsonify({'published': True, 'transaction': tx}), 200
+            transaction_data = PHILOS.publish_file(cid)
+            data = PHILOS.get_dashboard_data()
+            data['transaction_data'] = transaction_data
+
+        if data == None:
+               return jsonify({'error': 'File data not updated'}), 400
+        else:
+               return data
         
 @app.route('/add_to_namespace', methods=['POST'])
 @cross_origin()

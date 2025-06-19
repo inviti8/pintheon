@@ -440,14 +440,42 @@ class PhilosMachine(object):
         return tx.result().address
     
     def publish_file(self, ipfs_hash):
+        transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
         tx = self.hvym_collective.publish_file(caller=self.stellar_keypair.public_key, ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-        tx.sign_and_submit()
-        return tx.result()
+
+        tx.sign()
+        send_transaction = self.soroban_server.send_transaction(tx)
+        while True:
+            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+            time.sleep(3)
+
+        if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+            transaction['hash'] = send_transaction.hash
+            transaction['successful'] = True
+            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+
+        return transaction
+
     
     def publish_encrypted_file(self, recipient, ipfs_hash):
+        transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
         tx = self.hvym_collective.publish_encrypted_share(caller=self.stellar_keypair.public_key, recipient=recipient, ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-        tx.sign_and_submit()
-        return tx.result()
+        tx.sign()
+        send_transaction = self.soroban_server.send_transaction(tx)
+        while True:
+            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+            time.sleep(3)
+
+        if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+            transaction['hash'] = send_transaction.hash
+            transaction['successful'] = True
+            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+
+        return transaction
     
     def ipfs_token_balance(self, token_id):
          token = self._bind_ipfs_token(token_id)
@@ -455,7 +483,7 @@ class PhilosMachine(object):
 
     def ipfs_token_mint(self, cid, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
-         tx = self._token_mint(token, recieving_address, amount, self.stellar_logo)
+         tx = self._token_mint(token, recieving_address, amount, self.stellar_logo, True)
          current_balance = self._token_balance(token)
          if current_balance != None:
             self.update_file_balance(cid, current_balance)
@@ -500,9 +528,12 @@ class PhilosMachine(object):
 
          return transaction
     
-    def _token_mint(self, token, recieving_address, amount, logo):
+    def _token_mint(self, token, recieving_address, amount, logo, file_token= False):
+         if not file_token:
+             amount = amount * 10**7
+             
          transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': logo}
-         tx = token.mint(recieving_address, amount * 10**7, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+         tx = token.mint(recieving_address, amount, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          tx.sign()
          send_transaction = self.soroban_server.send_transaction(tx)
          while True:

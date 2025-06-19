@@ -250,18 +250,6 @@ const transaction_sent = async(node_data) => {
     };
 };
 
-const file_published = async(response) => {
-
-    if(response.published){
-        ons.notification.toast('File Data Published on Chain', {
-            timeout: 2000
-        });
-    }else{
-        ons.notification.alert('Publish Failed');
-    };
-
-};
-
 const send_file_token_prompt = async (name, cid, icon) => {
     window.dlg.showAndRender('send-file-token-dialog', window.rndr.send_file_token_dlg, name, cid, icon);
 };
@@ -322,7 +310,7 @@ const publish_file = async (name, cid, encrypted, reciever_pub) => {
     formData.append('encrypted', encrypted);
     formData.append('reciever_pub', reciever_pub);
 
-    await window.fn.publishFile(formData, '/publish_file', file_published, 'POST', 'publish-file-dialog');
+    await window.fn.publishFile(formData, '/publish_file', transaction_sent, 'POST', 'publish-file-dialog');
 };
 
 const dash_data = async (callback) => {
