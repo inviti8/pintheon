@@ -68,7 +68,7 @@ FAKE_IPFS_FILE3 = 'QmSc9NR6uPhtt2P6o7XjTnWtcr1jB9MRGurbt8WGKK1ika'
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
 
-class PhilosMachine(object):
+class PintheonMachine(object):
 
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
@@ -167,10 +167,10 @@ class PhilosMachine(object):
         self._client_generator_pub = None
         self._seed_cipher = None
 
-        self._dirs = PlatformDirs('PHILOS', 'XRO Network', ensure_exists=True)
+        self._dirs = PlatformDirs('PINTHEON', 'XRO Network', ensure_exists=True)
 
         # Initialize the state machine
-        self.machine = Machine(model=self, states=PhilosMachine.states, initial='spawned')
+        self.machine = Machine(model=self, states=PintheonMachine.states, initial='spawned')
 
         self.machine.add_transition(trigger='initialize', source='spawned', dest='initialized', conditions=['do_initialize'])
 
@@ -258,7 +258,7 @@ class PhilosMachine(object):
             client_mac = Macaroon.deserialize(client_token)
             mac = Macaroon(
                 location=client_mac.location,
-                identifier='PHILOS_SESSION',
+                identifier='PINTHEON_SESSION',
                 key=self.generate_shared_session_secret(b64_pub)
             )
 
@@ -617,14 +617,14 @@ class PhilosMachine(object):
     def _create_root_token(self):
         self.root_token = Macaroon(
             location='',
-            identifier='PHILOS_GENERATOR',
+            identifier='PINTHEON_GENERATOR',
             key=self.generate_shared_node_secret()
         ).serialize()
 
     def _create_auth_token(self):
         mac = Macaroon(
             location='',
-            identifier='PHILOS_AUTH',
+            identifier='PINTHEON_AUTH',
             key=self.generate_shared_session_secret(self._client_session_pub)
         )
         mac.add_first_party_caveat('nonce == '+self.auth_nonce)

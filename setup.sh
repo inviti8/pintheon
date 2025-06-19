@@ -8,9 +8,9 @@ After=network.target
 [Service]
 User=test
 Group=www-data
-WorkingDirectory=/home/test/philos
-Environment="PATH=/home/test/philos/bin"
-ExecStart=/home/test/philos/philos/bin/gunicorn --workers 1 --limit-request-line 0 --bind unix:philos.sock -m 007 wsgi:app
+WorkingDirectory=/home/test/pintheon
+Environment="PATH=/home/test/pintheon/bin"
+ExecStart=/home/test/pintheon/pintheon/bin/gunicorn --workers 1 --limit-request-line 0 --bind unix:pintheon.sock -m 007 wsgi:app
 Restart=always
 
 [Install]
@@ -29,17 +29,17 @@ echo "Configuring Nginx"
 
 echo "Generate SSL Certs."
 mkcert -install
-mkcert local.philos.com localhost 127.0.0.1 ::1
-sudo mv -f local.philos.com+3.pem /etc/ssl/philos.crt
-sudo mv -f local.philos.com+3-key.pem /etc/ssl/philos.key
-#openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/localhost.key -out certs/localhost.crt -config ./philos/localhost.cnf -extensions ext
-#sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt -config ./philos/localhost.cnf
+mkcert local.pintheon.com localhost 127.0.0.1 ::1
+sudo mv -f local.pintheon.com+3.pem /etc/ssl/pintheon.crt
+sudo mv -f local.pintheon.com+3-key.pem /etc/ssl/pintheon.key
+#openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/localhost.key -out certs/localhost.crt -config ./pintheon/localhost.cnf -extensions ext
+#sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt -config ./pintheon/localhost.cnf
 
 cat > /etc/nginx/sites-available/default<<  EOF
 
 server{
     listen 80;
-    server_name local.philos.com;
+    server_name local.pintheon.com;
     client_max_body_size 200M;
 
     location / {
@@ -50,11 +50,11 @@ server{
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    server_name local.philos.com;
+    server_name local.pintheon.com;
     client_max_body_size 200M;
 
-    ssl_certificate /etc/ssl/philos.crt;
-    ssl_certificate_key /etc/ssl/philos.key;
+    ssl_certificate /etc/ssl/pintheon.crt;
+    ssl_certificate_key /etc/ssl/pintheon.key;
 
     location ~ ^/(ipfs|ipns) {
         proxy_pass http://127.0.0.1:8082;
@@ -69,12 +69,12 @@ server {
         add_header Access-Control-Allow-Methods *;
 
         include proxy_params;
-        proxy_pass http://unix:/home/test/philos/philos.sock;
+        proxy_pass http://unix:/home/test/pintheon/pintheon.sock;
     }
 
     location /static  {
         include  /etc/nginx/mime.types;
-        root /home/test/philos/;
+        root /home/test/pintheon/;
     }
 }
 EOF
@@ -82,8 +82,8 @@ EOF
 echo "Owning the directory"
 sudo chown -R test /home/
 echo "Owning the directory"
-sudo chown -R test:www-data /home/test/philos/
+sudo chown -R test:www-data /home/test/pintheon/
 echo "set ownership to nginx for staic files"
-sudo chmod -R 755 /home/test/philos/static
+sudo chmod -R 755 /home/test/pintheon/static
 echo "Restarting Nginx"
 sudo systemctl restart nginx

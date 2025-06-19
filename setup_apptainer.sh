@@ -5,15 +5,15 @@ echo "Configuring Nginx"
 
 echo "Generate SSL Certs."
 mkcert -install
-mkcert local.philos.com localhost 127.0.0.1 ::1
-mv -f local.philos.com+3.pem /etc/ssl/philos.crt
-mv -f local.philos.com+3-key.pem /etc/ssl/philos.key
+mkcert local.pintheon.com localhost 127.0.0.1 ::1
+mv -f local.pintheon.com+3.pem /etc/ssl/pintheon.crt
+mv -f local.pintheon.com+3-key.pem /etc/ssl/pintheon.key
 
 cat > /etc/nginx/sites-available/default<<  EOF
 
 server{
     listen 80;
-    server_name local.philos.com;
+    server_name local.pintheon.com;
     client_max_body_size 200M;
 
     location / {
@@ -24,11 +24,11 @@ server{
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    server_name local.philos.com;
+    server_name local.pintheon.com;
     client_max_body_size 200M;
 
-    ssl_certificate /etc/ssl/philos.crt;
-    ssl_certificate_key /etc/ssl/philos.key;
+    ssl_certificate /etc/ssl/pintheon.crt;
+    ssl_certificate_key /etc/ssl/pintheon.key;
 
     location ~ ^/(ipfs|ipns) {
         proxy_pass http://127.0.0.1:8082;
@@ -43,12 +43,12 @@ server {
         add_header Access-Control-Allow-Methods *;
 
         include proxy_params;
-        proxy_pass http://unix:/home/philos/philos.sock;
+        proxy_pass http://unix:/home/pintheon/pintheon.sock;
     }
 
     location /static  {
         include  /etc/nginx/mime.types;
-        root /home/philos/;
+        root /home/pintheon/;
     }
 }
 EOF
@@ -56,7 +56,7 @@ EOF
 echo "Owning the directory"
 chown -R root /home/
 echo "Owning the directory"
-chown -R root:www-data /home/philos/
+chown -R root:www-data /home/pintheon/
 echo "set ownership to nginx for staic files"
-chmod -R 755 /home/philos/static
+chmod -R 755 /home/pintheon/static
 

@@ -6,7 +6,7 @@ from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound, H
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 from platformdirs import *
-from philosMachine import PhilosMachine
+from pintheonMachine import PintheonMachine
 from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 
 app = Flask(__name__)
@@ -22,8 +22,8 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PHILOS = PhilosMachine(static_path=STATIC_PATH, db_path=DB_PATH, debug=True, fake_ipfs=True)
-PHILOS.initialize()
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, debug=True, fake_ipfs=True)
+PINTHEON.initialize()
 
 ##UTILITIES###
 def _load_components(comp):
@@ -65,10 +65,10 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
 
     if encrypted == True:
         reciever_pub = request.form['reciever_pub']
-        file_data = PHILOS.stellar_shared_archive(file, reciever_pub)
+        file_data = PINTHEON.stellar_shared_archive(file, reciever_pub)
         file_name = f"{file.filename}.7z",
 
-    ipfs_response = PHILOS.add_file_to_ipfs(file_name=file_name, file_type=file.mimetype, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub)
+    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file.mimetype, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -104,7 +104,7 @@ class Unauthorized(HTTPException):
     description = 'Invalid Credentials'
 
 def _on_failure_error():
-    PHILOS.end_session()
+    PINTHEON.end_session()
 
 @app.errorhandler(401)
 def unauthorized_access(e):
@@ -127,60 +127,60 @@ def unauthorized_access(e):
 ##ROUTES## 
 @app.route('/admin')
 def admin():
-   hsh = PHILOS.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
-   print(PHILOS.hash_key(hsh))
+   hsh = PINTHEON.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
+   print(PINTHEON.hash_key(hsh))
    m = Macaroon(
             location='',
-            identifier='PHILOS_LAUNCH_TOKEN',
+            identifier='PINTHEON_LAUNCH_TOKEN',
             key='bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=',
             version=MACAROON_V1
         )
    print(m.identifier)
    print('-----------------------------------')
    print(m.serialize())
-   print(PHILOS.state)
+   print(PINTHEON.state)
    print(request.headers)
    print('-----------------------------------')
 
        
-   PHILOS.logo_url = url_for('static', filename='hvym_logo.png')
-   PHILOS.stellar_logo_url = url_for('static', filename='stellar_logo.png')
+   PINTHEON.logo_url = url_for('static', filename='hvym_logo.png')
+   PINTHEON.stellar_logo_url = url_for('static', filename='stellar_logo.png')
    stellar_light_logo = url_for('static', filename='stellar_logo_light.png')
    stellar_dark_logo = url_for('static', filename='stellar_logo_dark.png')
 
-   if PHILOS.stellar_logo == None:
-     PHILOS.stellar_set_logos(stellar_light_logo, stellar_dark_logo)
-   PHILOS.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
-   PHILOS.opus_logo = url_for('static', filename='opus.png')
-   PHILOS.boros_logo = url_for('static', filename='boros.png')
+   if PINTHEON.stellar_logo == None:
+     PINTHEON.stellar_set_logos(stellar_light_logo, stellar_dark_logo)
+   PINTHEON.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
+   PINTHEON.opus_logo = url_for('static', filename='opus.png')
+   PINTHEON.boros_logo = url_for('static', filename='boros.png')
 
-   pub = PHILOS.session_pub
-   if not PHILOS.logged_in:
-       pub = PHILOS.new_session()
+   pub = PINTHEON.session_pub
+   if not PINTHEON.logged_in:
+       pub = PINTHEON.new_session()
 
-   template = PHILOS.view_template
-   components=_load_components(PHILOS.view_components)
-   page = PHILOS.active_page
-   js=_load_js(PHILOS.view_components)
-   logo=PHILOS.logo_url
-   customization = PHILOS.get_customization()
+   template = PINTHEON.view_template
+   components=_load_components(PINTHEON.view_components)
+   page = PINTHEON.active_page
+   js=_load_js(PINTHEON.view_components)
+   logo=PINTHEON.logo_url
+   customization = PINTHEON.get_customization()
    theme = customization['themes'][customization['current_theme']]
    bg_img = customization['bg_img']
-   shared_dialogs=_load_components(PHILOS.shared_dialogs)
-   shared_dialogs_js=_load_js(PHILOS.shared_dialogs)
+   shared_dialogs=_load_components(PINTHEON.shared_dialogs)
+   shared_dialogs_js=_load_js(PINTHEON.shared_dialogs)
    client_tokens= _load_js('macaroons_js_bundle')
    theme_css = url_for('static', filename=theme+'-theme.css')
    
-   session_data = { 'pub': pub, 'generator_pub': PHILOS.node_pub, 'time': PHILOS.session_ends, 'nonce': PHILOS.session_nonce }
+   session_data = { 'pub': pub, 'generator_pub': PINTHEON.node_pub, 'time': PINTHEON.session_ends, 'nonce': PINTHEON.session_nonce }
    return render_template(template, page=page, components=components, js=js, logo=logo, bg_img=bg_img, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
 
 @app.route('/top_up_stellar')
 def top_up_stellar():
-   PHILOS.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
+   PINTHEON.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
    template = 'top_up.html'
    page = 'top_up'
    js=_load_js('top_up')
-   qr=PHILOS.stellar_wallet_qr
+   qr=PINTHEON.stellar_wallet_qr
 
    return render_template(template, page=page, js=js, qr=qr)
 
@@ -194,23 +194,23 @@ def end_session():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not PHILOS.session_active:  # Session must be active
+   elif not PINTHEON.session_active:  # Session must be active
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']):
+   elif not PINTHEON.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
-        PHILOS.end_session()
+        PINTHEON.end_session()
         
         return jsonify({'authorized': False}), 200
    
 @app.route('/reset_init', methods=['POST'])
 @cross_origin()
 def reset_init():
-     if PHILOS.state == 'establishing':
-          PHILOS.init_reset()
-          PHILOS.end_session()
+     if PINTHEON.state == 'establishing':
+          PINTHEON.init_reset()
+          PINTHEON.end_session()
           admin()
         
      return jsonify({'authorized': False}), 200
@@ -226,20 +226,20 @@ def new_node():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not PHILOS.state == 'initialized':  # PHILOS must be initialized
+   elif not PINTHEON.state == 'initialized':  # PINTHEON must be initialized
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']):
+   elif not PINTHEON.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
-        PHILOS.new_node()
-        PHILOS.set_client_session_pub(data['client_pub'])
-        PHILOS.set_seed_cipher(data['seed_cipher'])
-        PHILOS.set_client_node_pub(data['generator_pub'])
-        PHILOS.new()
+        PINTHEON.new_node()
+        PINTHEON.set_client_session_pub(data['client_pub'])
+        PINTHEON.set_seed_cipher(data['seed_cipher'])
+        PINTHEON.set_client_node_pub(data['generator_pub'])
+        PINTHEON.new()
         
-   return PHILOS.establish_data(), 200
+   return PINTHEON.establish_data(), 200
         
 
 @app.route('/establish', methods=['POST'])
@@ -252,17 +252,17 @@ def establish():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not PHILOS.state == 'establishing':  # PHILOS must be establishing
+   elif not PINTHEON.state == 'establishing':  # PINTHEON must be establishing
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']):  # client must send valid session token
+   elif not PINTHEON.verify_request(data['client_pub'], data['token']):  # client must send valid session token
         raise Unauthorized()  # Unauthorized
 
    else:
-        PHILOS.set_node_data(data['name'], data['descriptor'], data['meta_data'], data['host'])
-        PHILOS.established()
+        PINTHEON.set_node_data(data['name'], data['descriptor'], data['meta_data'], data['host'])
+        PINTHEON.established()
         
-   return PHILOS.establish_data(), 200
+   return PINTHEON.establish_data(), 200
    
 
 @app.route('/authorize', methods=['POST'])
@@ -274,15 +274,15 @@ def authorize():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   elif PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.token_not_expired(data['client_pub'], data['token']) or not PHILOS.verify_request(data['client_pub'], data['token']) or not PHILOS.verify_generator(data['generator_pub'], data['auth_token']):  # client must send valid tokens
+   elif not PINTHEON.token_not_expired(data['client_pub'], data['token']) or not PINTHEON.verify_request(data['client_pub'], data['token']) or not PINTHEON.verify_generator(data['generator_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        PHILOS.set_client_session_pub(data['client_pub'])
-        PHILOS.authorized()
-        data = PHILOS.get_dashboard_data()
+        PINTHEON.set_client_session_pub(data['client_pub'])
+        PINTHEON.authorized()
+        data = PINTHEON.get_dashboard_data()
         if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
         else:
@@ -299,13 +299,13 @@ def authorized():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not PHILOS.token_not_expired(data['client_pub'], data['token']) and (not PHILOS.session_active or not PHILOS.state == 'idle'):  # PHILOS must be idle
+   elif not PINTHEON.token_not_expired(data['client_pub'], data['token']) and (not PINTHEON.session_active or not PINTHEON.state == 'idle'):  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
+   elif not PINTHEON.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-     data = PHILOS.get_dashboard_data()
+     data = PINTHEON.get_dashboard_data()
      if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
      else:
@@ -322,15 +322,15 @@ def deauthorize():
    if not _payload_valid(required, data):
         abort(400)  # Bad Request
 
-   elif not PHILOS.session_active:  # Session must be active
+   elif not PINTHEON.session_active:  # Session must be active
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(data['client_pub'], data['token']):
+   elif not PINTHEON.verify_request(data['client_pub'], data['token']):
         raise Unauthorized()  # Unauthorized
 
    else:
-        PHILOS.deauthorized()
-        PHILOS.end_session()
+        PINTHEON.deauthorized()
+        PINTHEON.end_session()
         
         return jsonify({'authorized': False}), 200
    
@@ -351,17 +351,17 @@ def update_logo():
    required = ['token', 'client_pub']
    file = request.files['file']
 
-   if PHILOS.file_exists(file.filename, file.mimetype):
-          PHILOS.update_file_as_logo(file.filename)
+   if PINTHEON.file_exists(file.filename, file.mimetype):
+          PINTHEON.update_file_as_logo(file.filename)
    else:
         files = _handle_upload(required=required, request=request, is_logo=True)
         cid = _get_file_cid(file, files)
 
    if cid != None:
-        PHILOS.logo_url = PHILOS.url_host+'/ipfs/'+cid
-        data = PHILOS.update_node_data()
+        PINTHEON.logo_url = PINTHEON.url_host+'/ipfs/'+cid
+        data = PINTHEON.update_node_data()
 
-   data = PHILOS.get_dashboard_data()
+   data = PINTHEON.get_dashboard_data()
    if data == None:
         return jsonify({'error': 'Cannot get dash data'}), 400
    else:
@@ -377,21 +377,21 @@ def update_gateway():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
         
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
         
-     PHILOS.url_host = host
+     PINTHEON.url_host = host
      
-     if '/ipfs/' in PHILOS.logo_url:
-         cid = PHILOS.logo_url.split('/ipfs/')[-1]
-         PHILOS.logo_url = PHILOS.url_host+'/ipfs/'+cid
-         PHILOS.update_node_data()
+     if '/ipfs/' in PINTHEON.logo_url:
+         cid = PINTHEON.logo_url.split('/ipfs/')[-1]
+         PINTHEON.logo_url = PINTHEON.url_host+'/ipfs/'+cid
+         PINTHEON.update_node_data()
      
-     data = PHILOS.get_dashboard_data()
+     data = PINTHEON.get_dashboard_data()
      if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
      else:
@@ -405,13 +405,13 @@ def remove_file():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        ipfs_response = PHILOS.remove_file_from_ipfs(request.form['cid'])
+        ipfs_response = PINTHEON.remove_file_from_ipfs(request.form['cid'])
 
         if ipfs_response == None:
                 return jsonify({'error': 'File not removed'}), 400
@@ -426,21 +426,21 @@ def tokenize_file():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        file_data = PHILOS.file_data_from_cid(request.form['cid'])
+        file_data = PINTHEON.file_data_from_cid(request.form['cid'])
         if len(file_data['ContractID']) > 0:
             return jsonify({'error': 'File already tokenized'}), 400
         else:
           print(request.form['allocation'])
-          contract_id = PHILOS.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PHILOS.url_host)
-          PHILOS.update_file_contract_id(request.form['cid'], contract_id)
-          transaction_data = PHILOS.ipfs_custodial_mint(request.form['cid'], contract_id, int(request.form['allocation']))
-          data = PHILOS.get_dashboard_data()
+          contract_id = PINTHEON.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PINTHEON.url_host)
+          PINTHEON.update_file_contract_id(request.form['cid'], contract_id)
+          transaction_data = PINTHEON.ipfs_custodial_mint(request.form['cid'], contract_id, int(request.form['allocation']))
+          data = PINTHEON.get_dashboard_data()
           data['transaction_data'] = transaction_data
 
           if data == None:
@@ -456,17 +456,17 @@ def send_file_token():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        file_data = PHILOS.file_data_from_cid(request.form['cid'])
+        file_data = PINTHEON.file_data_from_cid(request.form['cid'])
         amount = int(request.form['amount'])
         if amount > 0 and len(file_data['ContractID']) > 0:
-          transaction_data = PHILOS.ipfs_token_send(request.form['cid'], file_data['ContractID'], request.form['to_address'], amount)
-          data = PHILOS.get_dashboard_data()
+          transaction_data = PINTHEON.ipfs_token_send(request.form['cid'], file_data['ContractID'], request.form['to_address'], amount)
+          data = PINTHEON.get_dashboard_data()
           data['transaction_data'] = transaction_data
 
           if data == None:
@@ -482,16 +482,16 @@ def send_token():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
         amount = int(request.form['amount'])
         if amount > 0 :
-          transaction_data = PHILOS.token_send(request.form['token_id'], request.form['to_address'], amount)
-          data = PHILOS.get_dashboard_data()
+          transaction_data = PINTHEON.token_send(request.form['token_id'], request.form['to_address'], amount)
+          data = PINTHEON.get_dashboard_data()
           data['transaction_data'] = transaction_data
 
           if data == None:
@@ -507,10 +507,10 @@ def publish_file():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
         encrypted = request.form['encrypted']
@@ -518,12 +518,12 @@ def publish_file():
         data = None
         if encrypted is True:
             reciever_pub = request.form['reciever_pub']
-            transaction_data = PHILOS.publish_encrypted_file(reciever_pub, cid)
-            data = PHILOS.get_dashboard_data()
+            transaction_data = PINTHEON.publish_encrypted_file(reciever_pub, cid)
+            data = PINTHEON.get_dashboard_data()
             data['transaction_data'] = transaction_data
         else:
-            transaction_data = PHILOS.publish_file(cid)
-            data = PHILOS.get_dashboard_data()
+            transaction_data = PINTHEON.publish_file(cid)
+            data = PINTHEON.get_dashboard_data()
             data['transaction_data'] = transaction_data
 
         if data == None:
@@ -539,16 +539,16 @@ def add_to_namespace():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
         if 'name' not in request.form:
-          ipfs_response = PHILOS.add_cid_to_ipns(request.form['cid'], request.form['name'])
+          ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'], request.form['name'])
         else:
-            ipfs_response = PHILOS.add_cid_to_ipns(request.form['cid'])
+            ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'])
 
         if ipfs_response == None:
                 return jsonify({'error': 'File not removed'}), 400
@@ -563,13 +563,13 @@ def dashboard_data():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
 
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-        data = PHILOS.get_dashboard_data()
+        data = PINTHEON.get_dashboard_data()
 
         if data == None:
                 return jsonify({'error': 'Cannot get dash data'}), 400
@@ -584,16 +584,16 @@ def update_theme():
 
    if not _payload_valid(required, req):
         abort(400)  # Bad Request
-   elif not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   elif not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(req['client_pub'], req['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(req['client_pub'], req['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
    
-     PHILOS.theme = req['theme']
-     PHILOS.update_customization()
-     data = PHILOS.get_dashboard_data()
+     PINTHEON.theme = req['theme']
+     PINTHEON.update_customization()
+     data = PINTHEON.get_dashboard_data()
      if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
      else:
@@ -610,30 +610,30 @@ def update_bg_img():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
         
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-     PHILOS.all_file_info()
+     PINTHEON.all_file_info()
 
      print(file.mimetype)
 
-     if PHILOS.file_exists(file.filename, file.mimetype):
+     if PINTHEON.file_exists(file.filename, file.mimetype):
           print('HERE!!!')
-          files = PHILOS.update_file_as_bg_img(file.filename)
+          files = PINTHEON.update_file_as_bg_img(file.filename)
           cid = _get_file_cid(file, files)
      else:
           files = _handle_upload(required=required, request=request, is_bg_img=True)
           cid = _get_file_cid(file, files)
 
      if cid != None:
-          PHILOS.bg_img = PHILOS.url_host+'/ipfs/'+cid
-          data = PHILOS.update_node_data()
+          PINTHEON.bg_img = PINTHEON.url_host+'/ipfs/'+cid
+          data = PINTHEON.update_node_data()
    
-     PHILOS.update_customization()
-     data = PHILOS.get_dashboard_data()
+     PINTHEON.update_customization()
+     data = PINTHEON.get_dashboard_data()
      if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
      else:
@@ -649,17 +649,17 @@ def remove_bg_img():
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
         
-   if not PHILOS.session_active or not PHILOS.state == 'idle':  # PHILOS must be idle
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
         abort(Forbidden())  # Forbidden
     
-   elif not PHILOS.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
    
-     PHILOS.remove_file_as_bg_img()
-     PHILOS.bg_img = None
-     PHILOS.update_customization()
-     data = PHILOS.get_dashboard_data()
+     PINTHEON.remove_file_as_bg_img()
+     PINTHEON.bg_img = None
+     PINTHEON.update_customization()
+     data = PINTHEON.get_dashboard_data()
      if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
      else:

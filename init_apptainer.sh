@@ -21,27 +21,27 @@ curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
 chmod +x mkcert-v1.4.4-linux-amd64
 cp mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
 
-echo "Cloning philos"
-git clone https://github.com/inviti8/philos.git
+echo "Cloning pintheon"
+git clone https://github.com/inviti8/pintheon.git
 echo "------------------------------------"
 echo "$PWD"
 echo "$(ls)"
 echo "------------------------------------"
 echo "Creating Env"
-python3 -m venv philos/philos
+python3 -m venv pintheon/pintheon
 echo "refresh the shell"
 source ~/.profile
 echo "Activating Env"
-source /home/philos/philos/bin/activate
+source /home/pintheon/pintheon/bin/activate
 echo "Installing requirements:"
-pip install -r /home/philos/requirements.txt
+pip install -r /home/pintheon/requirements.txt
 echo "Deactivate the environment"
 deactivate
 usermod -a -G root www-data
-chmod +x philos/setup_apptainer.sh
-./philos/setup_apptainer.sh
-chmod +x philos/install_kubo_apptainer.sh
-./philos/install_kubo_apptainer.sh
+chmod +x pintheon/setup_apptainer.sh
+./pintheon/setup_apptainer.sh
+chmod +x pintheon/install_kubo_apptainer.sh
+./pintheon/install_kubo_apptainer.sh
 # ufw reset
 # ufw default allow outgoing
 # ufw default allow incoming

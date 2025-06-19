@@ -20,5 +20,5 @@ source <(stellar completion --shell bash)
 echo "source <(stellar completion --shell bash)" >> ~/.bashrc
 
 stellar network add --global testnet --rpc-url https://horizon-testnet.stellar.org --network-passphrase "Test SDF Network ; September 2015"
-stellar keys generate --global philos_testnet --network testnet --fund
-stellar keys use philos_testnet
+stellar keys generate --global pintheon_testnet --network testnet --fund
+stellar keys use pintheon_testnet

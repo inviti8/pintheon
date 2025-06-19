@@ -4,8 +4,8 @@ window.fn.stellar_keys;
 
 // load wasm wallet and generate wallet seed right away
 async function init() {
-    localStorage.removeItem('PHILOS_SESSION');
-    localStorage.removeItem('PHILOS_NODE');
+    localStorage.removeItem('PINTHEON_SESSION');
+    localStorage.removeItem('PINTHEON_NODE');
     window.fn.generator_keys = await generateClientKeys(true);
 };
 
@@ -150,7 +150,7 @@ document.addEventListener('init', function(event) {
         // };
         
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
-        window.rndr.nodeCardHeader(window.constants.LOGO, 'PHILOS', 'XRO Network');
+        window.rndr.nodeCardHeader(window.constants.LOGO, 'PINTHEON', 'XRO Network');
     }
 });
 
