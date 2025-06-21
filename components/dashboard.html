@@ -133,20 +133,20 @@
                   </div>
                 </ons-card>
               </ons-col>
-            <!-- <ons-row>
-             </ons-col> -->
-             <!-- <ons-col width="100%">
+            <ons-row>
+             </ons-col>
+             <ons-col width="100%">
                 <ons-card modifier="default outlined">
-                  <div class="content"><ons-button modifier="large" id="aettings-add-peer-button" ripple>ADD PEER</ons-button></div>
+                  <div class="content"><ons-button modifier="large" id="settings-add-access-token-button" ripple>ADD ACCESS TOKEN</ons-button></div>
                   <div class="content">
-                    <ons-list  id="file-list-main"> -->
-                      <!-- <ons-list-header>PEER LIST</ons-list-header> -->
-                      <!-- <ons-lazy-repeat id="file-list-items"></ons-lazy-repeat> -->
-                    <!-- </ons-list>
+                    <ons-list  id="file-list-main">
+                      <ons-list-header>ACCESS TOKENS</ons-list-header>
+                      <ons-lazy-repeat id="access-token-list-items"></ons-lazy-repeat>
+                    </ons-list>
                   </div>
               </ons-card>
-             </ons-col> -->
-           <!-- </ons-row> -->
+             </ons-col>
+           </ons-row>
             </div>
         </div>
       </div>
@@ -516,6 +516,40 @@
             </header>
       </ons-list-item>
     </ons-list>
+  </template>
+
+    <template id="access-token-list-items-template">
+    <ons-list-item ripple>
+      <div class="fab-container left">
+        <span class="left"><ons-icon icon="fa-ticket"></ons-icon></span>
+        <pre>   </pre><span id="access-token-name"></span>
+        <pre>                 </pre><span id="access-token-pub"></span>
+      </div>
+      <div class="right">
+        <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="access-token-remove">
+          <ons-icon icon="fa-remove"></ons-icon>
+        </ons-button>
+      </div>
+    </ons-list-item>
+  </template>
+
+  <template id="add-access-token-dialog.html">
+    <ons-dialog id="add-access-token-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list  style="width:100%;">
+          <ons-list-header><ons-icon class="right" icon="fa-ticket"></ons-icon>__NEW ACCESS TOKEN</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <ons-input class="dash-input" id="add-access-token-dialog-name" modifier="large" placeholder="Token Name" float></ons-input>
+          </ons-list-item>
+          <ons-list-item class="node-data-card-header-list-item">
+            <ons-input class="dash-input" id="add-access-token-dialog-pub" modifier="large" placeholder="Stellar 25519 Public Key" float></ons-input>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;" >
+              <ons-button id="add-access-token-dialog-button" class="can-callback" modifier="large" ripple>ADD</ons-button>
+          </ons-list-item>
+        </ons-list>
+      </div>
+    </ons-dialog>
   </template>
 
   <template id="settings-appearance-template">

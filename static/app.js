@@ -100,11 +100,11 @@ document.addEventListener('init', function(event) {
     };
 
     //Validation Methods
-    let input_rules = {
+    window.fn.input_rules = {
         required: true
     };
 
-    var password_rules = {
+    window.fn.password_rules = {
         required: true,
         strength: {
             min: 6,
@@ -130,7 +130,7 @@ document.addEventListener('init', function(event) {
         let result = true;
         for (let i = 0; i < inputs.length; i++) {
             const input = inputs[i];
-            if (!approve.value(input.value, input_rules).approved) {
+            if (!approve.value(input.value, window.fn.input_rules).approved) {
             result = false;
             break;
             };
@@ -160,7 +160,7 @@ document.addEventListener('init', function(event) {
       
         if(dialog){
           result = (pwInput.value === confirmPwInput.value);
-          console.log(approve.value(pwInput.value, password_rules))
+          console.log(approve.value(pwInput.value, window.fn.password_rules))
         };
       
         return result
@@ -173,7 +173,7 @@ document.addEventListener('init', function(event) {
       
         if(dialog){
             result = true;
-            console.log(approve.value(pwInput.value, password_rules))
+            console.log(approve.value(pwInput.value, window.fn.password_rules))
         };
       
         return result
@@ -308,6 +308,14 @@ document.addEventListener('init', function(event) {
 
     window.fn.removeBg = async (formData, endpoint, callback, method='POST') => {
         window.fn.confirmedCall('Remove the background image?', 'bg image removal failed', formData, endpoint, callback, method);
+    };
+
+    window.fn.addAccessToken = async (formData, endpoint, callback, method='POST') => {
+        window.fn.confirmedCall('Add a new access token?', 'Error updating adding access token', formData, endpoint, callback, method);
+    };
+
+    window.fn.removeAccessToken = async (formData, endpoint, callback, method='POST') => {
+        window.fn.confirmedCall('Remove this access token?', 'Error updating removing access token', formData, endpoint, callback, method);
     };
 
     window.fn.dashData = async (formData, endpoint, callback, method='POST') => {

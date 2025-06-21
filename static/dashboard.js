@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'XRO Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined };
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'XRO Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': [],};
 window.dash.SESSION_KEYS = 'PINTHEON_SESSION';
 window.dash.NODE = 'PINTHEON_NODE';
 window.dash.AUTHORIZED = false;
@@ -426,6 +426,63 @@ const copy_peer_id = () => {
     fn.copyToClipboard(multiaddress);
 };
 
+const add_access_token_dlg = async (callback) => {
+    window.dlg.show('add-access-token-dialog', callback)
+};
+
+const add_access_token = async () => {
+    let name = document.querySelector('#add-access-token-dialog-name');
+    let pub = document.querySelector('#add-access-token-dialog-pub');
+    const session = _getSessionData();
+
+    const formData = new FormData();
+
+    if(name != undefined && pub != undefined){
+        if (approve.value(name.value, window.fn.input_rules).approved && approve.value(pub.value, window.fn.input_rules).approved){
+            formData.append('token', session.token.serialize());
+            formData.append('client_pub', session.pub);
+            formData.append('name', name.value);
+            formData.append('stellar_25519_pub', pub.value)
+            await window.fn.addAccessToken(formData, '/add_access_token', access_token_added);
+        }else{
+            ons.notification.alert('All fields must be filled out');
+        };
+    }else{
+        ons.notification.alert('Something went wrong');
+    };
+};
+
+const access_token_added = (node_data) => {
+
+    console.log(node_data)
+    _updateDashData(node_data);
+    window.rndr.settings();
+    //window.location.reload();
+
+};
+
+const remove_access_token = async (stellar_25519_pub) => {
+
+    const session = _getSessionData();
+
+    const formData = new FormData();
+
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('stellar_25519_pub', stellar_25519_pub)
+    await window.fn.removeAccessToken(formData, '/remove_access_token', access_token_removed);
+    
+};
+
+const access_token_removed = (node_data) => {
+
+    console.log(node_data)
+    _updateDashData(node_data);
+    window.rndr.settings();
+    //window.location.reload();
+
+};
+
 
 document.addEventListener('init', function(event) {
     let page = event.target;
@@ -600,6 +657,19 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_LIST('peer-list-items', peerList, _updateElem, peerList);
     };
 
+    window.rndr.accessTokenListItems = function(tokenList){
+
+        let _updateElem = function(clone, i, tokenList){
+            if (tokenList[i] == undefined)
+                return;
+            clone.querySelector('#access-token-name').textContent = tokenList[i]['name']
+            clone.querySelector('#access-token-pub').textContent = tokenList[i]['pub']
+            clone.querySelector('#access-token-remove').setAttribute('onclick', 'remove_access_token("' + tokenList[i]['pub'] + '")');
+        }
+
+        window.rndr.RENDER_LIST('access-token-list-items', tokenList, _updateElem, tokenList);
+    };
+
     window.rndr.dashboard = function(){
 
         console.log('window.dash:')
@@ -622,6 +692,7 @@ document.addEventListener('init', function(event) {
         let theme_select = document.querySelector('#settings-appearance-select');
         let upload_btn = document.querySelector('#settings-appearance-bg-button');
         let remove_btn = document.querySelector('#settings-appearance-remove-bg-button');
+        let add_token_btn = document.querySelector('#settings-add-access-token-button');
 
         if(window.constants.HAS_BG_IMG){
             remove_btn.disabled = false;
@@ -642,6 +713,12 @@ document.addEventListener('init', function(event) {
         remove_btn.onclick = function  () {
             remove_bg();
         };
+
+        add_token_btn.onclick = function (){
+            add_access_token_dlg(add_access_token);
+        };
+
+        window.rndr.accessTokenListItems(window.dash.data.access_tokens)
     }
 
     window.rndr.tokenize_file_dlg = function  (name, cid) {

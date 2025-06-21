@@ -560,8 +560,7 @@ def add_to_namespace():
 @app.route('/add_access_token', methods=['POST'])
 @cross_origin()
 def add_access_token():
-   required = ['token', 'client_pub', 'stellar_25519_pub']
-   stellar_25519_pub = request.form['stellar_25519_pub']
+   required = ['token', 'client_pub', 'name', 'stellar_25519_pub']
 
    for field in required:
         if field not in request.form:
@@ -573,7 +572,33 @@ def add_access_token():
    elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-       PINTHEON.add_access_token(stellar_25519_pub)
+       name = request.form['name']
+       stellar_25519_pub = request.form['stellar_25519_pub']
+       PINTHEON.add_access_token(name, stellar_25519_pub)
+       data = PINTHEON.get_dashboard_data()
+
+       if data == None:
+                return jsonify({'error': 'Cannot get dash data'}), 400
+       else:
+            return data, 200
+       
+@app.route('/remove_access_token', methods=['POST'])
+@cross_origin()
+def remove_access_token():
+   required = ['token', 'client_pub', 'stellar_25519_pub']
+
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+        
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+       stellar_25519_pub = request.form['stellar_25519_pub']
+       PINTHEON.remove_access_token(stellar_25519_pub)
        data = PINTHEON.get_dashboard_data()
 
        if data == None:

@@ -1028,28 +1028,26 @@ class PintheonMachine(object):
 
         return all_file_info
     
-    def add_access_token(self, stellar_25519_pub):
+    def add_access_token(self, name, stellar_25519_pub):
         builder = StellarSharedKeyTokenBuilder(self.stellar_25519_keypair, stellar_25519_pub)
-        data = { 'pub': stellar_25519_pub }
+        data = { 'name': name, 'pub': stellar_25519_pub }
         self._open_db()
         file = Query()
 
-        record = self.access_tokens.get(file.stellar_25519_pub == stellar_25519_pub)
+        record = self.access_tokens.get(file.pub == stellar_25519_pub)
         if record == None:
             self.access_tokens.insert(data)
         else:
-            self.access_tokens.update(data, file.stellar_25519_pub == stellar_25519_pub)
+            self.access_tokens.update(data, file.pub == stellar_25519_pub)
         self.db.close()
 
         return builder.serialize()
     
     def remove_access_token(self, stellar_25519_pub):
-        data = { 'pub': stellar_25519_pub }
         self._open_db()
         file = Query()
-        record = self.access_tokens.get(file.stellar_25519_pub == stellar_25519_pub)
-        if record != None:
-            self.access_tokens.remove(record.doc_id)
+        if len(self.access_tokens.search(file.pub == stellar_25519_pub))>0:
+                self.access_tokens.remove(file.pub == stellar_25519_pub)
 
         all_token_info = self.access_tokens.all()
         self.db.close()
@@ -1222,14 +1220,13 @@ class PintheonMachine(object):
                 del repo['Version']
                 result['repo'] = repo
 
+            result['access_tokens'] = access_tokens
+
             if customization != None:
                 result['customization'] = customization[0]
 
             if token_info != None:
                 result['token_info'] = token_info
-
-            if access_tokens != None:
-                result['access_tokens'] = access_tokens
 
             if files_list != None:
                 result['file_list'] = files_list
