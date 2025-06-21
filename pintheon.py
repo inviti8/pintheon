@@ -573,7 +573,13 @@ def add_access_token():
    elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
         raise Unauthorized()  # Unauthorized
    else:
-       print('x')
+       PINTHEON.add_access_token(stellar_25519_pub)
+       data = PINTHEON.get_dashboard_data()
+
+       if data == None:
+                return jsonify({'error': 'Cannot get dash data'}), 400
+       else:
+            return data, 200
         
 @app.route('/dashboard_data', methods=['POST'])
 @cross_origin()
