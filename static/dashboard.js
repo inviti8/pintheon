@@ -554,7 +554,7 @@ document.addEventListener('init', function(event) {
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+' )" disabled><ons-icon icon="fa-paper-plane"></ons-icon>_send</ons-button>');
             }
 
-            if(fileList[i]['Encrypted']){
+            if(fileList[i]['Encrypted'] == "true"){
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+', '+true+', '+"'"+reciever_pub+"'"+', )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
             }else{
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+', '+false+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');

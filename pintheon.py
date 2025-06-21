@@ -61,14 +61,16 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
 
     file_data = file.read()
     file_name = file.filename
+    file_type = file.mimetype
     reciever_pub = None
 
-    if encrypted == True:
+    if encrypted == 'true':
         reciever_pub = request.form['reciever_pub']
         file_data = PINTHEON.stellar_shared_archive(file, reciever_pub)
         file_name = f"{file.filename}.7z",
+        file_type = 'application/x-7z-compressed'
 
-    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file.mimetype, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub)
+    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -554,6 +556,24 @@ def add_to_namespace():
                 return jsonify({'error': 'File not removed'}), 400
         else:
             return ipfs_response
+        
+@app.route('/add_access_token', methods=['POST'])
+@cross_origin()
+def add_access_token():
+   required = ['token', 'client_pub', 'stellar_25519_pub']
+   stellar_25519_pub = request.form['stellar_25519_pub']
+
+   for field in required:
+        if field not in request.form:
+            return "Missing or empty value for field: {}".format(field), 400
+        
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+       print('x')
         
 @app.route('/dashboard_data', methods=['POST'])
 @cross_origin()

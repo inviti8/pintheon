@@ -105,6 +105,7 @@ class PintheonMachine(object):
         self.stellar_book = None
         self.namespaces = None
         self.token_book = None
+        self.access_tokens = None
 
         #-------IPFS--------
         self.ipfs_daemon = ipfs_daemon
@@ -819,6 +820,7 @@ class PintheonMachine(object):
         self.stellar_book= self.db.table('stellar_book')
         self.token_book= self.db.table('token_book')
         self.namespaces= self.db.table('namespaces')
+        self.access_tokens= self.db.table('access_tokens')
 
     def get_customization(self):
         result = None
@@ -1025,6 +1027,41 @@ class PintheonMachine(object):
         self.db.close()
 
         return all_file_info
+    
+    def add_access_token(self, stellar_25519_pub):
+        builder = StellarSharedKeyTokenBuilder(self.stellar_25519_keypair, stellar_25519_pub)
+        data = { 'pub': stellar_25519_pub }
+        self._open_db()
+        file = Query()
+
+        record = self.access_tokens.get(file.stellar_25519_pub == stellar_25519_pub)
+        if record == None:
+            self.access_tokens.insert(data)
+        else:
+            self.access_tokens.update(data, file.stellar_25519_pub == stellar_25519_pub)
+        self.db.close()
+
+        return builder.serialize()
+    
+    def remove_access_token(self, stellar_25519_pub):
+        data = { 'pub': stellar_25519_pub }
+        self._open_db()
+        file = Query()
+        record = self.access_tokens.get(file.stellar_25519_pub == stellar_25519_pub)
+        if record != None:
+            self.access_tokens.remove(record.doc_id)
+
+        all_token_info = self.access_tokens.all()
+        self.db.close()
+
+        return all_token_info
+    
+    def all_access_token_info(self):
+        self._open_db()
+        all_token_info = self.access_tokens.all()
+        self.db.close()
+
+        return all_token_info
 
     def ipfs_repo_stats(self):
         url = f'{self.ipfs_endpoint}/repo/stat?size-only=false&human=true'
@@ -1141,7 +1178,7 @@ class PintheonMachine(object):
             return None
         
     def get_dashboard_data(self):
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': self.stellar_keypair.public_key, '25519_pub': self.stellar_25519_keypair.public_key(), 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None}
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': self.stellar_keypair.public_key, '25519_pub': self.stellar_25519_keypair.public_key(), 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None, 'access_tokens': []}
         if self.DEBUG or self.FAKE_IPFS:
             #If DEBUG we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}
@@ -1150,6 +1187,7 @@ class PintheonMachine(object):
             files_list = self.file_book.all()
             customization = self.customization.all()
             token_info = self.token_book.all()
+            access_tokens = self.access_tokens.all()
             self.db.close()
             result['customization'] = customization[0]
             result['token_info'] = token_info
@@ -1157,6 +1195,7 @@ class PintheonMachine(object):
             result['repo'] = repo
             result['file_list'] = files_list
             result['peer_id'] = 'FAKE-PEER-ID'
+            result['access_tokens'] = access_tokens
         else:
             self._open_db()
             stats_response = self.get_stats('bw')
@@ -1165,6 +1204,7 @@ class PintheonMachine(object):
             customization = self.customization.all()
             token_info = self.token_book.all()
             peer_id_response = self.get_peer_id()
+            access_tokens = self.access_tokens.all()
             self.db.close()
 
             if stats_response.status_code == 200:
@@ -1187,6 +1227,9 @@ class PintheonMachine(object):
 
             if token_info != None:
                 result['token_info'] = token_info
+
+            if access_tokens != None:
+                result['access_tokens'] = access_tokens
 
             if files_list != None:
                 result['file_list'] = files_list
