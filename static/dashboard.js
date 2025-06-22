@@ -427,7 +427,13 @@ const copy_peer_id = () => {
 };
 
 const add_access_token_dlg = async (callback) => {
-    window.dlg.show('add-access-token-dialog', callback)
+    await window.dlg.show('add-access-token-dialog', callback);
+    let name = document.querySelector('#add-access-token-dialog-name');
+    let pub = document.querySelector('#add-access-token-dialog-pub');
+    if(name != undefined && pub != undefined){
+        name.value = "";
+        pub.value = "";
+    }
 };
 
 const add_access_token = async () => {

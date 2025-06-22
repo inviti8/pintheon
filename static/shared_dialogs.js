@@ -94,7 +94,7 @@ window.dlg.showAndRender = function(id, renderCallback, ...args) {
     return dialog;
 };
 
-window.dlg.show = function(id, callback, ...args) {
+window.dlg.show = async function(id, callback, ...args) {
     let dialog = document.getElementById(id);
 
     if (dialog) {
