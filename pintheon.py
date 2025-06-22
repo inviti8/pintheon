@@ -340,12 +340,18 @@ def deauthorize():
 @app.route('/upload', methods=['POST'])
 @cross_origin()
 def upload():
-   required = ['token', 'client_pub']
-   encrypted = request.form['encrypted']
-   print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-   print(encrypted)
-   print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-   return _handle_upload(required, request, False, False, encrypted)
+   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
+        abort(Forbidden())  # Forbidden
+    
+   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
+        raise Unauthorized()  # Unauthorized
+   else:
+     required = ['token', 'client_pub']
+     encrypted = request.form['encrypted']
+     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+     print(encrypted)
+     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+     return _handle_upload(required, request, False, False, encrypted)
 
 @app.route('/api_upload', methods=['POST'])
 @cross_origin()
@@ -355,8 +361,9 @@ def api_upload():
    encrypted = request.form['encrypted']
    if not PINTHEON.auth_token(token):
        abort(Forbidden())
+   else:
 
-   return _handle_upload(required, request, False, False, encrypted)
+     return _handle_upload(required, request, False, False, encrypted)
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()
