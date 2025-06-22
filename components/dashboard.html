@@ -82,7 +82,7 @@
              <ons-col width="100%">
                 <ons-card modifier="default outlined">
                   <H3>FILES</H3>
-                  <ons-button id="debug-button" style="margin: 20px;" onclick="window.dlg.show('recieve-token-dialog')" >DEBUG</ons-button>
+                  <ons-button id="debug-button" style="margin: 20px;" onclick="window.dlg.show('copy-access-token-dialog')" >DEBUG</ons-button>
                   <div class="content"><ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button></div>
                   <div class="content">
                     <div class="content_top">
@@ -546,6 +546,22 @@
           </ons-list-item>
           <ons-list-item modifier="nodivider" style="width:100%;" >
               <ons-button id="add-access-token-dialog-button" class="can-callback" modifier="large" ripple>ADD</ons-button>
+          </ons-list-item>
+        </ons-list>
+      </div>
+    </ons-dialog>
+  </template>
+
+  <template id="copy-access-token-dialog.html">
+    <ons-dialog id="copy-access-token-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list  style="width:100%;">
+          <ons-list-header><ons-icon class="right" icon="fa-ticket"></ons-icon>__COPY ACCESS TOKEN</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <textarea id="copy-access-token-dialog-input" modifier="large" class="textarea card-content" rows="4"></textarea>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;" >
+              <ons-button id="copy-access-token-dialog-button" class="can-callback" modifier="large" ripple>COPY</ons-button>
           </ons-list-item>
         </ons-list>
       </div>

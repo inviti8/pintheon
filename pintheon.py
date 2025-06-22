@@ -574,13 +574,12 @@ def add_access_token():
    else:
        name = request.form['name']
        stellar_25519_pub = request.form['stellar_25519_pub']
-       PINTHEON.add_access_token(name, stellar_25519_pub)
-       data = PINTHEON.get_dashboard_data()
+       token = PINTHEON.add_access_token(name, stellar_25519_pub)
 
-       if data == None:
-                return jsonify({'error': 'Cannot get dash data'}), 400
+       if token == None:
+                return jsonify({'error': 'Cannot create new access token'}), 400
        else:
-            return data, 200
+            return jsonify({'access_token': token}), 200
        
 @app.route('/remove_access_token', methods=['POST'])
 @cross_origin()

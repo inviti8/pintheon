@@ -11,7 +11,7 @@ window.dash.node_data;
 
 
 
-function _updateDashData(data){
+async function _updateDashData(data){
     Object.keys(data).forEach((k, i) => {
         if (k in window.dash.data){
             window.dash.data[k] = data[k];
@@ -452,12 +452,26 @@ const add_access_token = async () => {
     };
 };
 
-const access_token_added = (node_data) => {
+const access_token_added = async (response) => {
+    window.dlg.hide('add-access-token-dialog')
 
-    console.log(node_data)
-    _updateDashData(node_data);
+    console.log(response)
+    window.dlg.showAndRender('copy-access-token-dialog', window.rndr.copy_access_token_dlg, response.access_token);
+
+    const session = _getSessionData();
+    const formData = new FormData()
+
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    await window.fn.dashData( formData, '/dashboard_data', access_tokens_updated );
+
+};
+
+const access_tokens_updated = async (data) => {
+
+    console.log(data)
+    await _updateDashData({ 'access_tokens': data.access_tokens});
     window.rndr.settings();
-    //window.location.reload();
 
 };
 
@@ -805,6 +819,17 @@ document.addEventListener('init', function(event) {
         transactionUrl.href = transaction.transaction_url;
         logo.src = fileUrl;
         description.textContent = "Token sent, and confirmed on the Stellar Blockchain.";
+    };
+
+    window.rndr.copy_access_token_dlg = function  (token) {
+        let input = document.querySelector('#copy-access-token-dialog-input');
+        let btn = document.querySelector('#copy-access-token-dialog-button');
+
+        input.value = token;
+
+        btn.onclick = function () {
+            fn.copyToClipboard(input.value);
+        };
     };
 
 

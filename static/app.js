@@ -230,7 +230,9 @@ document.addEventListener('init', function(event) {
         })
         .then(data => {
             console.log('Server response:', data);
-            callback(data);
+            if(callback != undefined){
+                callback(data);
+            }; 
         })
         .catch(error => {
             if(loadingDlg){
