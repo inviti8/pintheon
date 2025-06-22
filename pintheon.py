@@ -349,13 +349,13 @@ def upload():
 
 @app.route('/api_upload', methods=['POST'])
 @cross_origin()
-def upload():
+def api_upload():
    required = ['access_token']
    token = request.form['access_token']
    encrypted = request.form['encrypted']
    if not PINTHEON.auth_token(token):
        abort(Forbidden())
-       
+
    return _handle_upload(required, request, False, False, encrypted)
 
 @app.route('/update_logo', methods=['POST'])
