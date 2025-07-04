@@ -542,6 +542,7 @@ class Client(ContractClient):
     def publish_file(
         self,
         caller: Union[Address, str],
+        publisher: bytes,
         ipfs_hash: bytes,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -553,7 +554,11 @@ class Client(ContractClient):
     ) -> AssembledTransaction[None]:
         return self.invoke(
             "publish_file",
-            [scval.to_address(caller), scval.to_string(ipfs_hash)],
+            [
+                scval.to_address(caller),
+                scval.to_string(publisher),
+                scval.to_string(ipfs_hash),
+            ],
             parse_result_xdr_fn=lambda _: None,
             source=source,
             signer=signer,
@@ -567,7 +572,8 @@ class Client(ContractClient):
     def publish_encrypted_share(
         self,
         caller: Union[Address, str],
-        recipient: Union[Address, str],
+        publisher: bytes,
+        recipient: bytes,
         ipfs_hash: bytes,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -581,7 +587,8 @@ class Client(ContractClient):
             "publish_encrypted_share",
             [
                 scval.to_address(caller),
-                scval.to_address(recipient),
+                scval.to_string(publisher),
+                scval.to_string(recipient),
                 scval.to_string(ipfs_hash),
             ],
             parse_result_xdr_fn=lambda _: None,
@@ -1048,6 +1055,7 @@ class ClientAsync(ContractClientAsync):
     async def publish_file(
         self,
         caller: Union[Address, str],
+        publisher: bytes,
         ipfs_hash: bytes,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -1059,7 +1067,11 @@ class ClientAsync(ContractClientAsync):
     ) -> AssembledTransactionAsync[None]:
         return await self.invoke(
             "publish_file",
-            [scval.to_address(caller), scval.to_string(ipfs_hash)],
+            [
+                scval.to_address(caller),
+                scval.to_string(publisher),
+                scval.to_string(ipfs_hash),
+            ],
             parse_result_xdr_fn=lambda _: None,
             source=source,
             signer=signer,
@@ -1073,7 +1085,8 @@ class ClientAsync(ContractClientAsync):
     async def publish_encrypted_share(
         self,
         caller: Union[Address, str],
-        recipient: Union[Address, str],
+        publisher: bytes,
+        recipient: bytes,
         ipfs_hash: bytes,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -1087,7 +1100,8 @@ class ClientAsync(ContractClientAsync):
             "publish_encrypted_share",
             [
                 scval.to_address(caller),
-                scval.to_address(recipient),
+                scval.to_string(publisher),
+                scval.to_string(recipient),
                 scval.to_string(ipfs_hash),
             ],
             parse_result_xdr_fn=lambda _: None,

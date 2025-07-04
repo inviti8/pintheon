@@ -67,7 +67,7 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
     if encrypted == 'true':
         reciever_pub = request.form['reciever_pub']
         file_data = PINTHEON.stellar_shared_archive(file, reciever_pub)
-        file_name = f"{file.filename}.7z",
+        file_name = f"{file.filename}.7z"
         file_type = 'application/x-7z-compressed'
 
     ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub)
@@ -335,7 +335,7 @@ def deauthorize():
         PINTHEON.end_session()
         
         return jsonify({'authorized': False}), 200
-   
+
 
 @app.route('/upload', methods=['POST'])
 @cross_origin()
@@ -536,7 +536,7 @@ def publish_file():
         encrypted = request.form['encrypted']
         cid = request.form['cid']
         data = None
-        if encrypted is True:
+        if encrypted == 'true':
             reciever_pub = request.form['reciever_pub']
             transaction_data = PINTHEON.publish_encrypted_file(reciever_pub, cid)
             data = PINTHEON.get_dashboard_data()
