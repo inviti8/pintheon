@@ -442,7 +442,7 @@ class PintheonMachine(object):
     
     def publish_file(self, ipfs_hash):
         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
-        tx = self.hvym_collective.publish_file(caller=self.stellar_keypair.public_key, publisher=self.stellar_25519_keypair.public_key, ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+        tx = self.hvym_collective.publish_file(caller=self.stellar_keypair.public_key, publisher=self.stellar_25519_keypair.public_key(), ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
 
         tx.sign()
         send_transaction = self.soroban_server.send_transaction(tx)
@@ -463,7 +463,7 @@ class PintheonMachine(object):
     def publish_encrypted_file(self, recipient, ipfs_hash):
         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
         
-        tx = self.hvym_collective.publish_encrypted_share(caller=self.stellar_keypair.public_key, publisher=self.stellar_25519_keypair.public_key, recipient=recipient, ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
+        tx = self.hvym_collective.publish_encrypted_share(caller=self.stellar_keypair.public_key, publisher=self.stellar_25519_keypair.public_key(), recipient=recipient, ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
         tx.sign()
         send_transaction = self.soroban_server.send_transaction(tx)
         while True:
