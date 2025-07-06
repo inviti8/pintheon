@@ -238,6 +238,7 @@ class PintheonMachine(object):
             if self.FAKE_IPFS:
                 self.url_host = FAKE_IPFS_HOST
         else:
+            self.join_collective()
             self.node_contract = self.deploy_node_token(name, descriptor)
 
         self._update_node_data(self.logo_url, self.node_name, self.node_descriptor, self.node_contract)
@@ -773,7 +774,6 @@ class PintheonMachine(object):
         self.active_page = 'authorize'
         self._update_state_data()
         self._update_customization()
-        self.join_collective()
         return True
 
     def do_redeem(self):
