@@ -62,9 +62,9 @@ DEBUG_SEED = "puppy address situate future gown trade limb rival crane increase 
 DEBUG_NODE_CONTRACT = "CBYP223JS7VYBIIFYUJ6ZQLAOOYXCIFZGMOHKIASMWKCZGFULVPNPV3H"
 DEBUG_URL_HOST = 'http://127.0.0.1:5000'
 FAKE_IPFS_HOST = 'https://sapphire-giant-butterfly-891.mypinata.cloud'
-FAKE_IPFS_FILE1 = 'QmSdzeGNHaqtobbEYECj1JEteoEWFhSsf1vhZTPDP1LtPV'
-FAKE_IPFS_FILE2 = 'QmTuCHPZGKM1TrXcQ7in82bHYcthvLb1nLFJpVoXD6YxmC'
-FAKE_IPFS_FILE3 = 'QmSc9NR6uPhtt2P6o7XjTnWtcr1jB9MRGurbt8WGKK1ika'
+FAKE_IPFS_FILE1 = 'QmUrSoGmy9djtrZVQuzEDFonrTKePf1ZxUrfQwYnHZ9EUU'
+FAKE_IPFS_FILE2 = 'QmYpkB6aWhWjY3UsFiWgRnWfExnrrsH2GpoTAv3mzo55Uf'
+FAKE_IPFS_FILE3 = 'Qmc9ZBtNGsxZKsph9JsUuRY5UGV7DakZMtSJwJpb999AtR'
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
 
@@ -1135,7 +1135,7 @@ class PintheonMachine(object):
                 return None
         
     def create_fake_ipfs_data(self):
-        names = ['oro_logo_peach.png', 'oro_logo_red_dark.png', 'oro_logo_green_dark.png']
+        names = ['oro_logo_pink.png', 'oro_logo_green.png', 'oro_logo_blue.png']
         types = ['image/png', 'image/png', 'image/png']
         logo = [False, True, False]
         bg_img = [False, False, False]

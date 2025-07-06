@@ -824,7 +824,7 @@ document.addEventListener('init', function(event) {
         let description= document.querySelector('#transaction-confirmed-dialog-description');;
         transactionUrl.href = transaction.transaction_url;
         logo.src = fileUrl;
-        description.textContent = "Token sent, and confirmed on the Stellar Blockchain.";
+        description.textContent = "Transaction confirmed on the Stellar Blockchain.";
     };
 
     window.rndr.copy_access_token_dlg = function  (token) {
