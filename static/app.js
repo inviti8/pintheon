@@ -196,16 +196,17 @@ document.addEventListener('init', function(event) {
             if (response.status === 200) {
                 return response.json();
             } else {
+                console.log(response.json())
+                console.log(response)
                 window.dlg.hide('loading-dialog');
                 window.dlg.show('fail-dialog');
-                throw new Error('Request failed with status ' + response.status);
+                throw new Error('Request failed with status: ' + response.status + ' With error:' + response.error);
             }
           })
           .then(data => {
             window.dlg.hide('loading-dialog');
             callback(data);
           });
-     
     };
 
     window.fn.formCall = async (error_msg, formData, endpoint, callback, method='POST', loadingDlg=true) => {

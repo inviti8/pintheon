@@ -48,10 +48,14 @@ const new_node = async () => {
 };
 
 const establishing = (data) => {
-    window.fn.establish_data = data;
-    // document.querySelector('#seed-text').value ="";
-    window.fn.pushPage('establish')
-    console.log("establish : ",data);
+    if('error' in data){
+        ons.notification.alert('The Stellar Wallet has an Insufficient balance.');
+    }else{
+        window.fn.establish_data = data;
+        // document.querySelector('#seed-text').value ="";
+        window.fn.pushPage('establish')
+        console.log("establish : ",data);
+    };
 };
 
 const create_keystore = async () => {

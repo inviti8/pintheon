@@ -72,9 +72,10 @@ class PintheonMachine(object):
 
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
-    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', debug = False, fake_ipfs=False):
+    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', testnet = False, debug = False, fake_ipfs=False):
 
         self.uid = str(uuid.uuid4())
+        self.use_testnet = testnet
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
         self.session_active = False
         self.session_started = None
@@ -137,10 +138,17 @@ class PintheonMachine(object):
         self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.stellar_initializing_keypair = Keypair.random()
         self.stellar_initializing_25519_keypair = Stellar25519KeyPair(self.stellar_initializing_keypair)
-        self.XLM_ID = XLM_TESTNET
-        self.COLLECTIVE_ID = COLLECTIVE_TESTNET
-        self.OPUS_ID = OPUS_TESTNET
-        self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
+        self.XLM_REQUIRED_START_BALANCE = 100
+        if self.use_testnet:
+            self.XLM_ID = XLM_TESTNET
+            self.COLLECTIVE_ID = COLLECTIVE_TESTNET
+            self.OPUS_ID = OPUS_TESTNET
+            self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
+        else:
+            self.XLM_ID = XLM_MAINNET
+            self.COLLECTIVE_ID = COLLECTIVE_MAINNET
+            self.OPUS_ID = OPUS_MAINNET
+            self.NETWORK_PASSPHRASE = Network.PUBLIC_NETWORK_PASSPHRASE
         self.BASE_FEE = self.stellar_server.fetch_base_fee()
         self.stellar_account = None
         self.stellar_keypair = None
@@ -652,11 +660,14 @@ class PintheonMachine(object):
          self._open_db()
          self.stellar_book.insert(keypair)
          self.db.close()
-         
-         self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
 
-         for balance in self.stellar_account['balances']:
-            print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
+         try:
+            self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
+            for balance in self.stellar_account['balances']:
+                print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
+         except Exception as e:
+            print("Insufficient balance: "+str(e))
+         
 
     def _load_stellar_keypair(self):
          print('load stellar keypair')
@@ -666,10 +677,12 @@ class PintheonMachine(object):
          self.stellar_keypair = Keypair.from_secret(keypair['priv'])
          self.stellar_25519_keypair = Stellar25519KeyPair(self.stellar_keypair)
          
-         self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
-
-         for balance in self.stellar_account['balances']:
-            print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
+         try:
+            self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
+            for balance in self.stellar_account['balances']:
+                print(f"Type: {balance['asset_type']}, Balance: {balance['balance']}")
+         except Exception as e:
+            print("Insufficient balance: "+str(e))
 
     def stellar_xlm_balance(self):
         xlm_balance = 0
@@ -731,15 +744,21 @@ class PintheonMachine(object):
             seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_session_secret(self._client_session_pub))
 
         self._create_stellar_keypair_from_seed(seed)
-        self._create_root_token()
-        self._update_state_data()
-        self._initialize_token_book_data()
-        self._update_customization()
-        self.active_page = 'establish'
-        self.logged_in = True
-        self._custom_qr_code(self.stellar_keypair.public_key, './static/stellar_logo.png', './static/stellar_wallet_qr.png', STELLAR_BG_RGB, STELLAR_FG_RGB )
-        self._custom_qr_code(self.stellar_keypair.public_key, './static/opus.png', './static/opus_wallet_qr.png', OPUS_BG_RGB, OPUS_FG_RGB )
-        return True
+
+        if self.stellar_account != None and self.stellar_xlm_balance() >= self.XLM_REQUIRED_START_BALANCE:
+            self._create_root_token()
+            self._update_state_data()
+            self._initialize_token_book_data()
+            self._update_customization()
+            self.active_page = 'establish'
+            self.logged_in = True
+            self._custom_qr_code(self.stellar_keypair.public_key, './static/stellar_logo.png', './static/stellar_wallet_qr.png', STELLAR_BG_RGB, STELLAR_FG_RGB )
+            self._custom_qr_code(self.stellar_keypair.public_key, './static/opus.png', './static/opus_wallet_qr.png', OPUS_BG_RGB, OPUS_FG_RGB )
+            return True
+        else:
+            self._custom_qr_code(self.stellar_keypair.public_key, './static/stellar_logo.png', './static/stellar_wallet_qr.png', STELLAR_BG_RGB, STELLAR_FG_RGB )
+            self._custom_qr_code(self.stellar_keypair.public_key, './static/opus.png', './static/opus_wallet_qr.png', OPUS_BG_RGB, OPUS_FG_RGB )
+            return False
     
     @property
     def reset_init(self):
@@ -754,6 +773,7 @@ class PintheonMachine(object):
         self.active_page = 'authorize'
         self._update_state_data()
         self._update_customization()
+        self.join_collective()
         return True
 
     def do_redeem(self):

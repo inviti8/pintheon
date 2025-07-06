@@ -22,7 +22,7 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, debug=True, fake_ipfs=True)
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, debug=False, fake_ipfs=False)
 PINTHEON.initialize()
 
 ##UTILITIES###
@@ -240,9 +240,12 @@ def new_node():
         PINTHEON.set_client_session_pub(data['client_pub'])
         PINTHEON.set_seed_cipher(data['seed_cipher'])
         PINTHEON.set_client_node_pub(data['generator_pub'])
-        PINTHEON.new()
-        
-   return PINTHEON.establish_data(), 200
+        established = PINTHEON.new()
+
+        if established:
+            return PINTHEON.establish_data(), 200
+        else:
+            return jsonify({'error': 'Insufficient Balance'}), 400       
         
 
 @app.route('/establish', methods=['POST'])
