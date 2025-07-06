@@ -194,6 +194,15 @@ class PintheonMachine(object):
         print(self._dirs.user_data_dir)
         print(self._dirs.user_config_dir)
 
+    def soroban_online(self):
+        result = None
+        try:
+            ledger = self.soroban_server.get_latest_ledger()
+            result = "Soroban Online, "+str(ledger.sequence)
+        except Exception as e:
+            result = "Can't connect to Soroban: "+str(e)
+        return result
+    
     def set_client_node_pub(self, client_pub):
         self._client_node_pub = client_pub
 

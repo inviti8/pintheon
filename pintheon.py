@@ -142,6 +142,7 @@ def admin():
    print(m.serialize())
    print(PINTHEON.state)
    print(request.headers)
+   print(PINTHEON.soroban_online())
    print('-----------------------------------')
 
        
