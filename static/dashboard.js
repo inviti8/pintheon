@@ -619,7 +619,7 @@ document.addEventListener('init', function(event) {
             clone.querySelector('.file-name').textContent = fileName;
             clone.querySelector('.file_url').href = fileUrl;
             clone.querySelector('.file_url').textContent = cid;
-            clone.querySelector('#file-remove').setAttribute('onclick', 'remove_file("' + cid + '")');
+            clone.querySelector('.file-remove').setAttribute('onclick', 'remove_file("' + cid + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'fn.copyToClipboard("' + fileUrl + '")');
             if (fileList[i]['IsLogo'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-star"></ons-icon>');};
             if (fileList[i]['IsBgImg'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-photo"></ons-icon>');};
