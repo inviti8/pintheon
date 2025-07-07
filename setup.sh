@@ -64,7 +64,7 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
 	}
 
-    location ~ ^/(admin|reset_init|new_node|establish|authorize|authorized|deauthorize|upload|update_logo|end_session) {
+    location ~ ^/(admin|reset_init|new_node|establish|authorize|authorized|deauthorize|upload|api_upload|remove_file|update_logo|tokenize_file|publish_file|send_file_token|send_token|update_gateway|add_access_token|remove_access_token|dashboard_data|update_theme|update_bg_img|remove_bg_img|end_session) {
         add_header Access-Control-Allow-Origin *;
         add_header Access-Control-Allow-Methods *;
 
