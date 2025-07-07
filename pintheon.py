@@ -22,7 +22,7 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, debug=False, fake_ipfs=False)
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, testnet=True, debug=False, fake_ipfs=False)
 PINTHEON.initialize()
 
 ##UTILITIES###
