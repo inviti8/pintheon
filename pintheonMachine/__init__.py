@@ -232,11 +232,13 @@ class PintheonMachine(object):
         self.node_descriptor = descriptor
         self.node_meta_data = metadata
         self.url_host = host
+        
+        if self.FAKE_IPFS:
+            self.url_host = FAKE_IPFS_HOST
+
         if self.DEBUG:
             self.node_contract = DEBUG_NODE_CONTRACT
             self.url_host = DEBUG_URL_HOST
-            if self.FAKE_IPFS:
-                self.url_host = FAKE_IPFS_HOST
         else:
             self.join_collective()
             self.node_contract = self.deploy_node_token(name, descriptor)
@@ -442,7 +444,7 @@ class PintheonMachine(object):
         tx = self.hvym_collective.join(caller=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
         tx.sign_and_submit()
         res = tx.result()
-        return { 'address': res.address.address, 'paid': res.paid }
+        return res
     
     def is_member(self):
         tx = self.hvym_collective.is_member(self.stellar_keypair.public_key)
