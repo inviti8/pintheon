@@ -232,7 +232,7 @@ class PintheonMachine(object):
         self.node_descriptor = descriptor
         self.node_meta_data = metadata
         self.url_host = host
-        
+
         if self.FAKE_IPFS:
             self.url_host = FAKE_IPFS_HOST
 
@@ -1213,8 +1213,8 @@ class PintheonMachine(object):
         
     def get_dashboard_data(self):
         result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': self.stellar_keypair.public_key, '25519_pub': self.stellar_25519_keypair.public_key(), 'logo': self.logo_url, 'host': self.url_host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None, 'access_tokens': []}
-        if self.DEBUG or self.FAKE_IPFS:
-            #If DEBUG we just create dummy ipfs data
+        if self.FAKE_IPFS:
+            #If FAKE IPFS we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}
             repo = {'RepoSize': "0.1", 'StorageMax':"9000", 'usedPercentage': 0.01}
             self._open_db()
@@ -1225,14 +1225,12 @@ class PintheonMachine(object):
             self.db.close()
             result['customization'] = customization[0]
             result['token_info'] = token_info
-            result['stats'] = stats
             result['repo'] = repo
             result['file_list'] = files_list
             result['peer_id'] = 'FAKE-PEER-ID'
             result['access_tokens'] = access_tokens
         else:
             self._open_db()
-            stats_response = self.get_stats('bw')
             repo_response = self.ipfs_repo_stats()
             files_list = self.file_book.all()
             customization = self.customization.all()
@@ -1241,8 +1239,6 @@ class PintheonMachine(object):
             access_tokens = self.access_tokens.all()
             self.db.close()
 
-            if stats_response.status_code == 200:
-                result['stats'] = stats_response.json()
 
             if repo_response.status_code == 200:
                 repo = repo_response.json()

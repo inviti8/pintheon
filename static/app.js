@@ -200,7 +200,7 @@ document.addEventListener('init', function(event) {
                 console.log(response)
                 window.dlg.hide('loading-dialog');
                 window.dlg.show('fail-dialog');
-                throw new Error('Request failed with status: ' + response.status + ' With error:' + response.error);
+                throw new Error('Request failed with status: ' + response.status );
             }
           })
           .then(data => {
