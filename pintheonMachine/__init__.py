@@ -183,11 +183,13 @@ class PintheonMachine(object):
 
         self.machine.add_transition(trigger='initialize', source='spawned', dest='initialized', conditions=['do_initialize'])
 
+        self.machine.add_transition(trigger='resume_state', source='spawned', dest='idle', conditions=['on_resume_state'])
+
         self.machine.add_transition(trigger='new', source='initialized', dest='establishing', conditions=['create_new_node'])
 
         self.machine.add_transition(trigger='init_reset', source='establishing', dest='initialized', conditions=['reset_init'])
 
-        self.machine.add_transition(trigger='established', source='establishing', dest='idle', conditions=['on_established'])
+        self.machine.add_transition(trigger='established', source='establishing', dest='idle', conditions=['on_established'], after=['activated'])
 
         self.machine.add_transition(trigger='handle_file', source='idle', dest='handling_file', conditions=['do_handle_file'])
 
@@ -198,9 +200,14 @@ class PintheonMachine(object):
         self.machine.add_transition(trigger='redeemed', source='redeeming', dest='idle', conditions=['on_redeemed'])
 
         self._initialize_db()
-        print('@@@@@@@@@@@@')
+        print('@@@@@@@@@@@@----------------------------------------------------------------')
+        print(self.uid)
         print(self._dirs.user_data_dir)
         print(self._dirs.user_config_dir)
+        print(self._get_saved_state())
+        print('@@@@@@@@@@@@----------------------------------------------------------------')
+        if self._get_saved_state() == 'idle':
+            self.resume_state()
 
     def soroban_online(self):
         result = None
@@ -213,6 +220,10 @@ class PintheonMachine(object):
     
     def set_client_node_pub(self, client_pub):
         self._client_node_pub = client_pub
+        self._open_db()
+        token = Query()
+        self.node_keys.update({'client_pub': self._client_node_pub}, token.id == 'NODE_KEYS')
+        self.db.close()
 
     def get_client_node_pub(self):
         return self._client_node_pub
@@ -376,6 +387,10 @@ class PintheonMachine(object):
         keypair = self._new_keypair()
         self.node_priv = keypair['priv']
         self.node_pub = keypair['pub']
+        data = {'id': 'NODE_KEYS', 'pub': self.node_pub, 'priv' : self.serialize_private_key(self.node_priv), 'client_pub': None, 'root_token' : None}
+        self._open_db()
+        self._update_table_doc(self.node_keys, data)
+        self.db.close()
         return self.session_pub
     
     def generate_shared_session_secret(self, b64_pub):
@@ -642,6 +657,10 @@ class PintheonMachine(object):
             identifier='PINTHEON_GENERATOR',
             key=self.generate_shared_node_secret()
         ).serialize()
+        self._open_db()
+        token = Query()
+        self.node_keys.update({'root_token': self.root_token}, token.id == 'NODE_KEYS')
+        self.db.close()
 
     def _create_auth_token(self):
         mac = Macaroon(
@@ -777,6 +796,26 @@ class PintheonMachine(object):
         self._update_state_data()
         self._update_customization()
         return True
+    
+    @property
+    def activated(self):
+        print('activated!!')
+        self._update_state_data()
+        return True
+    
+    @property
+    def on_resume_state(self):
+        print('state_resumed!!')
+        self.view_components = 'dashboard'
+        self.active_page = 'authorize'
+        node_keys = self._get_node_keys()
+        self.node_pub = node_keys['pub']
+        self.node_priv = self.deserialize_private_key(node_keys['priv'])
+        self.root_token = node_keys['root_token']
+        self._client_node_pub = node_keys['client_pub']
+        self._update_state_data()
+        self._update_customization()
+        return True
 
     def do_redeem(self):
         print('redeem')
@@ -808,9 +847,23 @@ class PintheonMachine(object):
         
         return { 'pub': pub, 'priv': priv }
     
+    def serialize_private_key(self, private_key):
+        return private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        ).decode('utf-8')
+    
+    def deserialize_private_key(self, serialized_key):
+        return serialization.load_pem_private_key(
+            serialized_key.encode('utf-8'),
+            password=None,
+            backend=default_backend()
+        )
+    
     def _update_state_data(self):
         self._open_db()
-        data = { 'current_state':str(self.state) }
+        data = { 'id': 'SAVED_STATE', 'current_state':str(self.state) }
         self._update_table_doc(self.state_data, data)
         self.db.close()
 
@@ -846,6 +899,7 @@ class PintheonMachine(object):
         self.db = TinyDB(encryption_key=self.master_key, path=self.db_path, storage=tae.EncryptedJSONStorage)
         self.state_data = self.db.table('state_data')
         self.node_data = self.db.table('node_data')
+        self.node_keys = self.db.table('node_keys')
         self.customization = self.db.table('customization')
         self.file_book= self.db.table('file_book')
         self.peer_book= self.db.table('peer_book')
@@ -853,6 +907,26 @@ class PintheonMachine(object):
         self.token_book= self.db.table('token_book')
         self.namespaces= self.db.table('namespaces')
         self.access_tokens= self.db.table('access_tokens')
+
+    def _get_node_keys(self):
+        result = None
+        self._open_db()
+        file = Query()
+        record = self.node_keys.get(file.id == 'NODE_KEYS')
+        if record != None:
+            result = record
+        self.db.close()
+        return result
+
+    def _get_saved_state(self):
+        result = None
+        self._open_db()
+        file = Query()
+        record = self.state_data.get(file.id == 'SAVED_STATE')
+        if record != None:
+            result = record['current_state']
+        self.db.close()
+        return result
 
     def get_customization(self):
         result = None

@@ -22,8 +22,9 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, testnet=True, debug=False, fake_ipfs=False)
-PINTHEON.initialize()
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, testnet=True, debug=True, fake_ipfs=True)
+if PINTHEON.state == None or PINTHEON.state == 'spawned':
+     PINTHEON.initialize()
 
 ##UTILITIES###
 def _load_components(comp):
@@ -129,21 +130,21 @@ def unauthorized_access(e):
 ##ROUTES## 
 @app.route('/admin')
 def admin():
-   hsh = PINTHEON.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
-   print(PINTHEON.hash_key(hsh))
-   m = Macaroon(
-            location='',
-            identifier='PINTHEON_LAUNCH_TOKEN',
-            key='bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=',
-            version=MACAROON_V1
-        )
-   print(m.identifier)
-   print('-----------------------------------')
-   print(m.serialize())
-   print(PINTHEON.state)
-   print(request.headers)
-   print(PINTHEON.soroban_online())
-   print('-----------------------------------')
+#    hsh = PINTHEON.hash_key('bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=')
+#    print(PINTHEON.hash_key(hsh))
+#    m = Macaroon(
+#             location='',
+#             identifier='PINTHEON_LAUNCH_TOKEN',
+#             key='bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0=',
+#             version=MACAROON_V1
+#         )
+#    print(m.identifier)
+#    print('-----------------------------------')
+#    print(m.serialize())
+#    print(PINTHEON.state)
+#    print(request.headers)
+#    print(PINTHEON.soroban_online())
+#    print('-----------------------------------')
 
        
    PINTHEON.logo_url = url_for('static', filename='hvym_logo.png')
@@ -175,6 +176,9 @@ def admin():
    theme_css = url_for('static', filename=theme+'-theme.css')
    
    session_data = { 'pub': pub, 'generator_pub': PINTHEON.node_pub, 'time': PINTHEON.session_ends, 'nonce': PINTHEON.session_nonce }
+   print('************************************')
+   print(session_data)
+   print('************************************')
    return render_template(template, page=page, components=components, js=js, logo=logo, bg_img=bg_img, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
 
 @app.route('/top_up_stellar')
