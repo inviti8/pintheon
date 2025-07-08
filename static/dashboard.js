@@ -79,7 +79,7 @@ async function init() {
     
 };
 
-init();
+// init();
 
 const load_encrypted_keystore = async () => {
     await window.fn.loadJSONFileObject( authorize, true, ['node_data'] );
