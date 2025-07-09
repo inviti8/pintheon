@@ -820,10 +820,18 @@ class PintheonMachine(object):
         self.view_components = 'dashboard'
         self.active_page = 'authorize'
         node_keys = self._get_node_keys()
+        node_data = self._get_node_data()
         self.node_pub = node_keys['pub']
         self.node_priv = self.deserialize_private_key(node_keys['priv'])
         self.root_token = node_keys['root_token']
         self._client_node_pub = node_keys['client_pub']
+        self.node_name = node_data['node_name']
+        self.logo_url = node_data['logo_url']
+        self.node_descriptor = node_data['node_descriptor']
+        self.url_host = node_data['url_host']
+        self.node_contract = node_data['node_contract']
+        self.master_key = node_data['master_key']
+        self.root_token = node_data['root_token']
         self._update_state_data()
         self._update_customization()
         return True
@@ -845,7 +853,7 @@ class PintheonMachine(object):
     def update_node_data(self):
         print('Update node data...')
         self._open_db()
-        data = { 'id':self.uid, 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'url_host':self.url_host, 'node_contract':self.node_contract, 'master_key':self.master_key, 'root_token': self.root_token }
+        data = { 'id': 'NODE_DATA', 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'url_host':self.url_host, 'node_contract':self.node_contract, 'master_key':self.master_key, 'root_token': self.root_token }
         self._update_table_doc(self.node_data, data)
         print(self.node_data.all())
         self.db.close()
@@ -918,6 +926,16 @@ class PintheonMachine(object):
         self.token_book= self.db.table('token_book')
         self.namespaces= self.db.table('namespaces')
         self.access_tokens= self.db.table('access_tokens')
+
+    def _get_node_data(self):
+        result = None
+        self._open_db()
+        file = Query()
+        record = self.node_data.get(file.id == 'NODE_DATA')
+        if record != None:
+            result = record
+        self.db.close()
+        return result
 
     def _get_node_keys(self):
         result = None

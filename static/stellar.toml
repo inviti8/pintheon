@@ -1,13 +1,12 @@
 VERSION = "0.0.1"
-NETWORK_PASSPHRASE = "Public Global Stellar Network ; September 2015"
-ACCOUNTS = []
-
+NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"
+ACCOUNTS = [ "GAPZA4BG5RSQC2OSO5JYQJ4DEBXMQM2H7AWY4E4TYNDYR42GYA6E6ITE",]
 
 [DOCUMENTATION]
-ORG_NAME = "Pintheon"
-ORG_DBA = "Pintheon Private IPFS Node"
-ORG_URL = "https://www.pintheon.com"
+ORG_NAME = "test4"
+ORG_DBA = "Pintheon Node"
+ORG_URL = "https://sapphire-giant-butterfly-891.mypinata.cloud"
 ORG_OFFICIAL_EMAIL = "hi@pintheon.com"
 ORG_SUPPORT_EMAIL = "support@pintheon.com"
-ORG_TWITTER = "@pintheon "
-ORG_DESCRIPTION = ""
+ORG_TWITTER = "@pintheon"
+ORG_DESCRIPTION = "4"

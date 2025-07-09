@@ -333,6 +333,8 @@ def authorized():
      if data == None:
           return jsonify({'error': 'Cannot get dash data'}), 400
      else:
+          print('@@@@@')
+          print(data)
           return data, 200  
    
 

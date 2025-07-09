@@ -70,6 +70,8 @@ async function init() {
             }
           })
           .then(data => {
+            console.log('GOT DASH DATA!!!!!!!')
+            console.log(data)
             window.dlg.hide('loading-dialog');
             _updateDashData(data)
             window.rndr.dashboard();
@@ -79,7 +81,7 @@ async function init() {
     
 };
 
-// init();
+init();
 
 const load_encrypted_keystore = async () => {
     await window.fn.loadJSONFileObject( authorize, true, ['node_data'] );
