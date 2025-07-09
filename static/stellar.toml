@@ -1,0 +1,13 @@
+VERSION = "0.0.1"
+NETWORK_PASSPHRASE = "Public Global Stellar Network ; September 2015"
+ACCOUNTS = []
+
+
+[DOCUMENTATION]
+ORG_NAME = "Pintheon"
+ORG_DBA = "Pintheon Private IPFS Node"
+ORG_URL = "https://www.pintheon.com"
+ORG_OFFICIAL_EMAIL = "hi@pintheon.com"
+ORG_SUPPORT_EMAIL = "support@pintheon.com"
+ORG_TWITTER = "@pintheon "
+ORG_DESCRIPTION = ""

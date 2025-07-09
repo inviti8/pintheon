@@ -1,12 +1,13 @@
 import os
 import requests
-from flask import Flask, render_template, request, session, abort, redirect, jsonify, url_for
+from flask import Flask, render_template, request, session, abort, redirect, jsonify, url_for, send_file, make_response
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound, HTTPException
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 from platformdirs import *
 from pintheonMachine import PintheonMachine
+from StellarTomlGenerator import StellarTomlGenerator
 from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 
 app = Flask(__name__)
@@ -22,7 +23,7 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, testnet=True, debug=False, fake_ipfs=False)
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=True)
 if PINTHEON.state == None or PINTHEON.state == 'spawned':
      PINTHEON.initialize()
 
@@ -180,6 +181,19 @@ def admin():
    print(session_data)
    print('************************************')
    return render_template(template, page=page, components=components, js=js, logo=logo, bg_img=bg_img, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
+
+@app.route('/.well-known/stellar.toml')
+def stellar_toml():
+    toml_file = os.path.join(SCRIPT_DIR, "static", "stellar.toml")
+
+    print(toml_file)
+    print(os.path.exists(toml_file))
+    if not os.path.exists(toml_file):
+        abort(404)
+    response = make_response(send_file(toml_file, mimetype='text/plain'))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    return response
 
 @app.route('/top_up_stellar')
 def top_up_stellar():

@@ -52,19 +52,19 @@ STELLAR_BG_RGB = (255, 255, 255)
 STELLAR_FG_RGB = (0, 0, 0)
 
 XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_TESTNET = 'CBNUWUWGBEO5HXKE52ORMZ454JZ3SPNZRVDZLGMQ53MXEDTDOB2NBXXN'
-OPUS_TESTNET = 'CCTNH5MGFR3GNJAJHCXBOYP7OUHNONT5EPMPX5H46JV2WWANOYH4YQVK'
+COLLECTIVE_TESTNET = 'CA3Q5J3GM6SQCPUKFJEUOBPBJNZO4DNFCQK4JJJOF3ZICN72EDHMNQC5'
+OPUS_TESTNET = 'CB6R6A2D4WDLQID7KDINQHTKGX73NJSVWNEZGQB7WXDZA7XG7BB42LKZ'
 XLM_MAINNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_MAINNET = 'CBNUWUWGBEO5HXKE52ORMZ454JZ3SPNZRVDZLGMQ53MXEDTDOB2NBXXN'
-OPUS_MAINNET = 'CCTNH5MGFR3GNJAJHCXBOYP7OUHNONT5EPMPX5H46JV2WWANOYH4YQVK'
+COLLECTIVE_MAINNET = 'CA3Q5J3GM6SQCPUKFJEUOBPBJNZO4DNFCQK4JJJOF3ZICN72EDHMNQC5'
+OPUS_MAINNET = 'CB6R6A2D4WDLQID7KDINQHTKGX73NJSVWNEZGQB7WXDZA7XG7BB42LKZ'
 
 DEBUG_SEED = "puppy address situate future gown trade limb rival crane increase when faculty category vague alpha program remember pill waste light broom decade buddy knock"
 DEBUG_NODE_CONTRACT = "CBYP223JS7VYBIIFYUJ6ZQLAOOYXCIFZGMOHKIASMWKCZGFULVPNPV3H"
 DEBUG_URL_HOST = 'http://127.0.0.1:5000'
 FAKE_IPFS_HOST = 'https://sapphire-giant-butterfly-891.mypinata.cloud'
-FAKE_IPFS_FILE1 = 'QmUrSoGmy9djtrZVQuzEDFonrTKePf1ZxUrfQwYnHZ9EUU'
-FAKE_IPFS_FILE2 = 'QmYpkB6aWhWjY3UsFiWgRnWfExnrrsH2GpoTAv3mzo55Uf'
-FAKE_IPFS_FILE3 = 'Qmc9ZBtNGsxZKsph9JsUuRY5UGV7DakZMtSJwJpb999AtR'
+FAKE_IPFS_FILE1 = str(uuid.uuid4())
+FAKE_IPFS_FILE2 = str(uuid.uuid4())
+FAKE_IPFS_FILE3 = str(uuid.uuid4())
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
 
@@ -72,9 +72,10 @@ class PintheonMachine(object):
 
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
-    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', testnet = False, debug = False, fake_ipfs=False):
+    def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', toml_gen = None, testnet = False, debug = False, fake_ipfs=True):
 
         self.uid = str(uuid.uuid4())
+        self.version = "0.0.1"
         self.use_testnet = testnet
         #self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
         self.session_active = False
@@ -162,6 +163,8 @@ class PintheonMachine(object):
         self.stellar_logo = None
         self.opus_logo = None
         self.boros_logo = None
+        self.TOML_GEN = toml_gen
+        self.stellar_toml = None
         
          #-------PRIVATE VARS--------
         self._generator_token = None
@@ -253,6 +256,8 @@ class PintheonMachine(object):
         else:
             self.join_collective()
             self.node_contract = self.deploy_node_token(name, descriptor)
+
+        self.stellar_toml = self.TOML_GEN( self.static_path, self.node_name, self.url_host, 'hi@pintheon.com', 'support@pintheon.com', '@pintheon', self.node_descriptor, self.version, self.NETWORK_PASSPHRASE, self.stellar_keypair.public_key)
 
         self._update_node_data(self.logo_url, self.node_name, self.node_descriptor, self.node_contract)
 
@@ -473,6 +478,7 @@ class PintheonMachine(object):
     def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash="NONE"):
         tx = self.hvym_collective.deploy_ipfs_token(caller=self.stellar_keypair.public_key, name=name, ipfs_hash=ipfs_hash, file_type=file_type, gateways=gateways, _ipns_hash=_ipns_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
         tx.sign_and_submit()
+        self.add_file_token_to_toml(name, ipfs_hash)
         return tx.result().address
     
     def publish_file(self, ipfs_hash):
@@ -513,6 +519,10 @@ class PintheonMachine(object):
             transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
 
         return transaction
+    
+    def add_file_token_to_toml(self, name, cid):
+        token_img = os.path.join(self.url_host, self.static_path, 'file_token')
+        self.stellar_toml.new_currency('HVYMFILE', name, self.stellar_keypair.public_key, 0, cid, token_img, 'This file is owned by the issuer.')
     
     def ipfs_token_balance(self, token_id):
          token = self._bind_ipfs_token(token_id)
@@ -1240,7 +1250,7 @@ class PintheonMachine(object):
                 return None
         
     def create_fake_ipfs_data(self):
-        names = ['oro_logo_pink.png', 'oro_logo_green.png', 'oro_logo_blue.png']
+        names = ['test1.png', 'test2.png', 'test3.png']
         types = ['image/png', 'image/png', 'image/png']
         logo = [False, True, False]
         bg_img = [False, False, False]
