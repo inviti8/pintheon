@@ -257,7 +257,7 @@ class PintheonMachine(object):
             self.join_collective()
             self.node_contract = self.deploy_node_token(name, descriptor)
 
-        self.stellar_toml = self.TOML_GEN( self.static_path, self.node_name, self.url_host, 'hi@pintheon.com', 'support@pintheon.com', '@pintheon', self.node_descriptor, self.version, self.NETWORK_PASSPHRASE, self.stellar_keypair.public_key)
+        self.stellar_toml = self.TOML_GEN( file_path=self.static_path, org_name=self.node_name, org_dba='Pintheon Node', org_url=self.url_host, org_official_email='hi@pintheon.com', org_support_email='support@pintheon.com', org_twitter='@pintheon', org_description=self.node_descriptor, version=self.version, network_passphrase=self.NETWORK_PASSPHRASE, accounts=[self.stellar_keypair.public_key])
 
         self._update_node_data(self.logo_url, self.node_name, self.node_descriptor, self.node_contract)
 
@@ -521,8 +521,8 @@ class PintheonMachine(object):
         return transaction
     
     def add_file_token_to_toml(self, name, cid):
-        token_img = os.path.join(self.url_host, self.static_path, 'file_token')
-        self.stellar_toml.new_currency('HVYMFILE', name, self.stellar_keypair.public_key, 0, cid, token_img, 'This file is owned by the issuer.')
+        token_img = os.path.join(self.url_host, 'static', 'file_token.png')
+        self.stellar_toml.new_currency(code='HVYMFILE', name=name, issuer=self.stellar_keypair.public_key, display_decimals=0, desc=cid, image=token_img, conditions='This file is owned by the issuer.')
     
     def ipfs_token_balance(self, token_id):
          token = self._bind_ipfs_token(token_id)
@@ -542,7 +542,7 @@ class PintheonMachine(object):
     
     def ipfs_token_send(self, cid, token_id, recieving_address, amount):
          token = self._bind_ipfs_token(token_id)
-         tx = self._token_send(token, recieving_address, amount, self.stellar_logo)
+         tx = self._token_send(token, recieving_address, amount, self.stellar_logo, False)
          current_balance = self._token_balance(token)
          if current_balance != None:
             self.update_file_balance(cid, current_balance)
@@ -556,9 +556,10 @@ class PintheonMachine(object):
          tx = token.balance(id=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          return tx.result()
     
-    def _token_send(self, token, recieving_address, amount, logo):
+    def _token_send(self, token, recieving_address, amount, logo, convert_to_stroops=True):
          transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': logo}
-         amount = amount * 10**7
+         if convert_to_stroops:
+            amount = amount * 10**7
          tx = token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
          tx.sign()
          send_transaction = self.soroban_server.send_transaction(tx)
