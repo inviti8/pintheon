@@ -448,11 +448,14 @@ class PintheonMachine(object):
     def opus_balance(self):
         return self._token_balance(self.opus)
     
+    def update_opus_balance(self):
+        balance = self.opus_balance()
+        if balance != None:
+            self._update_token_book_balance(self.OPUS_ID, balance)
+    
     def opus_send(self, recieving_address, amount):
          tx = self._token_send(self, self.opus, recieving_address, amount, self.opus_logo)
-         current_balance = self.opus_balance()
-         if current_balance != None:
-            self._update_token_book_balance(self.OPUS_ID, current_balance)
+         self.update_opus_balance()
 
          return tx
     
@@ -478,6 +481,7 @@ class PintheonMachine(object):
     def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash="NONE"):
         tx = self.hvym_collective.deploy_ipfs_token(caller=self.stellar_keypair.public_key, name=name, ipfs_hash=ipfs_hash, file_type=file_type, gateways=gateways, _ipns_hash=_ipns_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
         tx.sign_and_submit()
+        self.update_opus_balance()
         self.add_file_token_to_toml(name, ipfs_hash)
         return tx.result().address
     
@@ -522,7 +526,7 @@ class PintheonMachine(object):
     
     def add_file_token_to_toml(self, name, cid):
         token_img = os.path.join(self.url_host, 'static', 'file_token.png')
-        self.stellar_toml.new_currency(code='HVYMFILE', name=name, issuer=self.stellar_keypair.public_key, display_decimals=0, desc=cid, image=token_img, conditions='This file is owned by the issuer.')
+        self.stellar_toml.new_currency(code=f'HVYMFILE_{name}', name=name, issuer=self.stellar_keypair.public_key, display_decimals=0, desc=cid, image=token_img, conditions='This file is owned by the issuer.')
     
     def ipfs_token_balance(self, token_id):
          token = self._bind_ipfs_token(token_id)
