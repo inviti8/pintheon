@@ -119,10 +119,10 @@ document.addEventListener('init', function(event) {
 
     if (page.id === 'new_node') {
 
-        document.querySelector('#generate-seed').onclick = async function () {
-            let seed = await generate_wallet();
-            document.querySelector('#seed-text').value = seed;
-        };
+        // document.querySelector('#generate-seed').onclick = async function () {
+        //     let seed = await generate_wallet();
+        //     document.querySelector('#seed-text').value = seed;
+        // };
         document.querySelector('#establish-button').onclick = function () {
             window.fn.validateAllInputsAndCall(
                 'Establish new Node?',
