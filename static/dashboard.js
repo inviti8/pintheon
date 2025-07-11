@@ -83,6 +83,27 @@ async function init() {
 
 init();
 
+// --- Heartbeat Logic ---
+function startHeartbeat() {
+    let missed = 0;
+    setInterval(() => {
+        fetch('/api/heartbeat', { method: 'GET' })
+            .then(res => {
+                if (!res.ok) throw new Error('Server error');
+                missed = 0; // Reset on success
+            })
+            .catch(() => {
+                missed++;
+                if (missed === 3) { // 3 missed = 15 seconds
+                    alert('Lost connection to server! You need to log in again.');
+                    logged_out();
+                }
+            });
+    }, 5000);
+}
+
+startHeartbeat();
+
 const load_encrypted_keystore = async () => {
     await window.fn.loadJSONFileObject( authorize, true, ['node_data'] );
 };
@@ -890,4 +911,14 @@ window.fn.pushPage = function(page, node_data, callback = null, ...args) {
             callback(...args);
         }
     });
+};
+
+window.onbeforeunload = function() {
+    const session = _getSessionData();
+    const data = new FormData();
+    data.append('token', session.token.serialize());
+    data.append('client_pub', session.pub);
+
+    // Use sendBeacon for logout
+    navigator.sendBeacon('/deauthorize', data);
 };
