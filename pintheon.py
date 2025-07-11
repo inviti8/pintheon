@@ -9,6 +9,7 @@ from platformdirs import *
 from pintheonMachine import PintheonMachine
 from StellarTomlGenerator import StellarTomlGenerator
 from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -23,7 +24,7 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=False)
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=True)
 if PINTHEON.state == None or PINTHEON.state == 'spawned':
      PINTHEON.initialize()
 
@@ -46,6 +47,54 @@ def _payload_valid(fields, data):
          break
 
    return result
+
+def require_fields(fields, source='json'):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if source == 'json':
+                data = request.get_json()
+                if not _payload_valid(fields, data):
+                    abort(400)
+                return f(*args, **kwargs)
+            elif source == 'form':
+                for field in fields:
+                    if field not in request.form:
+                        return "Missing or empty value for field: {}".format(field), 400
+                return f(*args, **kwargs)
+            else:
+                abort(400)
+        return wrapper
+    return decorator
+
+def require_session_state(state='idle', active=True):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if active and not PINTHEON.session_active:
+                abort(403)
+            if state and not PINTHEON.state == state:
+                abort(403)
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+def require_token_verification(pub_field, token_field, source='json'):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if source == 'json':
+                data = request.get_json()
+                if not PINTHEON.verify_request(data[pub_field], data[token_field]):
+                    raise Unauthorized()
+            elif source == 'form':
+                if not PINTHEON.verify_request(request.form[pub_field], request.form[token_field]):
+                    raise Unauthorized()
+            else:
+                abort(400)
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
 
 def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False):
     if 'file' not in request.files:
@@ -193,24 +242,14 @@ def top_up_stellar():
 
 @app.route('/end_session', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub'], source='json')
+@require_session_state(active=True)
+@require_token_verification('client_pub', 'token', source='json')
 def end_session():
-   required = ['token', 'client_pub']
-   data = request.get_json()
-   print(data)
-
-   if not _payload_valid(required, data):
-        abort(400)  # Bad Request
-
-   elif not PINTHEON.session_active:  # Session must be active
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(data['client_pub'], data['token']):
-        raise Unauthorized()  # Unauthorized
-
-   else:
-        PINTHEON.end_session()
-        
-        return jsonify({'authorized': False}), 200
+    data = request.get_json()
+    print(data)
+    PINTHEON.end_session()
+    return jsonify({'authorized': False}), 200
    
 @app.route('/reset_init', methods=['POST'])
 @cross_origin()
@@ -224,524 +263,379 @@ def reset_init():
 
 @app.route('/new_node', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'seed_cipher', 'generator_pub'], source='json')
+@require_session_state(state='initialized', active=False)
+@require_token_verification('client_pub', 'token', source='json')
 def new_node():
-   required = ['token', 'client_pub', 'seed_cipher', 'generator_pub']
-   data = request.get_json()
-
-   print(data)
-
-   if not _payload_valid(required, data):
-        abort(400)  # Bad Request
-
-   elif not PINTHEON.state == 'initialized':  # PINTHEON must be initialized
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(data['client_pub'], data['token']):
-        raise Unauthorized()  # Unauthorized
-
-   else:
-        PINTHEON.new_node()
-        PINTHEON.set_client_session_pub(data['client_pub'])
-        PINTHEON.set_seed_cipher(data['seed_cipher'])
-        PINTHEON.set_client_node_pub(data['generator_pub'])
-        established = PINTHEON.new()
-
-        if established:
-            return PINTHEON.establish_data(), 200
-        else:
-            return jsonify({'error': 'Insufficient Balance'}), 400       
-        
+    data = request.get_json()
+    print(data)
+    PINTHEON.new_node()
+    PINTHEON.set_client_session_pub(data['client_pub'])
+    PINTHEON.set_seed_cipher(data['seed_cipher'])
+    PINTHEON.set_client_node_pub(data['generator_pub'])
+    established = PINTHEON.new()
+    if established:
+        return PINTHEON.establish_data(), 200
+    else:
+        return jsonify({'error': 'Insufficient Balance'}), 400
 
 @app.route('/establish', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'name', 'descriptor', 'meta_data', 'host'], source='json')
+@require_session_state(state='establishing', active=True)
+@require_token_verification('client_pub', 'token', source='json')
 def establish():
-   required = ['token', 'client_pub', 'name', 'descriptor', 'meta_data', 'host']
-   data = request.get_json()
-   print(data)
-
-   if not _payload_valid(required, data):
-        abort(400)  # Bad Request
-
-   elif not PINTHEON.state == 'establishing':  # PINTHEON must be establishing
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(data['client_pub'], data['token']):  # client must send valid session token
-        raise Unauthorized()  # Unauthorized
-
-   else:
-        PINTHEON.set_node_data(data['name'], data['descriptor'], data['meta_data'], data['host'])
-        PINTHEON.established()
-        
-   return PINTHEON.establish_data(), 200
-   
+    data = request.get_json()
+    print(data)
+    PINTHEON.set_node_data(data['name'], data['descriptor'], data['meta_data'], data['host'])
+    PINTHEON.established()
+    return PINTHEON.establish_data(), 200
 
 @app.route('/authorize', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'auth_token', 'generator_pub'], source='json')
 def authorize():
-   required = ['token', 'client_pub', 'auth_token', 'generator_pub']
-   data = request.get_json()
-
-   if not _payload_valid(required, data):
-        abort(400)  # Bad Request
-
-   elif PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.token_not_expired(data['client_pub'], data['token']) or not PINTHEON.verify_request(data['client_pub'], data['token']) or not PINTHEON.verify_generator(data['generator_pub'], data['auth_token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
+    data = request.get_json()
+    if PINTHEON.session_active or not PINTHEON.state == 'idle':
+        abort(403)
+    elif not PINTHEON.token_not_expired(data['client_pub'], data['token']) or not PINTHEON.verify_request(data['client_pub'], data['token']) or not PINTHEON.verify_generator(data['generator_pub'], data['auth_token']):
+        raise Unauthorized()
+    else:
         PINTHEON.set_client_session_pub(data['client_pub'])
         PINTHEON.authorized()
-        data = PINTHEON.get_dashboard_data()
-        if data == None:
-          return jsonify({'error': 'Cannot get dash data'}), 400
+        dash_data = PINTHEON.get_dashboard_data()
+        if dash_data is None:
+            return jsonify({'error': 'Cannot get dash data'}), 400
         else:
-          return data, 200
-   
+            return dash_data, 200
 
 @app.route('/authorized', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'auth_token', 'client_pub'], source='json')
 def authorized():
-   required = ['token', 'auth_token', 'client_pub']
-   data = request.get_json()
-   print(data)
-
-   if not _payload_valid(required, data):
-        abort(400)  # Bad Request
-
-   elif not PINTHEON.token_not_expired(data['client_pub'], data['token']) and (not PINTHEON.session_active or not PINTHEON.state == 'idle'):  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_authorization(data['client_pub'], data['auth_token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-     data = PINTHEON.get_dashboard_data()
-     if data == None:
-          return jsonify({'error': 'Cannot get dash data'}), 400
-     else:
-          print('@@@@@')
-          print(data)
-          return data, 200  
-   
+    data = request.get_json()
+    print(data)
+    if not PINTHEON.token_not_expired(data['client_pub'], data['token']) and (not PINTHEON.session_active or not PINTHEON.state == 'idle'):
+        abort(403)
+    elif not PINTHEON.verify_authorization(data['client_pub'], data['auth_token']):
+        raise Unauthorized()
+    else:
+        dash_data = PINTHEON.get_dashboard_data()
+        if dash_data is None:
+            return jsonify({'error': 'Cannot get dash data'}), 400
+        else:
+            print('@@@@@')
+            print(dash_data)
+            return dash_data, 200
 
 @app.route('/deauthorize', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub'], source='json')
+@require_session_state(active=True)
+@require_token_verification('client_pub', 'token', source='json')
 def deauthorize():
-   required = ['token', 'client_pub']
-   data = request.get_json()
-   print(data)
-
-   if not _payload_valid(required, data):
-        abort(400)  # Bad Request
-
-   elif not PINTHEON.session_active:  # Session must be active
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(data['client_pub'], data['token']):
-        raise Unauthorized()  # Unauthorized
-
-   else:
-        PINTHEON.deauthorized()
-        PINTHEON.end_session()
-        
-        return jsonify({'authorized': False}), 200
-
+    data = request.get_json()
+    print(data)
+    PINTHEON.deauthorized()
+    PINTHEON.end_session()
+    return jsonify({'authorized': False}), 200
 
 @app.route('/upload', methods=['POST'])
 @cross_origin()
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def upload():
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-     required = ['token', 'client_pub']
-     encrypted = request.form['encrypted']
-     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-     print(encrypted)
-     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-     return _handle_upload(required, request, False, False, encrypted)
+    required = ['token', 'client_pub']
+    encrypted = request.form['encrypted']
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+    print(encrypted)
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+    return _handle_upload(required, request, False, False, encrypted)
 
 @app.route('/api_upload', methods=['POST'])
 @cross_origin()
+@require_fields(['access_token'], source='form')
 def api_upload():
-   required = ['access_token']
-   token = request.form['access_token']
-   encrypted = request.form['encrypted']
-   if not PINTHEON.auth_token(token):
-       abort(Forbidden())
-   else:
-
-     return _handle_upload(required, request, False, False, encrypted)
+    token = request.form['access_token']
+    encrypted = request.form['encrypted']
+    if not PINTHEON.auth_token(token):
+        abort(403)
+    else:
+        required = ['access_token']
+        return _handle_upload(required, request, False, False, encrypted)
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def update_logo():
-   required = ['token', 'client_pub']
-   file = request.files['file']
-
-   if PINTHEON.file_exists(file.filename, file.mimetype):
-          PINTHEON.update_file_as_logo(file.filename)
-   else:
-        files = _handle_upload(required=required, request=request, is_logo=True)
+    file = request.files['file']
+    cid = None
+    if PINTHEON.file_exists(file.filename, file.mimetype):
+        PINTHEON.update_file_as_logo(file.filename)
+    else:
+        files = _handle_upload(required=['token', 'client_pub'], request=request, is_logo=True)
         cid = _get_file_cid(file, files)
-
-   if cid != None:
+    if cid is not None:
         PINTHEON.logo_url = PINTHEON.url_host+'/ipfs/'+cid
-        data = PINTHEON.update_node_data()
-
-   data = PINTHEON.get_dashboard_data()
-   if data == None:
+        PINTHEON.update_node_data()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
         return jsonify({'error': 'Cannot get dash data'}), 400
-   else:
+    else:
         return data, 200
-   
+
 @app.route('/update_gateway', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'gateway'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def update_gateway():
-   required = ['token', 'client_pub', 'gateway']
-   host = request.form['gateway']
-
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
-        
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        
-     PINTHEON.url_host = host
-     
-     if '/ipfs/' in PINTHEON.logo_url:
-         cid = PINTHEON.logo_url.split('/ipfs/')[-1]
-         PINTHEON.logo_url = PINTHEON.url_host+'/ipfs/'+cid
-         PINTHEON.update_node_data()
-     
-     data = PINTHEON.get_dashboard_data()
-     if data == None:
-          return jsonify({'error': 'Cannot get dash data'}), 400
-     else:
-          return data, 200
+    host = request.form['gateway']
+    PINTHEON.url_host = host
+    if '/ipfs/' in PINTHEON.logo_url:
+        cid = PINTHEON.logo_url.split('/ipfs/')[-1]
+        PINTHEON.logo_url = PINTHEON.url_host+'/ipfs/'+cid
+        PINTHEON.update_node_data()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        return data, 200
 
 @app.route('/remove_file', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'cid'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def remove_file():
-   required = ['token', 'client_pub', 'cid']
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
+    ipfs_response = PINTHEON.remove_file_from_ipfs(request.form['cid'])
+    if ipfs_response is None:
+        return jsonify({'error': 'File not removed'}), 400
+    else:
+        return ipfs_response
 
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        ipfs_response = PINTHEON.remove_file_from_ipfs(request.form['cid'])
-
-        if ipfs_response == None:
-                return jsonify({'error': 'File not removed'}), 400
-        else:
-            return ipfs_response
-        
 @app.route('/tokenize_file', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'cid', 'allocation'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def tokenize_file():
-   required = ['token', 'client_pub', 'cid', 'allocation']
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
-
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        file_data = PINTHEON.file_data_from_cid(request.form['cid'])
-        if len(file_data['ContractID']) > 0:
-            return jsonify({'error': 'File already tokenized'}), 400
+    file_data = PINTHEON.file_data_from_cid(request.form['cid'])
+    if len(file_data['ContractID']) > 0:
+        return jsonify({'error': 'File already tokenized', 'success': False}), 400
+    else:
+        contract_result = PINTHEON.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PINTHEON.url_host)
+        if isinstance(contract_result, dict) and not contract_result.get('success', True):
+            data = PINTHEON.get_dashboard_data() or {}
+            data['transaction_data'] = None
+            data['error'] = contract_result.get('error', 'Contract deployment failed')
+            data['success'] = False
+            return jsonify(data), 400
+        contract_id = contract_result['address'] if isinstance(contract_result, dict) else contract_result
+        PINTHEON.update_file_contract_id(request.form['cid'], contract_id)
+        transaction_result = PINTHEON.ipfs_custodial_mint(request.form['cid'], contract_id, int(request.form['allocation']))
+        data = PINTHEON.get_dashboard_data() or {}
+        # Always return the original transaction structure
+        if isinstance(transaction_result, dict) and 'tx' in transaction_result:
+            data['transaction_data'] = transaction_result['tx']
         else:
-          print(request.form['allocation'])
-          contract_id = PINTHEON.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PINTHEON.url_host)
-          PINTHEON.update_file_contract_id(request.form['cid'], contract_id)
-          transaction_data = PINTHEON.ipfs_custodial_mint(request.form['cid'], contract_id, int(request.form['allocation']))
-          data = PINTHEON.get_dashboard_data()
-          data['transaction_data'] = transaction_data
+            data['transaction_data'] = transaction_result
+        if isinstance(transaction_result, dict) and not transaction_result.get('success', True):
+            data['error'] = transaction_result.get('error', 'Minting failed')
+            data['success'] = False
+            return jsonify(data), 400
+        data['success'] = True
+        return jsonify(data)
 
-          if data == None:
-                    return jsonify({'error': 'File data not updated'}), 400
-          else:
-               return data
-        
 @app.route('/send_file_token', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'cid', 'amount', 'to_address'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def send_file_token():
-   required = ['token', 'client_pub', 'cid', 'amount', 'to_address']
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
+    file_data = PINTHEON.file_data_from_cid(request.form['cid'])
+    amount = int(request.form['amount'])
+    if amount > 0 and len(file_data['ContractID']) > 0:
+        transaction_result = PINTHEON.ipfs_token_send(request.form['cid'], file_data['ContractID'], request.form['to_address'], amount)
+        data = PINTHEON.get_dashboard_data() or {}
+        # Always return the original transaction structure
+        if isinstance(transaction_result, dict) and 'tx' in transaction_result:
+            data['transaction_data'] = transaction_result['tx']
+        else:
+            data['transaction_data'] = transaction_result
+        if isinstance(transaction_result, dict) and not transaction_result.get('success', True):
+            data['error'] = transaction_result.get('error', 'Token send failed')
+            data['success'] = False
+            return jsonify(data), 400
+        data['success'] = True
+        return jsonify(data)
 
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        file_data = PINTHEON.file_data_from_cid(request.form['cid'])
-        amount = int(request.form['amount'])
-        if amount > 0 and len(file_data['ContractID']) > 0:
-          transaction_data = PINTHEON.ipfs_token_send(request.form['cid'], file_data['ContractID'], request.form['to_address'], amount)
-          data = PINTHEON.get_dashboard_data()
-          data['transaction_data'] = transaction_data
-
-          if data == None:
-                    return jsonify({'error': 'File data not updated'}), 400
-          else:
-               return data
-          
 @app.route('/send_token', methods=['POST'])
 @cross_origin()
+@require_fields(['name', 'token_id', 'client_pub', 'token_id', 'amount', 'to_address'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def send_token():
-   required = ['name', 'token_id', 'client_pub', 'token_id', 'amount', 'to_address']
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
+    amount = int(request.form['amount'])
+    if amount > 0:
+        transaction_result = PINTHEON.token_send(request.form['token_id'], request.form['to_address'], amount)
+        data = PINTHEON.get_dashboard_data() or {}
+        # Always return the original transaction structure
+        if isinstance(transaction_result, dict) and 'tx' in transaction_result:
+            data['transaction_data'] = transaction_result['tx']
+        else:
+            data['transaction_data'] = transaction_result
+        if isinstance(transaction_result, dict) and not transaction_result.get('success', True):
+            data['error'] = transaction_result.get('error', 'Token send failed')
+            data['success'] = False
+            return jsonify(data), 400
+        data['success'] = True
+        return jsonify(data)
 
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        amount = int(request.form['amount'])
-        if amount > 0 :
-          transaction_data = PINTHEON.token_send(request.form['token_id'], request.form['to_address'], amount)
-          data = PINTHEON.get_dashboard_data()
-          data['transaction_data'] = transaction_data
-
-          if data == None:
-                    return jsonify({'error': 'File data not updated'}), 400
-          else:
-               return data
-          
 @app.route('/publish_file', methods=['POST'])
 @cross_origin()
+@require_fields(['name', 'cid', 'client_pub', 'token', 'encrypted', 'reciever_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def publish_file():
-   required = ['name', 'cid', 'client_pub', 'token', 'encrypted', 'reciever_pub']
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
+    encrypted = request.form['encrypted']
+    cid = request.form['cid']
+    data = None
+    if encrypted == 'true':
+        reciever_pub = request.form['reciever_pub']
+        transaction_result = PINTHEON.publish_encrypted_file(reciever_pub, cid)
+    else:
+        transaction_result = PINTHEON.publish_file(cid)
+    data = PINTHEON.get_dashboard_data() or {}
+    # Always return the original transaction structure
+    if isinstance(transaction_result, dict) and 'transaction' in transaction_result:
+        data['transaction_data'] = transaction_result['transaction']
+    else:
+        data['transaction_data'] = transaction_result
+    if isinstance(transaction_result, dict) and not transaction_result.get('successful', True):
+        data['error'] = transaction_result.get('error', 'Publish failed')
+        data['success'] = False
+        return jsonify(data), 400
+    data['success'] = True
+    return jsonify(data)
 
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        encrypted = request.form['encrypted']
-        cid = request.form['cid']
-        data = None
-        if encrypted == 'true':
-            reciever_pub = request.form['reciever_pub']
-            transaction_data = PINTHEON.publish_encrypted_file(reciever_pub, cid)
-            data = PINTHEON.get_dashboard_data()
-            data['transaction_data'] = transaction_data
-        else:
-            transaction_data = PINTHEON.publish_file(cid)
-            data = PINTHEON.get_dashboard_data()
-            data['transaction_data'] = transaction_data
-
-        if data == None:
-               return jsonify({'error': 'File data not updated'}), 400
-        else:
-               return data
-        
 @app.route('/add_to_namespace', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'cid'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def add_to_namespace():
-   required = ['token', 'client_pub', 'cid']
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
+    if 'name' not in request.form:
+        ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'], request.form['name'])
+    else:
+        ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'])
+    if ipfs_response is None:
+        return jsonify({'error': 'File not removed'}), 400
+    else:
+        return ipfs_response
 
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        if 'name' not in request.form:
-          ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'], request.form['name'])
-        else:
-            ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'])
-
-        if ipfs_response == None:
-                return jsonify({'error': 'File not removed'}), 400
-        else:
-            return ipfs_response
-        
 @app.route('/add_access_token', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'name', 'stellar_25519_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def add_access_token():
-   required = ['token', 'client_pub', 'name', 'stellar_25519_pub']
+    name = request.form['name']
+    stellar_25519_pub = request.form['stellar_25519_pub']
+    token = PINTHEON.add_access_token(name, stellar_25519_pub)
+    if token is None:
+        return jsonify({'error': 'Cannot create new access token'}), 400
+    else:
+        return jsonify({'access_token': token}), 200
 
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
-        
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-       name = request.form['name']
-       stellar_25519_pub = request.form['stellar_25519_pub']
-       token = PINTHEON.add_access_token(name, stellar_25519_pub)
-
-       if token == None:
-                return jsonify({'error': 'Cannot create new access token'}), 400
-       else:
-            return jsonify({'access_token': token}), 200
-       
 @app.route('/remove_access_token', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'stellar_25519_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def remove_access_token():
-   required = ['token', 'client_pub', 'stellar_25519_pub']
+    stellar_25519_pub = request.form['stellar_25519_pub']
+    PINTHEON.remove_access_token(stellar_25519_pub)
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        return data, 200
 
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
-        
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-       stellar_25519_pub = request.form['stellar_25519_pub']
-       PINTHEON.remove_access_token(stellar_25519_pub)
-       data = PINTHEON.get_dashboard_data()
-
-       if data == None:
-                return jsonify({'error': 'Cannot get dash data'}), 400
-       else:
-            return data, 200
-        
 @app.route('/dashboard_data', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def dashboard_data():
-   required = ['token', 'client_pub']
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        return data, 200
 
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-        data = PINTHEON.get_dashboard_data()
-
-        if data == None:
-                return jsonify({'error': 'Cannot get dash data'}), 400
-        else:
-            return data, 200
-        
 @app.route('/update_theme', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub', 'theme'], source='json')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='json')
 def update_theme():
-   required = ['token', 'client_pub', 'theme']
-   req = request.get_json()
+    req = request.get_json()
+    PINTHEON.theme = req['theme']
+    PINTHEON.update_customization()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        return data, 200
 
-   if not _payload_valid(required, req):
-        abort(400)  # Bad Request
-   elif not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(req['client_pub'], req['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-   
-     PINTHEON.theme = req['theme']
-     PINTHEON.update_customization()
-     data = PINTHEON.get_dashboard_data()
-     if data == None:
-          return jsonify({'error': 'Cannot get dash data'}), 400
-     else:
-          return data, 200
-     
 @app.route('/update_bg_img', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def update_bg_img():
-   required = ['token', 'client_pub']
-   file = request.files['file']
-   cid = None
+    file = request.files['file']
+    cid = None
+    PINTHEON.all_file_info()
+    print(file.mimetype)
+    if PINTHEON.file_exists(file.filename, file.mimetype):
+        print('HERE!!!')
+        files = PINTHEON.update_file_as_bg_img(file.filename)
+        cid = _get_file_cid(file, files)
+    else:
+        files = _handle_upload(required=['token', 'client_pub'], request=request, is_bg_img=True)
+        cid = _get_file_cid(file, files)
+    if cid is not None:
+        PINTHEON.bg_img = PINTHEON.url_host+'/ipfs/'+cid
+        PINTHEON.update_node_data()
+    PINTHEON.update_customization()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        return data, 200
 
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
-        
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-     PINTHEON.all_file_info()
-
-     print(file.mimetype)
-
-     if PINTHEON.file_exists(file.filename, file.mimetype):
-          print('HERE!!!')
-          files = PINTHEON.update_file_as_bg_img(file.filename)
-          cid = _get_file_cid(file, files)
-     else:
-          files = _handle_upload(required=required, request=request, is_bg_img=True)
-          cid = _get_file_cid(file, files)
-
-     if cid != None:
-          PINTHEON.bg_img = PINTHEON.url_host+'/ipfs/'+cid
-          data = PINTHEON.update_node_data()
-   
-     PINTHEON.update_customization()
-     data = PINTHEON.get_dashboard_data()
-     if data == None:
-          return jsonify({'error': 'Cannot get dash data'}), 400
-     else:
-          return data, 200
-     
 @app.route('/remove_bg_img', methods=['POST'])
 @cross_origin()
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
 def remove_bg_img():
-   required = ['token', 'client_pub']
+    PINTHEON.remove_file_as_bg_img()
+    PINTHEON.bg_img = None
+    PINTHEON.update_customization()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        return data, 200
 
-
-   for field in required:
-        if field not in request.form:
-            return "Missing or empty value for field: {}".format(field), 400
-        
-   if not PINTHEON.session_active or not PINTHEON.state == 'idle':  # PINTHEON must be idle
-        abort(Forbidden())  # Forbidden
-    
-   elif not PINTHEON.verify_request(request.form['client_pub'], request.form['token']):  # client must send valid tokens
-        raise Unauthorized()  # Unauthorized
-   else:
-   
-     PINTHEON.remove_file_as_bg_img()
-     PINTHEON.bg_img = None
-     PINTHEON.update_customization()
-     data = PINTHEON.get_dashboard_data()
-     if data == None:
-          return jsonify({'error': 'Cannot get dash data'}), 400
-     else:
-          return data, 200
+@app.route('/api/heartbeat', methods=['GET'])
+def api_heartbeat():
+    return jsonify({'status': 'ok'}), 200
         
 
 if __name__ == '__main__':
