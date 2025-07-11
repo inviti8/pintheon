@@ -88,6 +88,7 @@ class PintheonMachine(object):
         self.logged_in = False
         self.root_token = None
         self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
+        self.is_established = False
         self.static_path = static_path
         self.logo_url = None
         self.node_contract = None
@@ -186,7 +187,8 @@ class PintheonMachine(object):
 
         self.machine.add_transition(trigger='initialize', source='spawned', dest='initialized', conditions=['do_initialize'])
 
-        self.machine.add_transition(trigger='resume_state', source='spawned', dest='idle', conditions=['on_resume_state'])
+        # Allow resume_state from any state to idle
+        self.machine.add_transition(trigger='resume_state', source='*', dest='idle', conditions=['on_resume_state'])
 
         self.machine.add_transition(trigger='new', source='initialized', dest='establishing', conditions=['create_new_node'])
 
@@ -209,7 +211,7 @@ class PintheonMachine(object):
         print(self._dirs.user_config_dir)
         print(self._get_saved_state())
         print('@@@@@@@@@@@@----------------------------------------------------------------')
-        if self._get_saved_state() == 'idle':
+        if self._get_saved_established_state():
             self.resume_state()
 
     def soroban_online(self):
@@ -446,7 +448,10 @@ class PintheonMachine(object):
         return self._token_symbol(self.opus)
 
     def opus_balance(self):
-        return self._token_balance(self.opus)
+        raw = self._token_balance(self.opus)
+        if raw is not None:
+            return self.stroops_to_xlm(raw)
+        return 0
     
     def update_opus_balance(self):
         balance = self.opus_balance()
@@ -463,65 +468,154 @@ class PintheonMachine(object):
         tx = self.hvym_collective.symbol(self.stellar_keypair.public_key)
         return tx.result()
     
+    def _safe_contract_call(self, func, *args, **kwargs):
+        try:
+            result = func(*args, **kwargs)
+            return {'success': True, 'result': result}
+        except Exception as e:
+            print(f'Contract call failed: {e}')
+            return {'success': False, 'error': str(e)}
+
     def join_collective(self):
-        tx = self.hvym_collective.join(caller=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-        tx.sign_and_submit()
-        res = tx.result()
-        return res
-    
+        call_result = self._safe_contract_call(
+            self.hvym_collective.join,
+            caller=self.stellar_keypair.public_key,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            return call_result
+        try:
+            tx = call_result['result']
+            tx.sign_and_submit()
+            res = tx.result()
+            return {'success': True, 'result': res}
+        except Exception as e:
+            print(f'Error in join_collective tx: {e}')
+            return {'success': False, 'error': str(e)}
+
     def is_member(self):
         tx = self.hvym_collective.is_member(self.stellar_keypair.public_key)
         return tx.result()
     
     def deploy_node_token(self, name, descriptor):
-        tx = self.hvym_collective.deploy_node_token(caller=self.stellar_keypair.public_key, name=name, descriptor=descriptor, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-        tx.sign_and_submit()
-        return tx.result().address
+        call_result = self._safe_contract_call(
+            self.hvym_collective.deploy_node_token,
+            caller=self.stellar_keypair.public_key,
+            name=name,
+            descriptor=descriptor,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            return call_result
+        try:
+            tx = call_result['result']
+            tx.sign_and_submit()
+            address = tx.result().address
+            return {'success': True, 'address': address}
+        except Exception as e:
+            print(f'Error in deploy_node_token tx: {e}')
+            return {'success': False, 'error': str(e)}
 
     def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash="NONE"):
-        tx = self.hvym_collective.deploy_ipfs_token(caller=self.stellar_keypair.public_key, name=name, ipfs_hash=ipfs_hash, file_type=file_type, gateways=gateways, _ipns_hash=_ipns_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-        tx.sign_and_submit()
-        self.update_opus_balance()
-        self.add_file_token_to_toml(name, ipfs_hash)
-        return tx.result().address
-    
+        call_result = self._safe_contract_call(
+            self.hvym_collective.deploy_ipfs_token,
+            caller=self.stellar_keypair.public_key,
+            name=name,
+            ipfs_hash=ipfs_hash,
+            file_type=file_type,
+            gateways=gateways,
+            _ipns_hash=_ipns_hash,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            return call_result
+        try:
+            tx = call_result['result']
+            tx.sign_and_submit()
+            self.update_opus_balance()
+            self.add_file_token_to_toml(name, ipfs_hash)
+            address = tx.result().address
+            return {'success': True, 'address': address}
+        except Exception as e:
+            print(f'Error in deploy_ipfs_token tx: {e}')
+            return {'success': False, 'error': str(e)}
+
     def publish_file(self, ipfs_hash):
         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
-        tx = self.hvym_collective.publish_file(caller=self.stellar_keypair.public_key, publisher=self.stellar_25519_keypair.public_key(), ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-
-        tx.sign()
-        send_transaction = self.soroban_server.send_transaction(tx)
-        while True:
-            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
-            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+        call_result = self._safe_contract_call(
+            self.hvym_collective.publish_file,
+            caller=self.stellar_keypair.public_key,
+            publisher=self.stellar_25519_keypair.public_key(),
+            ipfs_hash=ipfs_hash,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            transaction['error'] = call_result['error']
+            return transaction
+        try:
+            tx = call_result['result']
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
                     break
-            time.sleep(3)
-
-        if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
-            transaction['hash'] = send_transaction.hash
-            transaction['successful'] = True
-            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
-
+                time.sleep(3)
+                attempts += 1
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                transaction['hash'] = send_transaction.hash
+                transaction['successful'] = True
+                transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+            else:
+                transaction['error'] = f"Transaction status: {get_transaction_data.status}"
+        except Exception as e:
+            print(f'Error in publish_file tx: {e}')
+            transaction['error'] = str(e)
         return transaction
 
     
     def publish_encrypted_file(self, recipient, ipfs_hash):
         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
         
-        tx = self.hvym_collective.publish_encrypted_share(caller=self.stellar_keypair.public_key, publisher=self.stellar_25519_keypair.public_key(), recipient=recipient, ipfs_hash=ipfs_hash, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-        tx.sign()
-        send_transaction = self.soroban_server.send_transaction(tx)
-        while True:
-            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
-            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+        call_result = self._safe_contract_call(
+            self.hvym_collective.publish_encrypted_share,
+            caller=self.stellar_keypair.public_key,
+            publisher=self.stellar_25519_keypair.public_key(),
+            recipient=recipient,
+            ipfs_hash=ipfs_hash,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            transaction['error'] = call_result['error']
+            return transaction
+        try:
+            tx = call_result['result']
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
                     break
-            time.sleep(3)
-
-        if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
-            transaction['hash'] = send_transaction.hash
-            transaction['successful'] = True
-            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
-
+                time.sleep(3)
+                attempts += 1
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                transaction['hash'] = send_transaction.hash
+                transaction['successful'] = True
+                transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+            else:
+                transaction['error'] = f"Transaction status: {get_transaction_data.status}"
+        except Exception as e:
+            print(f'Error in publish_encrypted_file tx: {e}')
+            transaction['error'] = str(e)
         return transaction
     
     def add_file_token_to_toml(self, name, cid):
@@ -533,77 +627,162 @@ class PintheonMachine(object):
          return self._token_balance(token) / 10
 
     def ipfs_token_mint(self, cid, token_id, recieving_address, amount):
-         token = self._bind_ipfs_token(token_id)
-         tx = self._token_mint(token, recieving_address, amount, self.stellar_logo, True)
-         current_balance = self._token_balance(token)
-         if current_balance != None:
-            self.update_file_balance(cid, current_balance)
-
-         return tx
+        token = self._bind_ipfs_token(token_id)
+        call_result = self._safe_contract_call(
+            self._token_mint,
+            token,
+            recieving_address,
+            amount,
+            self.stellar_logo,
+            True
+        )
+        if not call_result['success']:
+            return call_result
+        try:
+            tx = call_result['result']
+            current_balance = self._token_balance(token)
+            if current_balance is not None:
+                self.update_file_balance(cid, current_balance)
+            return {'success': True, 'tx': tx}
+        except Exception as e:
+            print(f'Error in ipfs_token_mint: {e}')
+            return {'success': False, 'error': str(e)}
     
     def ipfs_custodial_mint(self, cid, token_id, amount):
         return self.ipfs_token_mint(cid, token_id, self.stellar_keypair.public_key, amount)
     
     def ipfs_token_send(self, cid, token_id, recieving_address, amount):
-         token = self._bind_ipfs_token(token_id)
-         tx = self._token_send(token, recieving_address, amount, self.stellar_logo, False)
-         current_balance = self._token_balance(token)
-         if current_balance != None:
-            self.update_file_balance(cid, current_balance)
-
-         return tx
+        token = self._bind_ipfs_token(token_id)
+        call_result = self._safe_contract_call(
+            self._token_send,
+            token,
+            recieving_address,
+            amount,
+            self.stellar_logo,
+            False
+        )
+        if not call_result['success']:
+            return call_result
+        try:
+            tx = call_result['result']
+            current_balance = self._token_balance(token)
+            if current_balance is not None:
+                self.update_file_balance(cid, current_balance)
+            return {'success': True, 'tx': tx}
+        except Exception as e:
+            print(f'Error in ipfs_token_send: {e}')
+            return {'success': False, 'error': str(e)}
     
     def _bind_ipfs_token(self, token_id):
          return IPFS_Token(token_id, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
     
     def _token_balance(self, token):
-         tx = token.balance(id=self.stellar_keypair.public_key, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-         return tx.result()
+        call_result = self._safe_contract_call(
+            token.balance,
+            id=self.stellar_keypair.public_key,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            print(f"Error in _token_balance: {call_result['error']}")
+            return None
+        try:
+            tx = call_result['result']
+            return tx.result()
+        except Exception as e:
+            print(f'Error in _token_balance tx: {e}')
+            return None
     
     def _token_send(self, token, recieving_address, amount, logo, convert_to_stroops=True):
-         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': logo}
-         if convert_to_stroops:
+        transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': logo}
+        if convert_to_stroops:
             amount = amount * 10**7
-         tx = token.transfer(from_=self.stellar_keypair.public_key, to=recieving_address, amount=amount, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-         tx.sign()
-         send_transaction = self.soroban_server.send_transaction(tx)
-         while True:
-            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
-            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+        call_result = self._safe_contract_call(
+            token.transfer,
+            from_=self.stellar_keypair.public_key,
+            to=recieving_address,
+            amount=amount,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            transaction['error'] = call_result['error']
+            return transaction
+        try:
+            tx = call_result['result']
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
                     break
-            time.sleep(3)
-
-         if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
-            transaction['hash'] = send_transaction.hash
-            transaction['successful'] = True
-            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
-
-         return transaction
+                time.sleep(3)
+                attempts += 1
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                transaction['hash'] = send_transaction.hash
+                transaction['successful'] = True
+                transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+            else:
+                transaction['error'] = f"Transaction status: {get_transaction_data.status}"
+        except Exception as e:
+            print(f'Error in _token_send tx: {e}')
+            transaction['error'] = str(e)
+        return transaction
     
     def _token_mint(self, token, recieving_address, amount, logo, file_token= False):
          if not file_token:
              amount = amount * 10**7
              
          transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': logo}
-         tx = token.mint(recieving_address, amount, source=self.stellar_keypair.public_key, signer=self.stellar_keypair)
-         tx.sign()
-         send_transaction = self.soroban_server.send_transaction(tx)
-         while True:
-            get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
-            if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+         call_result = self._safe_contract_call(
+            token.mint,
+            recieving_address,
+            amount,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+         if not call_result['success']:
+            transaction['error'] = call_result['error']
+            return transaction
+         try:
+            tx = call_result['result']
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
                     break
-            time.sleep(3)
-
-         if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
-            transaction['hash'] = send_transaction.hash
-            transaction['successful'] = True
-            transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
-
+                time.sleep(3)
+                attempts += 1
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                transaction['hash'] = send_transaction.hash
+                transaction['successful'] = True
+                transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+            else:
+                transaction['error'] = f"Transaction status: {get_transaction_data.status}"
+         except Exception as e:
+            print(f'Error in _token_mint tx: {e}')
+            transaction['error'] = str(e)
          return transaction
     
     def _token_symbol(self, token):
-         tx = token.symbol(self.stellar_keypair.public_key)
-         return tx.result()
+        call_result = self._safe_contract_call(
+            token.symbol,
+            self.stellar_keypair.public_key
+        )
+        if not call_result['success']:
+            print(f"Error in _token_symbol: {call_result['error']}")
+            return None
+        try:
+            tx = call_result['result']
+            return tx.result()
+        except Exception as e:
+            print(f'Error in _token_symbol tx: {e}')
+            return None
     
     def _initialize_token_book_data(self):
         xlm_balance = self.stellar_xlm_balance()
@@ -808,6 +987,7 @@ class PintheonMachine(object):
         print('established!!')
         self.view_components = 'dashboard'
         self.active_page = 'authorize'
+        self.is_established = True
         self._update_state_data()
         self._update_customization()
         return True
@@ -886,7 +1066,7 @@ class PintheonMachine(object):
     
     def _update_state_data(self):
         self._open_db()
-        data = { 'id': 'SAVED_STATE', 'current_state':str(self.state) }
+        data = { 'id': 'SAVED_STATE', 'current_state':str(self.state), 'established': self.is_established }
         self._update_table_doc(self.state_data, data)
         self.db.close()
 
@@ -957,8 +1137,20 @@ class PintheonMachine(object):
         file = Query()
         record = self.state_data.get(file.id == 'SAVED_STATE')
         if record != None:
+            self.is_established = record['established']
             result = record['current_state']
         self.db.close()
+        return result
+    
+    def _get_saved_established_state(self):
+        result = False
+        if os.path.isfile(self.db_path):
+            self._open_db()
+            file = Query()
+            record = self.state_data.get(file.id == 'SAVED_STATE')
+            if record != None:
+                result = record['established']
+            self.db.close()
         return result
 
     def get_customization(self):
