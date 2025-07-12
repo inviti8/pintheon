@@ -160,3 +160,21 @@ header {
 span.thick {
   font-weight: bold;
 }
+
+.homepage-status.status-active {
+  color: #4CAF50;
+  font-weight: bold;
+  padding: 4px 8px;
+  background-color: #E8F5E8;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.homepage-status.status-inactive {
+  color: #FF9800;
+  font-weight: bold;
+  padding: 4px 8px;
+  background-color: #FFF3E0;
+  border-radius: 4px;
+  font-size: 0.9em;
+}

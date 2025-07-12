@@ -126,6 +126,7 @@
 
                       <ons-lazy-repeat id="settings-info"></ons-lazy-repeat>
                       <ons-lazy-repeat id="settings-appearance"></ons-lazy-repeat>
+                      <ons-lazy-repeat id="settings-homepage"></ons-lazy-repeat>
 
                     </div>  
                   </div>
@@ -593,6 +594,52 @@
       </ons-list-item>
     </ons-list>
   </template>
+
+  <template id="settings-homepage-template">
+    <ons-list class="stat-ul" style="width:40%; height:200px;">
+      <ons-list-header>HOMEPAGE</ons-list-header>
+      <ons-list-item style="width:100%;" >
+            <header class="center-both">
+              <pre><span class="list-item__subtitle">status:   </span></pre>
+              <span id="settings-homepage-status" class="homepage-status">Checking...</span>
+            </header>
+      </ons-list-item>
+      <ons-list-item style="width:100%;" >
+            <header class="center-both">
+              <pre><span class="list-item__subtitle">upload:   </span></pre>
+              <span>
+              <ons-button modifier="quiet" id="settings-homepage-upload-button" class="scale-on-hover-icon can-callback" ripple>
+                <input type="file" id="settings-homepage-upload-input" style="display: none;" accept=".zip">
+                <ons-icon icon="fa-upload"></ons-icon>
+              </ons-button>
+              <ons-button modifier="quiet" id="settings-homepage-remove-button" class="scale-on-hover-icon can-callback" ripple disabled>
+                <ons-icon icon="fa-remove"></ons-icon>
+              </ons-button>
+            </span>
+            </header>
+      </ons-list-item>
+    </ons-list>
+  </template>
+
+  <style>
+  .homepage-status.status-active {
+    color: #4CAF50;
+    font-weight: bold;
+    padding: 4px 8px;
+    background-color: #E8F5E8;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  .homepage-status.status-inactive {
+    color: #FF9800;
+    font-weight: bold;
+    padding: 4px 8px;
+    background-color: #FFF3E0;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  </style>
   
   <template id="peer-list-items-template">
     <ons-list-item>

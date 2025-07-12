@@ -1,6 +1,8 @@
 import os
 import requests
-from flask import Flask, render_template, request, session, abort, redirect, jsonify, url_for, send_file, make_response
+import zipfile
+import tempfile
+from flask import Flask, render_template, request, session, abort, redirect, jsonify, url_for, send_file, make_response, send_from_directory
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound, HTTPException
 from pymacaroons import Macaroon, Verifier
@@ -10,6 +12,8 @@ from pintheonMachine import PintheonMachine
 from StellarTomlGenerator import StellarTomlGenerator
 from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 from functools import wraps
+import mimetypes
+import shutil
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -52,12 +56,20 @@ PINTHEON_DATA_DIR = get_data_directory()
 PINTHEON_IPFS_PATH = os.environ.get('PINTHEON_IPFS_PATH', os.path.join(PINTHEON_DATA_DIR, 'ipfs'))
 PINTHEON_DB_PATH = os.environ.get('PINTHEON_DB_PATH', os.path.join(PINTHEON_DATA_DIR, 'db'))
 
+# Updated paths using environment variables
+STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
+DB_PATH = os.path.join(PINTHEON_DB_PATH, "enc_db.json")
+COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
+
 # Ensure data directories exist with error handling
 def ensure_directories():
     """Create data directories if they don't exist"""
-    global PINTHEON_DATA_DIR, PINTHEON_IPFS_PATH, PINTHEON_DB_PATH
+    global PINTHEON_DATA_DIR, PINTHEON_IPFS_PATH, PINTHEON_DB_PATH, CUSTOM_HOMEPAGE_PATH
     
-    directories = [PINTHEON_DATA_DIR, PINTHEON_DB_PATH, PINTHEON_IPFS_PATH]
+    # Define CUSTOM_HOMEPAGE_PATH here after PINTHEON_DATA_DIR is set
+    CUSTOM_HOMEPAGE_PATH = os.path.join(PINTHEON_DATA_DIR, "custom_homepage")
+    
+    directories = [PINTHEON_DATA_DIR, PINTHEON_DB_PATH, PINTHEON_IPFS_PATH, CUSTOM_HOMEPAGE_PATH]
     for directory in directories:
         try:
             os.makedirs(directory, exist_ok=True)
@@ -73,9 +85,11 @@ def ensure_directories():
                     PINTHEON_DATA_DIR = fallback_dir
                     PINTHEON_IPFS_PATH = os.path.join(fallback_dir, 'ipfs')
                     PINTHEON_DB_PATH = os.path.join(fallback_dir, 'db')
+                    CUSTOM_HOMEPAGE_PATH = os.path.join(fallback_dir, 'custom_homepage')
                     # Create the subdirectories
                     os.makedirs(PINTHEON_IPFS_PATH, exist_ok=True)
                     os.makedirs(PINTHEON_DB_PATH, exist_ok=True)
+                    os.makedirs(CUSTOM_HOMEPAGE_PATH, exist_ok=True)
                     break
                 except (OSError, PermissionError) as e2:
                     print(f"Error: Could not create fallback directory {fallback_dir}: {e2}")
@@ -83,10 +97,8 @@ def ensure_directories():
 
 ensure_directories()
 
-# Updated paths using environment variables
-STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
-DB_PATH = os.path.join(PINTHEON_DB_PATH, "enc_db.json")
-COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
+# Now define CUSTOM_HOMEPAGE_PATH globally after ensure_directories() has run
+CUSTOM_HOMEPAGE_PATH = os.path.join(PINTHEON_DATA_DIR, "custom_homepage")
 
 PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=True)
 if PINTHEON.state == None or PINTHEON.state == 'spawned':
@@ -116,17 +128,24 @@ def require_fields(fields, source='json'):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
+            print(f"DEBUG: require_fields decorator called for {f.__name__}")
+            print(f"DEBUG: fields: {fields}, source: {source}")
             if source == 'json':
                 data = request.get_json()
+                print(f"DEBUG: JSON data keys: {list(data.keys()) if data else 'None'}")
                 if not _payload_valid(fields, data):
+                    print(f"DEBUG: Missing fields in JSON data")
                     abort(400)
                 return f(*args, **kwargs)
             elif source == 'form':
+                print(f"DEBUG: Form data keys: {list(request.form.keys())}")
                 for field in fields:
                     if field not in request.form:
+                        print(f"DEBUG: Missing field in form: {field}")
                         return "Missing or empty value for field: {}".format(field), 400
                 return f(*args, **kwargs)
             else:
+                print(f"DEBUG: Invalid source: {source}")
                 abort(400)
         return wrapper
     return decorator
@@ -135,9 +154,14 @@ def require_session_state(state='idle', active=True):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
+            print(f"DEBUG: require_session_state decorator called for {f.__name__}")
+            print(f"DEBUG: required state: {state}, current state: {PINTHEON.state}")
+            print(f"DEBUG: active required: {active}, session_active: {PINTHEON.session_active}")
             if active and not PINTHEON.session_active:
+                print(f"DEBUG: Session not active")
                 abort(403)
             if state and not PINTHEON.state == state:
+                print(f"DEBUG: State mismatch - required: {state}, current: {PINTHEON.state}")
                 abort(403)
             return f(*args, **kwargs)
         return wrapper
@@ -147,14 +171,21 @@ def require_token_verification(pub_field, token_field, source='json'):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
+            print(f"DEBUG: require_token_verification decorator called for {f.__name__}")
+            print(f"DEBUG: pub_field: {pub_field}, token_field: {token_field}, source: {source}")
             if source == 'json':
                 data = request.get_json()
+                print(f"DEBUG: JSON data for verification: {data}")
                 if not PINTHEON.verify_request(data[pub_field], data[token_field]):
+                    print(f"DEBUG: Token verification failed for JSON")
                     raise Unauthorized()
             elif source == 'form':
+                print(f"DEBUG: Form data for verification: pub={request.form.get(pub_field)}, token={request.form.get(token_field)}")
                 if not PINTHEON.verify_request(request.form[pub_field], request.form[token_field]):
+                    print(f"DEBUG: Token verification failed for form")
                     raise Unauthorized()
             else:
+                print(f"DEBUG: Invalid source for token verification: {source}")
                 abort(400)
             return f(*args, **kwargs)
         return wrapper
@@ -208,6 +239,72 @@ def _get_file_cid(file, files):
                 break
 
     return cid
+
+def _get_mime_type(filename):
+    """Get MIME type for a file"""
+    mime_type, _ = mimetypes.guess_type(filename)
+    return mime_type or 'application/octet-stream'
+
+def _custom_homepage_exists():
+    """Check if a custom homepage exists"""
+    index_files = ['index.html', 'index.htm', 'index.php']
+    
+    # Check in root directory first
+    for filename in index_files:
+        if os.path.exists(os.path.join(CUSTOM_HOMEPAGE_PATH, filename)):
+            return True
+    
+    # Check in subdirectories
+    for root, dirs, files in os.walk(CUSTOM_HOMEPAGE_PATH):
+        for filename in files:
+            if filename in index_files:
+                return True
+    
+    return False
+
+def _get_custom_homepage_file():
+    """Get the main file of the custom homepage"""
+    index_files = ['index.html', 'index.htm', 'index.php']
+    
+    # Check in root directory first
+    for filename in index_files:
+        filepath = os.path.join(CUSTOM_HOMEPAGE_PATH, filename)
+        if os.path.exists(filepath):
+            return filename
+    
+    # Check in subdirectories
+    for root, dirs, files in os.walk(CUSTOM_HOMEPAGE_PATH):
+        for filename in files:
+            if filename in index_files:
+                # Return the relative path from CUSTOM_HOMEPAGE_PATH
+                rel_path = os.path.relpath(os.path.join(root, filename), CUSTOM_HOMEPAGE_PATH)
+                return rel_path
+    
+    return None
+
+def _extract_zip_to_homepage(zip_file):
+    """Extract uploaded ZIP file to custom homepage directory"""
+    try:
+        # Clear existing homepage
+        if os.path.exists(CUSTOM_HOMEPAGE_PATH):
+            shutil.rmtree(CUSTOM_HOMEPAGE_PATH)
+        os.makedirs(CUSTOM_HOMEPAGE_PATH, exist_ok=True)
+        
+        # Extract ZIP file
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            zip_ref.extractall(CUSTOM_HOMEPAGE_PATH)
+        
+        # Debug: List extracted files
+        print(f"DEBUG: Extracted files in {CUSTOM_HOMEPAGE_PATH}:")
+        for root, dirs, files in os.walk(CUSTOM_HOMEPAGE_PATH):
+            for file in files:
+                rel_path = os.path.relpath(os.path.join(root, file), CUSTOM_HOMEPAGE_PATH)
+                print(f"DEBUG:   {rel_path}")
+        
+        return True
+    except Exception as e:
+        print(f"Error extracting ZIP file: {e}")
+        return False
         
 
 
@@ -242,6 +339,29 @@ def unauthorized_access(e):
     return 'Server Error', 500
 
 ##ROUTES## 
+
+@app.route('/')
+def root():
+    """Root route - serve custom homepage if exists, otherwise redirect to admin"""
+    if _custom_homepage_exists():
+        index_file = _get_custom_homepage_file()
+        # If the index file is in a subdirectory, we need to handle it properly
+        if '/' in index_file:
+            # Index file is in a subdirectory, serve it from the subdirectory
+            subdir = os.path.dirname(index_file)
+            filename = os.path.basename(index_file)
+            return send_from_directory(os.path.join(CUSTOM_HOMEPAGE_PATH, subdir), filename)
+        else:
+            # Index file is in the root directory
+            return send_from_directory(CUSTOM_HOMEPAGE_PATH, index_file)
+    else:
+        return redirect(url_for('admin'))
+
+@app.route('/custom_homepage/<path:filename>')
+def custom_homepage_static(filename):
+    """Serve static files from custom homepage directory"""
+    return send_from_directory(CUSTOM_HOMEPAGE_PATH, filename)
+
 @app.route('/admin')
 def admin():
    print('-----------------------------------')
@@ -696,6 +816,105 @@ def remove_bg_img():
         return jsonify({'error': 'Cannot get dash data'}), 400
     else:
         return data, 200
+
+@app.route('/upload_homepage', methods=['POST'])
+@cross_origin()
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def upload_homepage():
+    """Upload a ZIP file containing the custom homepage"""
+    print(f"DEBUG: upload_homepage called")
+    print(f"DEBUG: request.files keys: {list(request.files.keys())}")
+    print(f"DEBUG: request.form keys: {list(request.form.keys())}")
+    print(f"DEBUG: PINTHEON.state: {PINTHEON.state}")
+    print(f"DEBUG: PINTHEON.session_active: {PINTHEON.session_active}")
+    
+    if 'file' not in request.files:
+        print(f"DEBUG: No file in request.files")
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    print(f"DEBUG: file.filename: {file.filename}")
+    print(f"DEBUG: file.mimetype: {file.mimetype}")
+    
+    if file.filename == '':
+        print(f"DEBUG: Empty filename")
+        return jsonify({'error': 'No file selected'}), 400
+    
+    # Check if it's a ZIP file
+    if not file.filename.lower().endswith('.zip'):
+        print(f"DEBUG: Not a ZIP file: {file.filename}")
+        return jsonify({'error': 'Please upload a ZIP file containing your website'}), 400
+    
+    # Save the ZIP file temporarily and extract it
+    try:
+        # Save ZIP file to a temporary location
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
+            file.save(tmp_file.name)
+            zip_path = tmp_file.name
+        
+        print(f"DEBUG: Saved ZIP to {zip_path}")
+        
+        # Extract ZIP file
+        if _extract_zip_to_homepage(zip_path):
+            print(f"DEBUG: ZIP extraction successful")
+            # Clean up the temporary ZIP file
+            os.remove(zip_path)
+            
+            # Check if an index file was created
+            if _custom_homepage_exists():
+                print(f"DEBUG: Custom homepage exists")
+                return jsonify({'success': True, 'message': 'Homepage uploaded successfully'}), 200
+            else:
+                print(f"DEBUG: No index file found")
+                return jsonify({'error': 'No index.html, index.htm, or index.php found in the ZIP file'}), 400
+        else:
+            print(f"DEBUG: ZIP extraction failed")
+            # Clean up the temporary ZIP file even if extraction failed
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+            return jsonify({'error': 'Failed to extract ZIP file'}), 400
+            
+    except Exception as e:
+        print(f"DEBUG: Exception in upload_homepage: {str(e)}")
+        # Clean up the temporary ZIP file in case of any error
+        if 'zip_path' in locals() and os.path.exists(zip_path):
+            os.remove(zip_path)
+        return jsonify({'error': f'Error processing file: {str(e)}'}), 400
+
+@app.route('/remove_homepage', methods=['POST'])
+@cross_origin()
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def remove_homepage():
+    """Remove the custom homepage"""
+    try:
+        if os.path.exists(CUSTOM_HOMEPAGE_PATH):
+            shutil.rmtree(CUSTOM_HOMEPAGE_PATH)
+            os.makedirs(CUSTOM_HOMEPAGE_PATH, exist_ok=True)
+        return jsonify({'success': True, 'message': 'Homepage removed successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': f'Error removing homepage: {str(e)}'}), 400
+
+@app.route('/homepage_status', methods=['POST'])
+@cross_origin()
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def homepage_status():
+    """Get the status of the custom homepage"""
+    exists = _custom_homepage_exists()
+    if exists:
+        index_file = _get_custom_homepage_file()
+        return jsonify({
+            'exists': True,
+            'index_file': index_file,
+            'files': os.listdir(CUSTOM_HOMEPAGE_PATH) if os.path.exists(CUSTOM_HOMEPAGE_PATH) else []
+        }), 200
+    else:
+        return jsonify({'exists': False}), 200
 
 @app.route('/api/heartbeat', methods=['GET'])
 def api_heartbeat():

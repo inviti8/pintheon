@@ -74,6 +74,7 @@ async function init() {
             console.log(data)
             window.dlg.hide('loading-dialog');
             _updateDashData(data)
+            window.dash.AUTHORIZED = true;
             window.rndr.dashboard();
           });
     
@@ -91,6 +92,11 @@ function startHeartbeat() {
             .then(res => {
                 if (!res.ok) throw new Error('Server error');
                 missed = 0; // Reset on success
+                
+                // Update dashboard data on successful heartbeat
+                // if (window.dash.AUTHORIZED) {
+                //     dash_data(dash_updated);
+                // }
             })
             .catch(() => {
                 missed++;
@@ -132,6 +138,7 @@ const on_authorized = async (node) => {
         window.fn.store(window.dash.SESSION_KEYS, session_jwk, 'local');
         window.fn.store(window.dash.NODE, node, 'local');
         _updateDashData(node);
+        window.dash.AUTHORIZED = true;
 
         window.fn.pushPage('dashboard', node);
     };
@@ -153,6 +160,7 @@ const deauthorize = async () => {
 const logged_out = () => {
     localStorage.removeItem(window.dash.SESSION_KEYS);
     localStorage.removeItem(window.dash.NODE);
+    window.dash.AUTHORIZED = false;
     location.reload();
 };
 
@@ -434,6 +442,79 @@ const remove_bg = async () => {
     await window.fn.removeBg(formData, '/remove_bg_img', bg_removed);
 };
 
+const upload_homepage = async (file) => {
+    const session = _getSessionData();
+
+    if(file){
+        const formData = new FormData()
+
+        formData.append('token', session.token.serialize());
+        formData.append('client_pub', session.pub);
+        formData.append('file', file);
+        await window.fn.uploadFile(file, formData, '/upload_homepage', homepage_updated);
+    };
+};
+
+const homepage_updated = (response) => {
+    console.log(response)
+    if(response.success){
+        ons.notification.alert('Homepage uploaded successfully!');
+        get_homepage_status();
+    } else {
+        ons.notification.alert('Error uploading homepage: ' + response.error);
+    }
+};
+
+const remove_homepage = async () => {
+    const session = _getSessionData();
+    const formData = new FormData()
+
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+        
+    await window.fn.formCall('Remove homepage failed', formData, '/remove_homepage', homepage_removed, 'POST', false);
+};
+
+const homepage_removed = (response) => {
+    console.log(response)
+    if(response.success){
+        ons.notification.alert('Homepage removed successfully!');
+        get_homepage_status();
+    } else {
+        ons.notification.alert('Error removing homepage: ' + response.error);
+    }
+};
+
+const get_homepage_status = async () => {
+    const session = _getSessionData();
+    const formData = new FormData()
+
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+        
+    await window.fn.formCall('Get homepage status failed', formData, '/homepage_status', homepage_status_updated, 'POST', false);
+};
+
+const homepage_status_updated = (response) => {
+    console.log(response)
+    // Update UI to show homepage status
+    const statusElement = document.querySelector('#settings-homepage-status');
+    const uploadButton = document.querySelector('#settings-homepage-upload-button');
+    const removeButton = document.querySelector('#settings-homepage-remove-button');
+    
+    if(statusElement){
+        if(response.exists){
+            statusElement.textContent = `Active (${response.index_file})`;
+            statusElement.className = 'status-active';
+            if(removeButton) removeButton.disabled = false;
+        } else {
+            statusElement.textContent = 'No custom homepage';
+            statusElement.className = 'status-inactive';
+            if(removeButton) removeButton.disabled = true;
+        }
+    }
+};
+
 const bg_removed = (data) => {
 
     console.log(data)
@@ -689,6 +770,16 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_ELEM('settings-appearance', _updateElem, selected_theme, themes, bg_img);
     };
 
+    window.rndr.settingsHomepage = function(){
+
+        let _updateElem = function(clone, elem){
+            // Initialize homepage status
+            get_homepage_status();
+        }
+
+        window.rndr.RENDER_ELEM('settings-homepage', _updateElem);
+    };
+
     window.rndr.peerListItems = function(peerList){
 
         let _updateElem = function(clone, i, peerList){
@@ -730,12 +821,19 @@ document.addEventListener('init', function(event) {
     window.rndr.settings = function(){
         window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.dash.data.host);
         window.rndr.settingsAppearance(window.dash.data.customization.current_theme, window.dash.data.customization.themes, window.dash.data.customization.bg_img);
+        window.rndr.settingsHomepage();
+        
         let gateway = document.querySelector('#settings-info-gateway-url');
         let update_gateway_btn = document.querySelector('#settings-info-update-gateway');
         let theme_select = document.querySelector('#settings-appearance-select');
         let upload_btn = document.querySelector('#settings-appearance-bg-button');
         let remove_btn = document.querySelector('#settings-appearance-remove-bg-button');
         let add_token_btn = document.querySelector('#settings-add-access-token-button');
+        
+        // Homepage settings elements
+        let homepage_upload_btn = document.querySelector('#settings-homepage-upload-button');
+        let homepage_remove_btn = document.querySelector('#settings-homepage-remove-button');
+        let homepage_upload_input = document.querySelector('#settings-homepage-upload-input');
 
         if(window.constants.HAS_BG_IMG){
             remove_btn.disabled = false;
@@ -760,6 +858,27 @@ document.addEventListener('init', function(event) {
         add_token_btn.onclick = function (){
             add_access_token_dlg(add_access_token);
         };
+
+        // Homepage event handlers
+        if(homepage_upload_btn){
+            homepage_upload_btn.onclick = function () {
+                homepage_upload_input.click();
+            };
+        }
+
+        if(homepage_upload_input){
+            homepage_upload_input.onchange = function (event) {
+                if(event.target.files.length > 0){
+                    upload_homepage(event.target.files[0]);
+                }
+            };
+        }
+
+        if(homepage_remove_btn){
+            homepage_remove_btn.onclick = function () {
+                remove_homepage();
+            };
+        }
 
         window.rndr.accessTokenListItems(window.dash.data.access_tokens)
     }

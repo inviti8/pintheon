@@ -40,8 +40,7 @@ deactivate
 usermod -a -G root www-data
 chmod +x pintheon/setup_apptainer.sh
 ./pintheon/setup_apptainer.sh
-# chmod +x pintheon/install_kubo_apptainer.sh
-# ./pintheon/install_kubo_apptainer.sh
+
 # ufw reset
 # ufw default allow outgoing
 # ufw default allow incoming
