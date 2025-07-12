@@ -24,14 +24,24 @@ Pintheon uses a configurable data storage architecture designed for Apptainer co
 
 ### Environment Variables
 
-- `PINTHEON_DATA_DIR`: Base directory for persistent data (default: `/home/pintheon/data`)
+- `PINTHEON_DATA_DIR`: Base directory for persistent data
 - `PINTHEON_IPFS_PATH`: IPFS repository location (default: `${PINTHEON_DATA_DIR}/ipfs`)
 - `PINTHEON_DB_PATH`: Database storage location (default: `${PINTHEON_DATA_DIR}/db`)
+
+### Default Directory Locations
+
+**Development Environment** (no environment variables set):
+- **Linux**: `~/.local/share/PINTHEON/`
+- **macOS**: `~/Library/Application Support/PINTHEON/`
+- **Windows**: `%LOCALAPPDATA%\PINTHEON\`
+
+**Container Environment** (Apptainer/Docker):
+- **Container**: `/home/pintheon/data/`
 
 ### Directory Structure
 
 ```
-/home/pintheon/data/          # Container path (bind mounted)
+PINTHEON_DATA_DIR/
 ├── ipfs/                     # IPFS repository
 │   ├── config               # IPFS configuration
 │   ├── swarm.key            # Private swarm key
@@ -78,21 +88,22 @@ For development on a Linux VM:
    pip install -r requirements.txt
    ```
 
-2. **Set Environment Variables**
+2. **Start Application** (uses platformdirs defaults)
+   ```bash
+   python3 pintheon.py
+   ```
+
+3. **Or set custom environment variables**
    ```bash
    export PINTHEON_DATA_DIR=/home/test
    export PINTHEON_IPFS_PATH=/home/test/.ipfs
    export PINTHEON_DB_PATH=/home/test/db
+   python3 pintheon.py
    ```
 
-3. **Install IPFS**
+4. **Install IPFS** (if needed)
    ```bash
    ./install_kubo.sh
-   ```
-
-4. **Start Application**
-   ```bash
-   python3 pintheon.py
    ```
 
 ## Host Configuration

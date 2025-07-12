@@ -5,11 +5,55 @@ This document describes the configurable data storage architecture for Pintheon 
 ## Environment Variables
 
 ### Core Data Directory
-- `PINTHEON_DATA_DIR`: Base directory for all persistent data (default: `/home/pintheon/data`)
+- `PINTHEON_DATA_DIR`: Base directory for all persistent data
 
 ### Subdirectories
 - `PINTHEON_IPFS_PATH`: IPFS repository location (default: `${PINTHEON_DATA_DIR}/ipfs`)
 - `PINTHEON_DB_PATH`: Database storage location (default: `${PINTHEON_DATA_DIR}/db`)
+
+## Default Directory Locations
+
+### Development Environment (No Environment Variables Set)
+When no environment variables are set, Pintheon uses `platformdirs` to determine the data location:
+
+**Linux Development**:
+```
+~/.local/share/PINTHEON/
+├── ipfs/                     # IPFS repository
+├── db/                       # Database files
+│   └── enc_db.json          # Encrypted database
+└── ...
+```
+
+**macOS Development**:
+```
+~/Library/Application Support/PINTHEON/
+```
+
+**Windows Development**:
+```
+%LOCALAPPDATA%\PINTHEON\
+```
+
+### Container Environment (Apptainer/Docker)
+When running in a container environment, Pintheon uses:
+
+```
+/home/pintheon/data/
+├── ipfs/                     # IPFS repository
+├── db/                       # Database files
+│   └── enc_db.json          # Encrypted database
+└── ...
+```
+
+### Custom Environment Variables
+You can override the default behavior by setting environment variables:
+
+```bash
+export PINTHEON_DATA_DIR=/custom/path
+export PINTHEON_IPFS_PATH=/custom/path/ipfs
+export PINTHEON_DB_PATH=/custom/path/db
+```
 
 ## Directory Structure
 
@@ -29,9 +73,8 @@ PINTHEON_DATA_DIR/
 
 ### Development Environment (Manual VM Installation)
 ```bash
-export PINTHEON_DATA_DIR=/home/test
-export PINTHEON_IPFS_PATH=/home/test/.ipfs
-export PINTHEON_DB_PATH=/home/test/db
+# No environment variables needed - uses platformdirs defaults
+python3 pintheon.py
 ```
 
 ### Production Apptainer
@@ -73,9 +116,9 @@ apptainer run --bind /host/path/to/data:/home/pintheon/data pintheon.sif
 The application automatically creates the new directory structure. If migrating from the old hardcoded paths:
 
 1. Stop the application
-2. Copy existing database: `cp enc_db.json /home/pintheon/data/db/`
-3. Copy existing IPFS repo: `cp -r .ipfs /home/pintheon/data/ipfs`
-4. Set environment variables
+2. Copy existing database: `cp enc_db.json /path/to/new/data/db/`
+3. Copy existing IPFS repo: `cp -r .ipfs /path/to/new/data/ipfs`
+4. Set environment variables (if needed)
 5. Restart the application
 
 ## Security Considerations
@@ -100,4 +143,15 @@ The application automatically creates the new directory structure. If migrating 
 ### Permission Denied
 - Check directory ownership and permissions
 - Ensure user has write access to data directories
-- Verify Apptainer bind mount permissions 
+- Verify Apptainer bind mount permissions
+
+### Finding Your Data Directory
+To find where Pintheon is storing data:
+
+```bash
+# Check environment variables
+echo $PINTHEON_DATA_DIR
+
+# Or run this Python code
+python3 -c "import pintheon; print('Data directory:', pintheon.PINTHEON_DATA_DIR)"
+``` 

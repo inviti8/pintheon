@@ -29,11 +29,11 @@ def get_data_directory():
     if env_data_dir:
         return env_data_dir
     
-    # Use platformdirs for default location
-    dirs = PlatformDirs('PINTHEON', 'XRO Network', ensure_exists=True)
+    # Use platformdirs for default location (no app author)
+    dirs = PlatformDirs('PINTHEON', ensure_exists=True)
     
     # For container environments, prefer /home/pintheon/data
-    # For development, use platformdirs user_data_dir
+    # For development, use platformdirs user_data_dir directly
     if os.path.exists('/.dockerenv') or os.environ.get('APPTAINER_CONTAINER'):
         # Container environment
         default_container_path = '/home/pintheon/data'
@@ -42,10 +42,10 @@ def get_data_directory():
             return default_container_path
         except (OSError, PermissionError):
             # Fallback to platformdirs if container path not writable
-            return os.path.join(dirs.user_data_dir, 'data')
+            return dirs.user_data_dir
     else:
-        # Development environment
-        return os.path.join(dirs.user_data_dir, 'data')
+        # Development environment - use platformdirs directly
+        return dirs.user_data_dir
 
 # Get data directory with fallback
 PINTHEON_DATA_DIR = get_data_directory()
@@ -88,7 +88,7 @@ STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
 DB_PATH = os.path.join(PINTHEON_DB_PATH, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=False)
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=True)
 if PINTHEON.state == None or PINTHEON.state == 'spawned':
      PINTHEON.initialize()
 
