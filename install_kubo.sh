@@ -11,7 +11,13 @@ export SWARM_KEY=$(tr -dc a-f0-9 </dev/urandom | head -c 64; echo '')
 echo "Created secret: $SWARM_KEY"
 
 export LIBP2P_FORCE_PNET=1
-echo 'export IPFS_PATH=/home/test/.ipfs' >>~/.profile
+
+# Use environment variable for IPFS path, default to /home/test/.ipfs for development
+export PINTHEON_DATA_DIR=${PINTHEON_DATA_DIR:-/home/test}
+export PINTHEON_IPFS_PATH=${PINTHEON_IPFS_PATH:-$PINTHEON_DATA_DIR/.ipfs}
+
+echo "Using IPFS_PATH: $PINTHEON_IPFS_PATH"
+echo 'export IPFS_PATH='$PINTHEON_IPFS_PATH >>~/.profile
 source ~/.profile
 
 echo "IPFS_PATH:"
@@ -30,6 +36,7 @@ echo './kubo/install.sh'
 #sudo bash $HOME/kubo/install.sh
 ipfs --version
 
+# Ensure IPFS directory exists
 mkdir -p $IPFS_PATH
 
 #CREATE THE SWARM KEY

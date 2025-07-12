@@ -111,6 +111,8 @@ class PintheonMachine(object):
         self.access_tokens = None
 
         #-------IPFS--------
+        # Use environment variable for IPFS path if available
+        self.ipfs_path = os.environ.get('PINTHEON_IPFS_PATH', '/home/pintheon/data/ipfs')
         self.ipfs_daemon = ipfs_daemon
         self.ipfs_endpoint = self.ipfs_daemon+'/api/v0'
 
@@ -180,6 +182,7 @@ class PintheonMachine(object):
         self._client_generator_pub = None
         self._seed_cipher = None
 
+        # Use platformdirs for additional data storage if needed
         self._dirs = PlatformDirs('PINTHEON', 'XRO Network', ensure_exists=True)
 
         # Initialize the state machine
@@ -207,6 +210,9 @@ class PintheonMachine(object):
         self._initialize_db()
         print('@@@@@@@@@@@@----------------------------------------------------------------')
         print(self.uid)
+        print(f"Data Directory: {os.environ.get('PINTHEON_DATA_DIR', '/home/pintheon/data')}")
+        print(f"IPFS Path: {self.ipfs_path}")
+        print(f"DB Path: {self.db_path}")
         print(self._dirs.user_data_dir)
         print(self._dirs.user_config_dir)
         print(self._get_saved_state())

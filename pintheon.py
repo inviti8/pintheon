@@ -20,8 +20,72 @@ app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
+
+# Use platformdirs for cross-platform data directory management
+def get_data_directory():
+    """Get the appropriate data directory using platformdirs with fallback"""
+    # Try environment variable first
+    env_data_dir = os.environ.get('PINTHEON_DATA_DIR')
+    if env_data_dir:
+        return env_data_dir
+    
+    # Use platformdirs for default location
+    dirs = PlatformDirs('PINTHEON', 'XRO Network', ensure_exists=True)
+    
+    # For container environments, prefer /home/pintheon/data
+    # For development, use platformdirs user_data_dir
+    if os.path.exists('/.dockerenv') or os.environ.get('APPTAINER_CONTAINER'):
+        # Container environment
+        default_container_path = '/home/pintheon/data'
+        try:
+            os.makedirs(default_container_path, exist_ok=True)
+            return default_container_path
+        except (OSError, PermissionError):
+            # Fallback to platformdirs if container path not writable
+            return os.path.join(dirs.user_data_dir, 'data')
+    else:
+        # Development environment
+        return os.path.join(dirs.user_data_dir, 'data')
+
+# Get data directory with fallback
+PINTHEON_DATA_DIR = get_data_directory()
+PINTHEON_IPFS_PATH = os.environ.get('PINTHEON_IPFS_PATH', os.path.join(PINTHEON_DATA_DIR, 'ipfs'))
+PINTHEON_DB_PATH = os.environ.get('PINTHEON_DB_PATH', os.path.join(PINTHEON_DATA_DIR, 'db'))
+
+# Ensure data directories exist with error handling
+def ensure_directories():
+    """Create data directories if they don't exist"""
+    global PINTHEON_DATA_DIR, PINTHEON_IPFS_PATH, PINTHEON_DB_PATH
+    
+    directories = [PINTHEON_DATA_DIR, PINTHEON_DB_PATH, PINTHEON_IPFS_PATH]
+    for directory in directories:
+        try:
+            os.makedirs(directory, exist_ok=True)
+        except (OSError, PermissionError) as e:
+            print(f"Warning: Could not create directory {directory}: {e}")
+            # If we can't create the main data dir, try a fallback
+            if directory == PINTHEON_DATA_DIR:
+                fallback_dir = os.path.join(os.path.expanduser("~"), "pintheon_data")
+                try:
+                    os.makedirs(fallback_dir, exist_ok=True)
+                    print(f"Using fallback directory: {fallback_dir}")
+                    # Update all paths to use fallback
+                    PINTHEON_DATA_DIR = fallback_dir
+                    PINTHEON_IPFS_PATH = os.path.join(fallback_dir, 'ipfs')
+                    PINTHEON_DB_PATH = os.path.join(fallback_dir, 'db')
+                    # Create the subdirectories
+                    os.makedirs(PINTHEON_IPFS_PATH, exist_ok=True)
+                    os.makedirs(PINTHEON_DB_PATH, exist_ok=True)
+                    break
+                except (OSError, PermissionError) as e2:
+                    print(f"Error: Could not create fallback directory {fallback_dir}: {e2}")
+                    raise
+
+ensure_directories()
+
+# Updated paths using environment variables
 STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
-DB_PATH = os.path.join(SCRIPT_DIR, "enc_db.json")
+DB_PATH = os.path.join(PINTHEON_DB_PATH, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
 
 PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=False)
