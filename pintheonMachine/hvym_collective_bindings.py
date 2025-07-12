@@ -16,6 +16,7 @@ class DatakeyKind(Enum):
     Member = "Member"
     Collective = "Collective"
     Admin = "Admin"
+    AdminList = "AdminList"
 
 
 class Datakey:
@@ -35,6 +36,8 @@ class Datakey:
             return scval.to_enum(self.kind.name, None)
         if self.kind == DatakeyKind.Admin:
             return scval.to_enum(self.kind.name, None)
+        if self.kind == DatakeyKind.AdminList:
+            return scval.to_enum(self.kind.name, None)
         raise ValueError(f"Invalid kind: {self.kind}")
 
     @classmethod
@@ -47,6 +50,8 @@ class Datakey:
         if kind == DatakeyKind.Collective:
             return cls(kind)
         if kind == DatakeyKind.Admin:
+            return cls(kind)
+        if kind == DatakeyKind.AdminList:
             return cls(kind)
         raise ValueError(f"Invalid kind: {kind}")
 
@@ -260,7 +265,8 @@ class Client(ContractClient):
 
     def withdraw(
         self,
-        some: Union[Address, str],
+        caller: Union[Address, str],
+        recipient: Union[Address, str],
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
         base_fee: int = 100,
@@ -271,7 +277,7 @@ class Client(ContractClient):
     ) -> AssembledTransaction[bool]:
         return self.invoke(
             "withdraw",
-            [scval.to_address(some)],
+            [scval.to_address(caller), scval.to_address(recipient)],
             parse_result_xdr_fn=lambda v: scval.from_bool(v),
             source=source,
             signer=signer,
@@ -447,7 +453,8 @@ class Client(ContractClient):
 
     def remove(
         self,
-        caller: Union[Address, str],
+        admin_caller: Union[Address, str],
+        member_to_remove: Union[Address, str],
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
         base_fee: int = 100,
@@ -458,7 +465,7 @@ class Client(ContractClient):
     ) -> AssembledTransaction[bool]:
         return self.invoke(
             "remove",
-            [scval.to_address(caller)],
+            [scval.to_address(admin_caller), scval.to_address(member_to_remove)],
             parse_result_xdr_fn=lambda v: scval.from_bool(v),
             source=source,
             signer=signer,
@@ -601,8 +608,10 @@ class Client(ContractClient):
             restore=restore,
         )
 
-    def launch_opus(
+    def set_opus_token(
         self,
+        caller: Union[Address, str],
+        opus_contract_id: Union[Address, str],
         initial_alloc: int,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -611,11 +620,15 @@ class Client(ContractClient):
         submit_timeout: int = 30,
         simulate: bool = True,
         restore: bool = True,
-    ) -> AssembledTransaction[Address]:
+    ) -> AssembledTransaction[bool]:
         return self.invoke(
-            "launch_opus",
-            [scval.to_uint32(initial_alloc)],
-            parse_result_xdr_fn=lambda v: scval.from_address(v),
+            "set_opus_token",
+            [
+                scval.to_address(caller),
+                scval.to_address(opus_contract_id),
+                scval.to_uint32(initial_alloc),
+            ],
+            parse_result_xdr_fn=lambda v: scval.from_bool(v),
             source=source,
             signer=signer,
             base_fee=base_fee,
@@ -650,6 +663,7 @@ class Client(ContractClient):
 
     def update_join_fee(
         self,
+        caller: Union[Address, str],
         new_fee: int,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -661,7 +675,7 @@ class Client(ContractClient):
     ) -> AssembledTransaction[int]:
         return self.invoke(
             "update_join_fee",
-            [scval.to_uint32(new_fee)],
+            [scval.to_address(caller), scval.to_uint32(new_fee)],
             parse_result_xdr_fn=lambda v: scval.from_int128(v),
             source=source,
             signer=signer,
@@ -674,6 +688,7 @@ class Client(ContractClient):
 
     def update_mint_fee(
         self,
+        caller: Union[Address, str],
         new_fee: int,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -685,7 +700,7 @@ class Client(ContractClient):
     ) -> AssembledTransaction[int]:
         return self.invoke(
             "update_mint_fee",
-            [scval.to_uint32(new_fee)],
+            [scval.to_address(caller), scval.to_uint32(new_fee)],
             parse_result_xdr_fn=lambda v: scval.from_int128(v),
             source=source,
             signer=signer,
@@ -698,6 +713,7 @@ class Client(ContractClient):
 
     def update_opus_reward(
         self,
+        caller: Union[Address, str],
         new_reward: int,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -709,8 +725,107 @@ class Client(ContractClient):
     ) -> AssembledTransaction[int]:
         return self.invoke(
             "update_opus_reward",
-            [scval.to_uint32(new_reward)],
+            [scval.to_address(caller), scval.to_uint32(new_reward)],
             parse_result_xdr_fn=lambda v: scval.from_int128(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    def add_admin(
+        self,
+        caller: Union[Address, str],
+        new_admin: Union[Address, str],
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransaction[bool]:
+        return self.invoke(
+            "add_admin",
+            [scval.to_address(caller), scval.to_address(new_admin)],
+            parse_result_xdr_fn=lambda v: scval.from_bool(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    def remove_admin(
+        self,
+        caller: Union[Address, str],
+        admin_to_remove: Union[Address, str],
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransaction[bool]:
+        return self.invoke(
+            "remove_admin",
+            [scval.to_address(caller), scval.to_address(admin_to_remove)],
+            parse_result_xdr_fn=lambda v: scval.from_bool(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    def is_admin(
+        self,
+        caller: Union[Address, str],
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransaction[bool]:
+        return self.invoke(
+            "is_admin",
+            [scval.to_address(caller)],
+            parse_result_xdr_fn=lambda v: scval.from_bool(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    def get_admin_list(
+        self,
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransaction[List[Address]]:
+        return self.invoke(
+            "get_admin_list",
+            [],
+            parse_result_xdr_fn=lambda v: [
+                scval.from_address(e) for e in scval.from_vec(v)
+            ],
             source=source,
             signer=signer,
             base_fee=base_fee,
@@ -773,7 +888,8 @@ class ClientAsync(ContractClientAsync):
 
     async def withdraw(
         self,
-        some: Union[Address, str],
+        caller: Union[Address, str],
+        recipient: Union[Address, str],
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
         base_fee: int = 100,
@@ -784,7 +900,7 @@ class ClientAsync(ContractClientAsync):
     ) -> AssembledTransactionAsync[bool]:
         return await self.invoke(
             "withdraw",
-            [scval.to_address(some)],
+            [scval.to_address(caller), scval.to_address(recipient)],
             parse_result_xdr_fn=lambda v: scval.from_bool(v),
             source=source,
             signer=signer,
@@ -960,7 +1076,8 @@ class ClientAsync(ContractClientAsync):
 
     async def remove(
         self,
-        caller: Union[Address, str],
+        admin_caller: Union[Address, str],
+        member_to_remove: Union[Address, str],
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
         base_fee: int = 100,
@@ -971,7 +1088,7 @@ class ClientAsync(ContractClientAsync):
     ) -> AssembledTransactionAsync[bool]:
         return await self.invoke(
             "remove",
-            [scval.to_address(caller)],
+            [scval.to_address(admin_caller), scval.to_address(member_to_remove)],
             parse_result_xdr_fn=lambda v: scval.from_bool(v),
             source=source,
             signer=signer,
@@ -1114,8 +1231,10 @@ class ClientAsync(ContractClientAsync):
             restore=restore,
         )
 
-    async def launch_opus(
+    async def set_opus_token(
         self,
+        caller: Union[Address, str],
+        opus_contract_id: Union[Address, str],
         initial_alloc: int,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -1124,11 +1243,15 @@ class ClientAsync(ContractClientAsync):
         submit_timeout: int = 30,
         simulate: bool = True,
         restore: bool = True,
-    ) -> AssembledTransactionAsync[Address]:
+    ) -> AssembledTransactionAsync[bool]:
         return await self.invoke(
-            "launch_opus",
-            [scval.to_uint32(initial_alloc)],
-            parse_result_xdr_fn=lambda v: scval.from_address(v),
+            "set_opus_token",
+            [
+                scval.to_address(caller),
+                scval.to_address(opus_contract_id),
+                scval.to_uint32(initial_alloc),
+            ],
+            parse_result_xdr_fn=lambda v: scval.from_bool(v),
             source=source,
             signer=signer,
             base_fee=base_fee,
@@ -1163,6 +1286,7 @@ class ClientAsync(ContractClientAsync):
 
     async def update_join_fee(
         self,
+        caller: Union[Address, str],
         new_fee: int,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -1174,7 +1298,7 @@ class ClientAsync(ContractClientAsync):
     ) -> AssembledTransactionAsync[int]:
         return await self.invoke(
             "update_join_fee",
-            [scval.to_uint32(new_fee)],
+            [scval.to_address(caller), scval.to_uint32(new_fee)],
             parse_result_xdr_fn=lambda v: scval.from_int128(v),
             source=source,
             signer=signer,
@@ -1187,6 +1311,7 @@ class ClientAsync(ContractClientAsync):
 
     async def update_mint_fee(
         self,
+        caller: Union[Address, str],
         new_fee: int,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -1198,7 +1323,7 @@ class ClientAsync(ContractClientAsync):
     ) -> AssembledTransactionAsync[int]:
         return await self.invoke(
             "update_mint_fee",
-            [scval.to_uint32(new_fee)],
+            [scval.to_address(caller), scval.to_uint32(new_fee)],
             parse_result_xdr_fn=lambda v: scval.from_int128(v),
             source=source,
             signer=signer,
@@ -1211,6 +1336,7 @@ class ClientAsync(ContractClientAsync):
 
     async def update_opus_reward(
         self,
+        caller: Union[Address, str],
         new_reward: int,
         source: Union[str, MuxedAccount] = NULL_ACCOUNT,
         signer: Optional[Keypair] = None,
@@ -1222,8 +1348,107 @@ class ClientAsync(ContractClientAsync):
     ) -> AssembledTransactionAsync[int]:
         return await self.invoke(
             "update_opus_reward",
-            [scval.to_uint32(new_reward)],
+            [scval.to_address(caller), scval.to_uint32(new_reward)],
             parse_result_xdr_fn=lambda v: scval.from_int128(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    async def add_admin(
+        self,
+        caller: Union[Address, str],
+        new_admin: Union[Address, str],
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransactionAsync[bool]:
+        return await self.invoke(
+            "add_admin",
+            [scval.to_address(caller), scval.to_address(new_admin)],
+            parse_result_xdr_fn=lambda v: scval.from_bool(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    async def remove_admin(
+        self,
+        caller: Union[Address, str],
+        admin_to_remove: Union[Address, str],
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransactionAsync[bool]:
+        return await self.invoke(
+            "remove_admin",
+            [scval.to_address(caller), scval.to_address(admin_to_remove)],
+            parse_result_xdr_fn=lambda v: scval.from_bool(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    async def is_admin(
+        self,
+        caller: Union[Address, str],
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransactionAsync[bool]:
+        return await self.invoke(
+            "is_admin",
+            [scval.to_address(caller)],
+            parse_result_xdr_fn=lambda v: scval.from_bool(v),
+            source=source,
+            signer=signer,
+            base_fee=base_fee,
+            transaction_timeout=transaction_timeout,
+            submit_timeout=submit_timeout,
+            simulate=simulate,
+            restore=restore,
+        )
+
+    async def get_admin_list(
+        self,
+        source: Union[str, MuxedAccount] = NULL_ACCOUNT,
+        signer: Optional[Keypair] = None,
+        base_fee: int = 100,
+        transaction_timeout: int = 300,
+        submit_timeout: int = 30,
+        simulate: bool = True,
+        restore: bool = True,
+    ) -> AssembledTransactionAsync[List[Address]]:
+        return await self.invoke(
+            "get_admin_list",
+            [],
+            parse_result_xdr_fn=lambda v: [
+                scval.from_address(e) for e in scval.from_vec(v)
+            ],
             source=source,
             signer=signer,
             base_fee=base_fee,
