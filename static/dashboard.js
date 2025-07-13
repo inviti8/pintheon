@@ -673,9 +673,12 @@ document.addEventListener('init', function(event) {
 
         if(fileList.length===0)
             return;
-
+        
         let _updateElem = function(clone, i, host, fileList, logo){
-            let fileUrl = host + '/ipfs/' + fileList[i]['CID'];
+            // Ensure file URLs have the correct protocol (HTTP/HTTPS)
+            let protocol = window.location.protocol;
+            let fileUrl = protocol + '//' + host + '/ipfs/' + fileList[i]['CID'];
+
             let fileName = fileList[i]['Name'];
             let fileType = fileList[i]['Type'];
             let cid = fileList[i]['CID']
@@ -884,7 +887,9 @@ document.addEventListener('init', function(event) {
     }
 
     window.rndr.tokenize_file_dlg = function  (name, cid) {
-        let fileUrl = window.dash.data.host + '/ipfs/' + cid;
+        // Ensure file URLs have the correct protocol (HTTP/HTTPS)
+        let protocol = window.location.protocol;
+        let fileUrl = protocol + '//' + window.dash.data.host + '/ipfs/' + cid;
         let img = document.querySelector('#tokenize-file-dialog-img');
         let nameElem = document.querySelector('#tokenize-file-dialog-name');
         let btn = document.querySelector('#tokenize-file-dialog-button');

@@ -250,6 +250,12 @@ def _get_mime_type(filename):
     mime_type, _ = mimetypes.guess_type(filename)
     return mime_type or 'application/octet-stream'
 
+def _ensure_protocol(url, default_protocol='https'):
+    """Ensure URL has the correct protocol. If no protocol is present, add the default."""
+    if url and not url.startswith(('http://', 'https://')):
+        return f"{default_protocol}://{url}"
+    return url
+
 def _custom_homepage_exists():
     """Check if a custom homepage exists"""
     index_files = ['index.html', 'index.htm', 'index.php']
@@ -567,7 +573,7 @@ def update_logo():
         files = _handle_upload(required=['token', 'client_pub'], request=request, is_logo=True)
         cid = _get_file_cid(file, files)
     if cid is not None:
-        PINTHEON.logo_url = PINTHEON.url_host+'/ipfs/'+cid
+        PINTHEON.logo_url = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
         PINTHEON.update_node_data()
     data = PINTHEON.get_dashboard_data()
     if data is None:
@@ -585,7 +591,7 @@ def update_gateway():
     PINTHEON.url_host = host
     if '/ipfs/' in PINTHEON.logo_url:
         cid = PINTHEON.logo_url.split('/ipfs/')[-1]
-        PINTHEON.logo_url = PINTHEON.url_host+'/ipfs/'+cid
+        PINTHEON.logo_url = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
         PINTHEON.update_node_data()
     data = PINTHEON.get_dashboard_data()
     if data is None:
@@ -798,7 +804,7 @@ def update_bg_img():
         files = _handle_upload(required=['token', 'client_pub'], request=request, is_bg_img=True)
         cid = _get_file_cid(file, files)
     if cid is not None:
-        PINTHEON.bg_img = PINTHEON.url_host+'/ipfs/'+cid
+        PINTHEON.bg_img = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
         PINTHEON.update_node_data()
     PINTHEON.update_customization()
     data = PINTHEON.get_dashboard_data()
