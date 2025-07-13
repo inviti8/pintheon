@@ -100,7 +100,7 @@ ensure_directories()
 # Now define CUSTOM_HOMEPAGE_PATH globally after ensure_directories() has run
 CUSTOM_HOMEPAGE_PATH = os.path.join(PINTHEON_DATA_DIR, "custom_homepage")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=True)
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=False)
 if PINTHEON.state == None or PINTHEON.state == 'spawned':
      PINTHEON.initialize()
 
