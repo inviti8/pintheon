@@ -916,6 +916,55 @@ def homepage_status():
     else:
         return jsonify({'exists': False}), 200
 
+@app.route('/api_upload_homepage', methods=['POST'])
+@cross_origin()
+@require_fields(['access_token'], source='form')
+def api_upload_homepage():
+    """Upload a ZIP file containing the custom homepage using access token authentication"""
+    token = request.form['access_token']
+    if not PINTHEON.auth_token(token):
+        abort(403)
+    
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    # Check if it's a ZIP file
+    if not file.filename.lower().endswith('.zip'):
+        return jsonify({'error': 'Please upload a ZIP file containing your website'}), 400
+    
+    # Save the ZIP file temporarily and extract it
+    try:
+        # Save ZIP file to a temporary location
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
+            file.save(tmp_file.name)
+            zip_path = tmp_file.name
+        
+        # Extract ZIP file
+        if _extract_zip_to_homepage(zip_path):
+            # Clean up the temporary ZIP file
+            os.remove(zip_path)
+            
+            # Check if an index file was created
+            if _custom_homepage_exists():
+                return jsonify({'success': True, 'message': 'Homepage uploaded successfully'}), 200
+            else:
+                return jsonify({'error': 'No index.html, index.htm, or index.php found in the ZIP file'}), 400
+        else:
+            # Clean up the temporary ZIP file even if extraction failed
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+            return jsonify({'error': 'Failed to extract ZIP file'}), 400
+            
+    except Exception as e:
+        # Clean up the temporary ZIP file in case of any error
+        if 'zip_path' in locals() and os.path.exists(zip_path):
+            os.remove(zip_path)
+        return jsonify({'error': f'Error processing file: {str(e)}'}), 400
+
 @app.route('/api/heartbeat', methods=['GET'])
 def api_heartbeat():
     return jsonify({'status': 'ok'}), 200
