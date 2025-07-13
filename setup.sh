@@ -80,10 +80,6 @@ server {
 
     # Root location - serve custom homepage or redirect to admin
     location / {
-        try_files \$uri \$uri/ @flask_app;
-    }
-
-    location @flask_app {
         include proxy_params;
         proxy_pass http://unix:/home/test/pintheon/pintheon.sock;
     }
