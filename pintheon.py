@@ -208,12 +208,22 @@ def require_localhost():
             # Check if request is from localhost
             client_ip = request.remote_addr
             forwarded_for = request.headers.get('X-Forwarded-For')
+            real_ip = request.headers.get('X-Real-IP')
+            
+            # Debug all relevant headers
+            print(f"DEBUG: {f.__name__} - remote_addr: {client_ip}, X-Forwarded-For: {forwarded_for}, X-Real-IP: {real_ip}")
             
             # Allow localhost IPs
             localhost_ips = ['127.0.0.1', '::1', 'localhost']
             
-            # Check direct IP
+            # Check direct IP (this should work for nginx proxy scenarios)
             if client_ip in localhost_ips:
+                print(f"DEBUG: Allowing access to {f.__name__} from localhost IP: {client_ip}")
+                return f(*args, **kwargs)
+            
+            # Check X-Real-IP header (nginx sets this)
+            if real_ip and real_ip in localhost_ips:
+                print(f"DEBUG: Allowing access to {f.__name__} from localhost via X-Real-IP: {real_ip}")
                 return f(*args, **kwargs)
             
             # Check X-Forwarded-For header (for proxy scenarios)
@@ -221,10 +231,11 @@ def require_localhost():
                 # X-Forwarded-For can contain multiple IPs, first one is the original client
                 original_client = forwarded_for.split(',')[0].strip()
                 if original_client in localhost_ips:
+                    print(f"DEBUG: Allowing access to {f.__name__} from localhost via X-Forwarded-For: {original_client}")
                     return f(*args, **kwargs)
             
             # If not localhost, return 403 Forbidden
-            print(f"DEBUG: Access denied to {f.__name__} from {client_ip} (X-Forwarded-For: {forwarded_for})")
+            print(f"DEBUG: Access denied to {f.__name__} from {client_ip} (X-Forwarded-For: {forwarded_for}, X-Real-IP: {real_ip})")
             abort(403)
         return wrapper
     return decorator
