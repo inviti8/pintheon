@@ -44,7 +44,22 @@ server {
         try_files \$uri \$uri/ =404;
     }
 
-    location ~ ^/(admin|reset_init|new_node|establish|authorize|authorized|deauthorize|upload|api_upload|api_upload_homepage|remove_file|update_logo|tokenize_file|publish_file|send_file_token|send_token|update_gateway|add_access_token|remove_access_token|dashboard_data|update_theme|update_bg_img|remove_bg_img|upload_homepage|remove_homepage|homepage_status|end_session|api/heartbeat|\.well-known/stellar\.toml) {
+    # Protected routes - localhost only
+    location ~ ^/(admin|reset_init|new_node|establish|authorize|authorized|deauthorize|upload|api_upload|api_upload_homepage|remove_file|update_logo|tokenize_file|publish_file|send_file_token|send_token|update_gateway|add_access_token|remove_access_token|dashboard_data|update_theme|update_bg_img|remove_bg_img|upload_homepage|remove_homepage|homepage_status|end_session|api/heartbeat) {
+        # IP filtering - only allow localhost
+        allow 127.0.0.1;
+        allow ::1;
+        deny all;
+        
+        add_header Access-Control-Allow-Origin *;
+        add_header Access-Control-Allow-Methods *;
+
+        include proxy_params;
+        proxy_pass http://unix:/home/pintheon/pintheon.sock;
+    }
+
+    # Public routes - any IP (including Stellar TOML)
+    location ~ ^/(\.well-known/stellar\.toml) {
         add_header Access-Control-Allow-Origin *;
         add_header Access-Control-Allow-Methods *;
 
