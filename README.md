@@ -122,12 +122,17 @@ If migrating from the previous hardcoded paths:
 
 See `CONFIGURATION.md` for detailed configuration options and troubleshooting.
 
+### Localhost Route Restrictions
+
+Pintheon supports restricting administrative routes to localhost-only access while keeping public routes accessible through tunnels. See `LOCALHOST_RESTRICTIONS.md` for detailed information.
+
 ## Security
 
 - Database encryption using master key
 - IPFS private network with swarm key
 - Configurable directory permissions
 - Environment-based configuration
+- Localhost route restrictions for administrative access
 
 ## Development
 

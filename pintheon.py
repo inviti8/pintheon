@@ -21,6 +21,10 @@ MEGABYTE = (2 ** 10) ** 2
 app.config['MAX_CONTENT_LENGTH'] = None
 app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 
+# Configuration for localhost restrictions
+# Set to False for debugging if needed (rarely needed since development is on localhost)
+ENABLE_LOCALHOST_RESTRICTIONS = True
+
 CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
@@ -105,6 +109,7 @@ if PINTHEON.state == None or PINTHEON.state == 'spawned':
      PINTHEON.initialize()
 
 ##UTILITIES###
+
 def _load_components(comp):
    result = None
    with open(os.path.join(COMPONENT_PATH, f'{comp}.html'), 'r') as f:
@@ -188,6 +193,39 @@ def require_token_verification(pub_field, token_field, source='json'):
                 print(f"DEBUG: Invalid source for token verification: {source}")
                 abort(400)
             return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+def require_localhost():
+    """Decorator to restrict routes to localhost only"""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            # Skip localhost check if restrictions are disabled
+            if not ENABLE_LOCALHOST_RESTRICTIONS:
+                return f(*args, **kwargs)
+            
+            # Check if request is from localhost
+            client_ip = request.remote_addr
+            forwarded_for = request.headers.get('X-Forwarded-For')
+            
+            # Allow localhost IPs
+            localhost_ips = ['127.0.0.1', '::1', 'localhost']
+            
+            # Check direct IP
+            if client_ip in localhost_ips:
+                return f(*args, **kwargs)
+            
+            # Check X-Forwarded-For header (for proxy scenarios)
+            if forwarded_for:
+                # X-Forwarded-For can contain multiple IPs, first one is the original client
+                original_client = forwarded_for.split(',')[0].strip()
+                if original_client in localhost_ips:
+                    return f(*args, **kwargs)
+            
+            # If not localhost, return 403 Forbidden
+            print(f"DEBUG: Access denied to {f.__name__} from {client_ip} (X-Forwarded-For: {forwarded_for})")
+            abort(403)
         return wrapper
     return decorator
 
@@ -363,6 +401,7 @@ def custom_homepage_static(filename):
     return send_from_directory(CUSTOM_HOMEPAGE_PATH, filename)
 
 @app.route('/admin')
+@require_localhost()
 def admin():
    print('-----------------------------------')
    print(PINTHEON.state)
@@ -415,6 +454,7 @@ def stellar_toml():
     return response
 
 @app.route('/top_up_stellar')
+@require_localhost()
 def top_up_stellar():
    PINTHEON.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
    template = 'top_up.html'
@@ -426,6 +466,7 @@ def top_up_stellar():
 
 @app.route('/end_session', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='json')
 @require_session_state(active=True)
 @require_token_verification('client_pub', 'token', source='json')
@@ -437,6 +478,7 @@ def end_session():
    
 @app.route('/reset_init', methods=['POST'])
 @cross_origin()
+@require_localhost()
 def reset_init():
      if PINTHEON.state == 'establishing':
           PINTHEON.init_reset()
@@ -447,6 +489,7 @@ def reset_init():
 
 @app.route('/new_node', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'seed_cipher', 'generator_pub'], source='json')
 @require_session_state(state='initialized', active=False)
 @require_token_verification('client_pub', 'token', source='json')
@@ -465,6 +508,7 @@ def new_node():
 
 @app.route('/establish', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'name', 'descriptor', 'meta_data', 'host'], source='json')
 @require_session_state(state='establishing', active=True)
 @require_token_verification('client_pub', 'token', source='json')
@@ -477,6 +521,7 @@ def establish():
 
 @app.route('/authorize', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'auth_token', 'generator_pub'], source='json')
 def authorize():
     data = request.get_json()
@@ -495,6 +540,7 @@ def authorize():
 
 @app.route('/authorized', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'auth_token', 'client_pub'], source='json')
 def authorized():
     data = request.get_json()
@@ -514,6 +560,7 @@ def authorized():
 
 @app.route('/deauthorize', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='json')
 @require_session_state(active=True)
 @require_token_verification('client_pub', 'token', source='json')
@@ -526,6 +573,7 @@ def deauthorize():
 
 @app.route('/upload', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def upload():
@@ -550,6 +598,7 @@ def api_upload():
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -572,6 +621,7 @@ def update_logo():
 
 @app.route('/update_gateway', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'gateway'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -590,6 +640,7 @@ def update_gateway():
 
 @app.route('/remove_file', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'cid'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -602,6 +653,7 @@ def remove_file():
 
 @app.route('/tokenize_file', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'cid', 'allocation'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -635,6 +687,7 @@ def tokenize_file():
 
 @app.route('/send_file_token', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'cid', 'amount', 'to_address'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -658,6 +711,7 @@ def send_file_token():
 
 @app.route('/send_token', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['name', 'token_id', 'client_pub', 'token_id', 'amount', 'to_address'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -680,6 +734,7 @@ def send_token():
 
 @app.route('/publish_file', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['name', 'cid', 'client_pub', 'token', 'encrypted', 'reciever_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -707,6 +762,7 @@ def publish_file():
 
 @app.route('/add_to_namespace', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'cid'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -722,6 +778,7 @@ def add_to_namespace():
 
 @app.route('/add_access_token', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'name', 'stellar_25519_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -736,6 +793,7 @@ def add_access_token():
 
 @app.route('/remove_access_token', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'stellar_25519_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -750,6 +808,7 @@ def remove_access_token():
 
 @app.route('/dashboard_data', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -762,6 +821,7 @@ def dashboard_data():
 
 @app.route('/update_theme', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub', 'theme'], source='json')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='json')
@@ -777,6 +837,7 @@ def update_theme():
 
 @app.route('/update_bg_img', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -804,6 +865,7 @@ def update_bg_img():
 
 @app.route('/remove_bg_img', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -819,6 +881,7 @@ def remove_bg_img():
 
 @app.route('/upload_homepage', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -885,6 +948,7 @@ def upload_homepage():
 
 @app.route('/remove_homepage', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -900,6 +964,7 @@ def remove_homepage():
 
 @app.route('/homepage_status', methods=['POST'])
 @cross_origin()
+@require_localhost()
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
