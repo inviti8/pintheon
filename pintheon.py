@@ -406,44 +406,47 @@ def custom_homepage_static(filename):
     return send_from_directory(CUSTOM_HOMEPAGE_PATH, filename)
 
 @app.route('/admin')
-@require_local_access
 def admin():
-   print('-----------------------------------')
-   print(PINTHEON.state)
-   print(request.headers)
-   print(PINTHEON.soroban_online())
-   print('-----------------------------------')
+    @require_local_access
+    def _admin():
+        print('-----------------------------------')
+        print(PINTHEON.state)
+        print(request.headers)
+        print(PINTHEON.soroban_online())
+        print('-----------------------------------')
 
-   PINTHEON.logo_url = url_for('static', filename='hvym_logo.png')
-   PINTHEON.stellar_logo_url = url_for('static', filename='stellar_logo.png')
-   stellar_light_logo = url_for('static', filename='stellar_logo_light.png')
-   stellar_dark_logo = url_for('static', filename='stellar_logo_dark.png')
+        PINTHEON.logo_url = url_for('static', filename='hvym_logo.png')
+        PINTHEON.stellar_logo_url = url_for('static', filename='stellar_logo.png')
+        stellar_light_logo = url_for('static', filename='stellar_logo_light.png')
+        stellar_dark_logo = url_for('static', filename='stellar_logo_dark.png')
 
-   if PINTHEON.stellar_logo == None:
-     PINTHEON.stellar_set_logos(stellar_light_logo, stellar_dark_logo)
-   PINTHEON.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
-   PINTHEON.opus_logo = url_for('static', filename='opus.png')
-   PINTHEON.boros_logo = url_for('static', filename='boros.png')
+        if PINTHEON.stellar_logo == None:
+          PINTHEON.stellar_set_logos(stellar_light_logo, stellar_dark_logo)
+        PINTHEON.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
+        PINTHEON.opus_logo = url_for('static', filename='opus.png')
+        PINTHEON.boros_logo = url_for('static', filename='boros.png')
 
-   pub = PINTHEON.session_pub
-   if not PINTHEON.logged_in:
-       pub = PINTHEON.new_session()
+        pub = PINTHEON.session_pub
+        if not PINTHEON.logged_in:
+            pub = PINTHEON.new_session()
 
-   template = PINTHEON.view_template
-   components=_load_components(PINTHEON.view_components)
-   page = PINTHEON.active_page
-   js=_load_js(PINTHEON.view_components)
-   logo=PINTHEON.logo_url
-   customization = PINTHEON.get_customization()
-   theme = customization['themes'][customization['current_theme']]
-   bg_img = customization['bg_img']
-   shared_dialogs=_load_components(PINTHEON.shared_dialogs)
-   shared_dialogs_js=_load_js(PINTHEON.shared_dialogs)
-   client_tokens= _load_js('macaroons_js_bundle')
-   theme_css = url_for('static', filename=theme+'-theme.css')
-   
-   session_data = { 'pub': pub, 'generator_pub': PINTHEON.node_pub, 'time': PINTHEON.session_ends, 'nonce': PINTHEON.session_nonce }
-   return render_template(template, page=page, components=components, js=js, logo=logo, bg_img=bg_img, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
+        template = PINTHEON.view_template
+        components=_load_components(PINTHEON.view_components)
+        page = PINTHEON.active_page
+        js=_load_js(PINTHEON.view_components)
+        logo=PINTHEON.logo_url
+        customization = PINTHEON.get_customization()
+        theme = customization['themes'][customization['current_theme']]
+        bg_img = customization['bg_img']
+        shared_dialogs=_load_components(PINTHEON.shared_dialogs)
+        shared_dialogs_js=_load_js(PINTHEON.shared_dialogs)
+        client_tokens= _load_js('macaroons_js_bundle')
+        theme_css = url_for('static', filename=theme+'-theme.css')
+        
+        session_data = { 'pub': pub, 'generator_pub': PINTHEON.node_pub, 'time': PINTHEON.session_ends, 'nonce': PINTHEON.session_nonce }
+        return render_template(template, page=page, components=components, js=js, logo=logo, bg_img=bg_img, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
+    
+    
 
 @app.route('/.well-known/stellar.toml')
 def stellar_toml():
