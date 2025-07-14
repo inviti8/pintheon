@@ -407,44 +407,57 @@ def custom_homepage_static(filename):
 
 @app.route('/admin')
 def admin():
-    @require_local_access
-    def _admin():
-        print('-----------------------------------')
-        print(PINTHEON.state)
-        print(request.headers)
-        print(PINTHEON.soroban_online())
-        print('-----------------------------------')
+    # Access check FIRST
+    host = request.headers.get('Host', '')
+    forwarded_host = request.headers.get('X-Forwarded-Host', '')
+    custom_host = PINTHEON.url_host if PINTHEON.url_host else None
+    if custom_host and custom_host not in ['localhost', '127.0.0.1', 'localhost:9500', '127.0.0.1:9500']:
+        # Extract hostname from custom_host (remove protocol if present)
+        if custom_host.startswith(('http://', 'https://')):
+            from urllib.parse import urlparse
+            parsed = urlparse(custom_host)
+            custom_hostname = parsed.netloc
+        else:
+            custom_hostname = custom_host
+        if (host and custom_hostname in host) or (forwarded_host and custom_hostname in forwarded_host):
+            print(f"DEBUG: Blocked external access to admin from {host} / {forwarded_host} (custom domain: {custom_hostname})")
+            raise Forbidden()
+    print('-----------------------------------')
+    print(PINTHEON.state)
+    print(request.headers)
+    print(PINTHEON.soroban_online())
+    print('-----------------------------------')
 
-        PINTHEON.logo_url = url_for('static', filename='hvym_logo.png')
-        PINTHEON.stellar_logo_url = url_for('static', filename='stellar_logo.png')
-        stellar_light_logo = url_for('static', filename='stellar_logo_light.png')
-        stellar_dark_logo = url_for('static', filename='stellar_logo_dark.png')
+    PINTHEON.logo_url = url_for('static', filename='hvym_logo.png')
+    PINTHEON.stellar_logo_url = url_for('static', filename='stellar_logo.png')
+    stellar_light_logo = url_for('static', filename='stellar_logo_light.png')
+    stellar_dark_logo = url_for('static', filename='stellar_logo_dark.png')
 
-        if PINTHEON.stellar_logo == None:
-          PINTHEON.stellar_set_logos(stellar_light_logo, stellar_dark_logo)
-        PINTHEON.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
-        PINTHEON.opus_logo = url_for('static', filename='opus.png')
-        PINTHEON.boros_logo = url_for('static', filename='boros.png')
+    if PINTHEON.stellar_logo == None:
+      PINTHEON.stellar_set_logos(stellar_light_logo, stellar_dark_logo)
+    PINTHEON.stellar_wallet_qr = url_for('static', filename='stellar_wallet_qr.png')
+    PINTHEON.opus_logo = url_for('static', filename='opus.png')
+    PINTHEON.boros_logo = url_for('static', filename='boros.png')
 
-        pub = PINTHEON.session_pub
-        if not PINTHEON.logged_in:
-            pub = PINTHEON.new_session()
+    pub = PINTHEON.session_pub
+    if not PINTHEON.logged_in:
+        pub = PINTHEON.new_session()
 
-        template = PINTHEON.view_template
-        components=_load_components(PINTHEON.view_components)
-        page = PINTHEON.active_page
-        js=_load_js(PINTHEON.view_components)
-        logo=PINTHEON.logo_url
-        customization = PINTHEON.get_customization()
-        theme = customization['themes'][customization['current_theme']]
-        bg_img = customization['bg_img']
-        shared_dialogs=_load_components(PINTHEON.shared_dialogs)
-        shared_dialogs_js=_load_js(PINTHEON.shared_dialogs)
-        client_tokens= _load_js('macaroons_js_bundle')
-        theme_css = url_for('static', filename=theme+'-theme.css')
-        
-        session_data = { 'pub': pub, 'generator_pub': PINTHEON.node_pub, 'time': PINTHEON.session_ends, 'nonce': PINTHEON.session_nonce }
-        return render_template(template, page=page, components=components, js=js, logo=logo, bg_img=bg_img, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
+    template = PINTHEON.view_template
+    components=_load_components(PINTHEON.view_components)
+    page = PINTHEON.active_page
+    js=_load_js(PINTHEON.view_components)
+    logo=PINTHEON.logo_url
+    customization = PINTHEON.get_customization()
+    theme = customization['themes'][customization['current_theme']]
+    bg_img = customization['bg_img']
+    shared_dialogs=_load_components(PINTHEON.shared_dialogs)
+    shared_dialogs_js=_load_js(PINTHEON.shared_dialogs)
+    client_tokens= _load_js('macaroons_js_bundle')
+    theme_css = url_for('static', filename=theme+'-theme.css')
+    
+    session_data = { 'pub': pub, 'generator_pub': PINTHEON.node_pub, 'time': PINTHEON.session_ends, 'nonce': PINTHEON.session_nonce }
+    return render_template(template, page=page, components=components, js=js, logo=logo, bg_img=bg_img, theme_css=theme_css, shared_dialogs=shared_dialogs, shared_dialogs_js=shared_dialogs_js, client_tokens=client_tokens, session_data=session_data)
     
     return _admin()
 
