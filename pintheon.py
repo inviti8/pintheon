@@ -194,7 +194,39 @@ def require_token_verification(pub_field, token_field, source='json'):
         return wrapper
     return decorator
 
-
+def require_local_access(f):
+    """Decorator to restrict access to local requests only (not custom domain)"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        host = request.headers.get('Host', '')
+        forwarded_host = request.headers.get('X-Forwarded-Host', '')
+        
+        # Get the current custom hostname from Pintheon
+        custom_host = PINTHEON.url_host if PINTHEON.url_host else None
+        
+        # If no custom hostname is set (still localhost), allow access
+        if not custom_host or custom_host in ['localhost', '127.0.0.1', 'localhost:9500', '127.0.0.1:9500']:
+            print(f"DEBUG: Allowed local access to {f.__name__} - no custom domain set")
+            return f(*args, **kwargs)
+        
+        # Extract hostname from custom_host (remove protocol if present)
+        if custom_host.startswith(('http://', 'https://')):
+            from urllib.parse import urlparse
+            parsed = urlparse(custom_host)
+            custom_hostname = parsed.netloc
+        else:
+            custom_hostname = custom_host
+        
+        # Check if request is coming through the custom domain
+        request_hosts = [host, forwarded_host]
+        for request_host in request_hosts:
+            if request_host and custom_hostname in request_host:
+                print(f"DEBUG: Blocked external access to {f.__name__} from {request_host} (custom domain: {custom_hostname})")
+                raise Forbidden()
+        
+        print(f"DEBUG: Allowed local access to {f.__name__} from Host: {host}, X-Forwarded-Host: {forwarded_host}")
+        return f(*args, **kwargs)
+    return decorated_function
 
 def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False):
     if 'file' not in request.files:
@@ -374,6 +406,7 @@ def custom_homepage_static(filename):
     return send_from_directory(CUSTOM_HOMEPAGE_PATH, filename)
 
 @app.route('/admin')
+@require_local_access
 def admin():
    print('-----------------------------------')
    print(PINTHEON.state)
@@ -437,6 +470,7 @@ def top_up_stellar():
 
 @app.route('/end_session', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='json')
 @require_session_state(active=True)
 @require_token_verification('client_pub', 'token', source='json')
@@ -448,6 +482,7 @@ def end_session():
    
 @app.route('/reset_init', methods=['POST'])
 @cross_origin()
+@require_local_access
 def reset_init():
      if PINTHEON.state == 'establishing':
           PINTHEON.init_reset()
@@ -458,6 +493,7 @@ def reset_init():
 
 @app.route('/new_node', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'seed_cipher', 'generator_pub'], source='json')
 @require_session_state(state='initialized', active=False)
 @require_token_verification('client_pub', 'token', source='json')
@@ -476,6 +512,7 @@ def new_node():
 
 @app.route('/establish', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'name', 'descriptor', 'meta_data', 'host'], source='json')
 @require_session_state(state='establishing', active=True)
 @require_token_verification('client_pub', 'token', source='json')
@@ -488,6 +525,7 @@ def establish():
 
 @app.route('/authorize', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'auth_token', 'generator_pub'], source='json')
 def authorize():
     data = request.get_json()
@@ -506,6 +544,7 @@ def authorize():
 
 @app.route('/authorized', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'auth_token', 'client_pub'], source='json')
 def authorized():
     data = request.get_json()
@@ -525,6 +564,7 @@ def authorized():
 
 @app.route('/deauthorize', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='json')
 @require_session_state(active=True)
 @require_token_verification('client_pub', 'token', source='json')
@@ -537,6 +577,7 @@ def deauthorize():
 
 @app.route('/upload', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def upload():
@@ -549,6 +590,7 @@ def upload():
 
 @app.route('/api_upload', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['access_token'], source='form')
 def api_upload():
     token = request.form['access_token']
@@ -561,6 +603,7 @@ def api_upload():
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -583,6 +626,7 @@ def update_logo():
 
 @app.route('/update_gateway', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'gateway'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -601,6 +645,7 @@ def update_gateway():
 
 @app.route('/remove_file', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'cid'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -613,6 +658,7 @@ def remove_file():
 
 @app.route('/tokenize_file', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'cid', 'allocation'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -646,6 +692,7 @@ def tokenize_file():
 
 @app.route('/send_file_token', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'cid', 'amount', 'to_address'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -669,6 +716,7 @@ def send_file_token():
 
 @app.route('/send_token', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['name', 'token_id', 'client_pub', 'token_id', 'amount', 'to_address'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -691,6 +739,7 @@ def send_token():
 
 @app.route('/publish_file', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['name', 'cid', 'client_pub', 'token', 'encrypted', 'reciever_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -718,6 +767,7 @@ def publish_file():
 
 @app.route('/add_to_namespace', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'cid'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -733,6 +783,7 @@ def add_to_namespace():
 
 @app.route('/add_access_token', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'name', 'stellar_25519_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -747,6 +798,7 @@ def add_access_token():
 
 @app.route('/remove_access_token', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'stellar_25519_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -761,6 +813,7 @@ def remove_access_token():
 
 @app.route('/dashboard_data', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -773,6 +826,7 @@ def dashboard_data():
 
 @app.route('/update_theme', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub', 'theme'], source='json')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='json')
@@ -788,6 +842,7 @@ def update_theme():
 
 @app.route('/update_bg_img', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -815,6 +870,7 @@ def update_bg_img():
 
 @app.route('/remove_bg_img', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -830,6 +886,7 @@ def remove_bg_img():
 
 @app.route('/upload_homepage', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -896,6 +953,7 @@ def upload_homepage():
 
 @app.route('/remove_homepage', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -911,6 +969,7 @@ def remove_homepage():
 
 @app.route('/homepage_status', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['token', 'client_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
@@ -929,6 +988,7 @@ def homepage_status():
 
 @app.route('/api_upload_homepage', methods=['POST'])
 @cross_origin()
+@require_local_access
 @require_fields(['access_token'], source='form')
 def api_upload_homepage():
     """Upload a ZIP file containing the custom homepage using access token authentication"""
@@ -977,6 +1037,7 @@ def api_upload_homepage():
         return jsonify({'error': f'Error processing file: {str(e)}'}), 400
 
 @app.route('/api/heartbeat', methods=['GET'])
+@require_local_access
 def api_heartbeat():
     return jsonify({'status': 'ok'}), 200
         
