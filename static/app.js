@@ -294,7 +294,11 @@ document.addEventListener('init', function(event) {
     };
 
     window.fn.tokenizeFile = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {
-        window.fn.confirmedCall('Tokenize this file?', 'file tokenize failed', formData, endpoint, callback, method, true, hideDlg);
+        console.log('[tokenizeFile] Sending formData:', Array.from(formData.entries()));
+        window.fn.confirmedCall('Tokenize this file?', 'file tokenize failed', formData, endpoint, async (data) => {
+            console.log('[tokenizeFile] Callback data:', data);
+            callback(data);
+        }, method, true, hideDlg);
     };
 
     window.fn.sendFileToken = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {

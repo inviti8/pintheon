@@ -267,8 +267,14 @@ const tokenize_file = async (cid) => {
 };
 
 const transaction_sent = async(node_data) => {
-    console.log(node_data)
-    if(node_data.transaction_data.successful){
+    console.log('[transaction_sent] node_data:', node_data);
+    if(node_data.transaction_data){
+        console.log('[transaction_sent] transaction_data:', node_data.transaction_data);
+        console.log('[transaction_sent] transaction_data.successful:', node_data.transaction_data.successful);
+    } else {
+        console.log('[transaction_sent] No transaction_data in response!');
+    }
+    if(node_data.transaction_data && node_data.transaction_data.successful){
         const session = _getSessionData();
         const formData = new FormData()
 
