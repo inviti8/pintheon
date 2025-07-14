@@ -253,7 +253,10 @@ class PintheonMachine(object):
         self.node_name = name
         self.node_descriptor = descriptor
         self.node_meta_data = metadata
-        self.url_host = host
+
+        # Only set url_host if it is not already set to a non-empty value
+        if not self.url_host and host:
+            self.url_host = host
 
         if self.FAKE_IPFS:
             self.url_host = FAKE_IPFS_HOST
@@ -265,7 +268,19 @@ class PintheonMachine(object):
             self.join_collective()
             self.node_contract = self.deploy_node_token(name, descriptor)
 
-        self.stellar_toml = self.TOML_GEN( file_path=self.static_path, org_name=self.node_name, org_dba='Pintheon Node', org_url=self.url_host, org_official_email='hi@pintheon.com', org_support_email='support@pintheon.com', org_twitter='@pintheon', org_description=self.node_descriptor, version=self.version, network_passphrase=self.NETWORK_PASSPHRASE, accounts=[self.stellar_keypair.public_key])
+        self.stellar_toml = self.TOML_GEN(
+            file_path=self.static_path,
+            org_name=self.node_name,
+            org_dba='Pintheon Node',
+            org_url=self.url_host,
+            org_official_email='hi@pintheon.com',
+            org_support_email='support@pintheon.com',
+            org_twitter='@pintheon',
+            org_description=self.node_descriptor,
+            version=self.version,
+            network_passphrase=self.NETWORK_PASSPHRASE,
+            accounts=[self.stellar_keypair.public_key]
+        )
 
         self._update_node_data(self.logo_url, self.node_name, self.node_descriptor, self.node_contract)
 

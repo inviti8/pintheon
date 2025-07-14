@@ -678,7 +678,7 @@ def remove_file():
 def tokenize_file():
     file_data = PINTHEON.file_data_from_cid(request.form['cid'])
     if len(file_data['ContractID']) > 0:
-        return jsonify({'error': 'File already tokenized', 'success': False}), 200
+        return jsonify({'error': 'File already tokenized', 'success': False}), 400
     else:
         contract_result = PINTHEON.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PINTHEON.url_host)
         if isinstance(contract_result, dict) and not contract_result.get('success', True):
@@ -686,7 +686,7 @@ def tokenize_file():
             data['transaction_data'] = None
             data['error'] = contract_result.get('error', 'Contract deployment failed')
             data['success'] = False
-            return jsonify(data), 200
+            return jsonify(data), 400
         contract_id = contract_result['address'] if isinstance(contract_result, dict) else contract_result
         PINTHEON.update_file_contract_id(request.form['cid'], contract_id)
         transaction_result = PINTHEON.ipfs_custodial_mint(request.form['cid'], contract_id, int(request.form['allocation']))
@@ -699,7 +699,7 @@ def tokenize_file():
         if isinstance(transaction_result, dict) and not transaction_result.get('success', True):
             data['error'] = transaction_result.get('error', 'Minting failed')
             data['success'] = False
-            return jsonify(data), 200
+            return jsonify(data), 400
         data['success'] = True
         return jsonify(data)
 
