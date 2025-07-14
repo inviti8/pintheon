@@ -361,24 +361,21 @@ class Unauthorized(HTTPException):
     description = 'Invalid Credentials'
 
 def _on_failure_error():
-    PINTHEON.end_session()
+    pass  # Removed global session end
 
 @app.errorhandler(401)
 def unauthorized_access(e):
-    # handle Unauthorized access here
-    _on_failure_error()
+    # _on_failure_error()  # No longer ends session
     return 'Access Denied', 401
 
 @app.errorhandler(Forbidden)
 def handle_forbidden(e):
-    # handle forbidden action here
-    _on_failure_error()
+    # _on_failure_error()  # No longer ends session
     return 'Permission Denied', 403
 
 @app.errorhandler(500)
 def unauthorized_access(e):
-    # handle server error here
-    _on_failure_error()
+    # _on_failure_error()  # No longer ends session
     return 'Server Error', 500
 
 ##ROUTES## 
