@@ -1026,19 +1026,7 @@ class PintheonMachine(object):
         self._update_customization()
         # Ensure stellar_toml is reinitialized on resume
         if self.stellar_toml is None and self.TOML_GEN is not None:
-            self.stellar_toml = self.TOML_GEN(
-                file_path=self.static_path,
-                org_name=self.node_name,
-                org_dba='Pintheon Node',
-                org_url=self.url_host,
-                org_official_email='hi@pintheon.com',
-                org_support_email='support@pintheon.com',
-                org_twitter='@pintheon',
-                org_description=self.node_descriptor,
-                version=self.version,
-                network_passphrase=self.NETWORK_PASSPHRASE,
-                accounts=[self.stellar_keypair.public_key]
-            )
+            self.stellar_toml = self.TOML_GEN(file_path=self.static_path)
         return True
 
     def do_redeem(self):

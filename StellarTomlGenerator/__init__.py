@@ -3,21 +3,42 @@ import toml
 import io
 
 class StellarTomlGenerator:
-    def __init__(self, file_path, org_name, org_dba, org_url, org_official_email, org_support_email, org_twitter, org_description, version, network_passphrase, accounts=None):
+    def __init__(
+        self,
+        file_path,
+        org_name=None,
+        org_dba=None,
+        org_url=None,
+        org_official_email=None,
+        org_support_email=None,
+        org_twitter=None,
+        org_description=None,
+        version=None,
+        network_passphrase=None,
+        accounts=None
+    ):
         self.file_path = os.path.join(file_path, 'stellar.toml')
-        self.version = version
-        self.network_passphrase = network_passphrase
-        self.documentation = {
-            'ORG_NAME': org_name,
-            'ORG_DBA': org_dba,
-            'ORG_URL': org_url,
-            'ORG_OFFICIAL_EMAIL': org_official_email,
-            'ORG_SUPPORT_EMAIL': org_support_email,
-            'ORG_TWITTER': org_twitter,
-            'ORG_DESCRIPTION': org_description
-        }
-        self.accounts = accounts or []
-        self._ensure_toml()
+        if os.path.exists(self.file_path):
+            with open(self.file_path, 'r') as f:
+                data = toml.load(f)
+            self.version = data.get('VERSION')
+            self.network_passphrase = data.get('NETWORK_PASSPHRASE')
+            self.accounts = data.get('ACCOUNTS', [])
+            self.documentation = data.get('DOCUMENTATION', {})
+        else:
+            self.version = version
+            self.network_passphrase = network_passphrase
+            self.accounts = accounts or []
+            self.documentation = {
+                'ORG_NAME': org_name,
+                'ORG_DBA': org_dba,
+                'ORG_URL': org_url,
+                'ORG_OFFICIAL_EMAIL': org_official_email,
+                'ORG_SUPPORT_EMAIL': org_support_email,
+                'ORG_TWITTER': org_twitter,
+                'ORG_DESCRIPTION': org_description
+            }
+            self._ensure_toml()
 
     def _ensure_toml(self):
         if not os.path.exists(self.file_path):
