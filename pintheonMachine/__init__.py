@@ -95,6 +95,7 @@ class PintheonMachine(object):
         self.node_descriptor = None
         self.node_meta_data = None
         self.url_host = None
+        self.port = 9999
 
         #-------DB--------
         self.db_path = db_path
