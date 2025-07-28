@@ -77,9 +77,7 @@ class PintheonMachine(object):
         self.uid = str(uuid.uuid4())
         self.version = "0.0.1"
         self.use_testnet = testnet
-        self.master_key = None
-        if not os.path.isfile(db_path):
-            self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
+        self.master_key = 'UNINITIALIZED_NODE'
         self.session_active = False
         self.session_started = None
         self.session_ends = None
@@ -89,7 +87,6 @@ class PintheonMachine(object):
         self.auth_token = None
         self.logged_in = False
         self.root_token = None
-        #self.master_key = 'bnhvRDlzdXFxTm9MMlVPZDZIbXZOMm9IZmFBWEJBb29FemZ4ZU9zT1p6Zz0='##DEBUG
         self.is_established = False
         self.static_path = static_path
         self.logo_url = None
@@ -1008,6 +1005,10 @@ class PintheonMachine(object):
     @property
     def on_established(self):
         print('established!!')
+        self._open_db()
+        self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
+        self.db.storage.change_encryption_key(self.master_key)
+        self.db.close()
         self.view_components = 'dashboard'
         self.active_page = 'authorize'
         self.is_established = True
