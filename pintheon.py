@@ -205,7 +205,7 @@ def require_local_access(f):
         custom_host = PINTHEON.url_host if PINTHEON.url_host else None
         
         # If no custom hostname is set (still localhost), allow access
-        if not custom_host or custom_host in ['localhost', '127.0.0.1', 'localhost:9500', '127.0.0.1:9500']:
+        if not custom_host or custom_host in ['localhost', '127.0.0.1', 'localhost:9999', '127.0.0.1:9999']:
             print(f"DEBUG: Allowed local access to {f.__name__} - no custom domain set")
             return f(*args, **kwargs)
         
@@ -408,7 +408,7 @@ def admin():
     host = request.headers.get('Host', '')
     forwarded_host = request.headers.get('X-Forwarded-Host', '')
     custom_host = PINTHEON.url_host if PINTHEON.url_host else None
-    if custom_host and custom_host not in ['localhost', '127.0.0.1', 'localhost:9500', '127.0.0.1:9500']:
+    if custom_host and custom_host not in ['localhost', '127.0.0.1', 'localhost:9999', '127.0.0.1:9999']:
         # Extract hostname from custom_host (remove protocol if present)
         if custom_host.startswith(('http://', 'https://')):
             from urllib.parse import urlparse
