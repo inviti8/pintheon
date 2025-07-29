@@ -79,13 +79,16 @@ class PintheonMachine(object):
         self.config = configparser.ConfigParser()
         self.config_path = Path(db_path).parent / 'pintheon.ini'
         if not os.path.isfile(self.config_path):
-            self.config['Init'] = {'master_key': base64.b64encode(Fernet.generate_key()).decode('utf-8')}
+            self.config['Init'] = {
+                'uid': str(uuid.uuid4()),
+                'master_key': base64.b64encode(Fernet.generate_key()).decode('utf-8')
+                }
             with open(self.config_path, 'w') as configfile:
                 self.config.write(configfile)
         else:
             self.config.read(self.config_path)
 
-        self.uid = str(uuid.uuid4())
+        self.uid = self.config.get('Init', 'uid')
         self.version = "0.0.1"
         self.use_testnet = testnet
         self.master_key = self.config.get('Init', 'master_key')
