@@ -43,6 +43,8 @@ import requests
 import time
 from hvym_stellar import *
 import py7zr
+from pathlib import Path
+import configparser
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
@@ -74,10 +76,19 @@ class PintheonMachine(object):
 
     def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', toml_gen = None, testnet = False, debug = False, fake_ipfs=True):
 
+        self.config = configparser.ConfigParser()
+        self.config_path = Path(db_path).parent / 'pintheon.ini'
+        if not os.path.isfile(self.config_path):
+            self.config['Init'] = {'master_key': base64.b64encode(Fernet.generate_key()).decode('utf-8')}
+            with open(self.config_path, 'w') as configfile:
+                self.config.write(configfile)
+        else:
+            self.config.read(self.config_path)
+
         self.uid = str(uuid.uuid4())
         self.version = "0.0.1"
         self.use_testnet = testnet
-        self.master_key = 'UNINITIALIZED_NODE'
+        self.master_key = self.config.get('Init', 'master_key')
         self.session_active = False
         self.session_started = None
         self.session_ends = None
@@ -1006,10 +1017,6 @@ class PintheonMachine(object):
     @property
     def on_established(self):
         print('established!!')
-        self._open_db()
-        self.master_key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
-        self.db.storage.change_encryption_key(self.master_key)
-        self.db.close()
         self.view_components = 'dashboard'
         self.active_page = 'authorize'
         self.is_established = True
@@ -1039,7 +1046,6 @@ class PintheonMachine(object):
         self.node_descriptor = node_data['node_descriptor']
         self.url_host = node_data['url_host']
         self.node_contract = node_data['node_contract']
-        self.master_key = node_data['master_key']
         self.root_token = node_data['root_token']
         self._update_state_data()
         self._update_customization()

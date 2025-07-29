@@ -26,6 +26,7 @@ app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
+# LOCAL_DEBUG = True
 
 # Use platformdirs for cross-platform data directory management
 def get_data_directory():
@@ -203,9 +204,12 @@ def require_local_access(f):
         
         # Get the current custom hostname from Pintheon
         custom_host = PINTHEON.url_host if PINTHEON.url_host else None
+        port = str(PINTHEON.port)
+        # if LOCAL_DEBUG:
+        #     port = '5000'
         
         # If no custom hostname is set (still localhost), allow access
-        if not custom_host or custom_host in ['localhost', '127.0.0.1', 'localhost:9999', '127.0.0.1:9999']:
+        if not custom_host or custom_host in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
             print(f"DEBUG: Allowed local access to {f.__name__} - no custom domain set")
             return f(*args, **kwargs)
         
@@ -408,7 +412,10 @@ def admin():
     host = request.headers.get('Host', '')
     forwarded_host = request.headers.get('X-Forwarded-Host', '')
     custom_host = PINTHEON.url_host if PINTHEON.url_host else None
-    if custom_host and custom_host not in ['localhost', '127.0.0.1', 'localhost:9999', '127.0.0.1:9999']:
+    port = str(PINTHEON.port)
+    # if LOCAL_DEBUG:
+    #         port = '5000'
+    if custom_host and custom_host not in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
         # Extract hostname from custom_host (remove protocol if present)
         if custom_host.startswith(('http://', 'https://')):
             from urllib.parse import urlparse
