@@ -112,6 +112,9 @@ const complete = () => {
     location.reload();
 };
 
+const open_token_gen = () => {
+    window.open('https://pintheon-testnet.anvil.app/', '_blank').focus();
+};
 
 
 document.addEventListener('init', function(event) {
@@ -124,6 +127,10 @@ document.addEventListener('init', function(event) {
         //     let seed = await generate_wallet();
         //     document.querySelector('#launch-token').value = seed;
         // };
+        document.querySelector('#open-token-gen').onclick = function () {
+            open_token_gen();
+        };
+
         document.querySelector('#establish-button').onclick = function () {
             window.fn.validateAllInputsAndCall(
                 'Establish new Node?',
@@ -131,6 +138,7 @@ document.addEventListener('init', function(event) {
                   new_node
                 );
         };
+
     } else if (page.id === 'establish') {
         // inputs.forEach(function(inp) {
         //     document.querySelector('#btn-'+inp).onclick = function () {
