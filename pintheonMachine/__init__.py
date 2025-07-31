@@ -75,7 +75,7 @@ class PintheonMachine(object):
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
     def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', toml_gen = None, testnet = False, debug = False, fake_ipfs=True):
-
+        self.custodian_25519_pub = 'br6Or4PeQFPJU0cmaQMKrGW__JCi3S-aY6bV6wFmi34='
         self.config = configparser.ConfigParser()
         self.config_path = Path(db_path).parent / 'pintheon.ini'
         if not os.path.isfile(self.config_path):
@@ -194,7 +194,7 @@ class PintheonMachine(object):
         self._client_node_pub = None
         self._client_session_pub = None
         self._client_generator_pub = None
-        self._seed_cipher = None
+        self._seed = None
 
         # Use platformdirs for additional data storage if needed
         self._dirs = PlatformDirs('PINTHEON', 'XRO Network', ensure_exists=True)
@@ -260,8 +260,8 @@ class PintheonMachine(object):
     def get_client_session_pub(self):
         return self._client_session_pub
     
-    def set_seed_cipher(self, seedCipher):
-        self._seed_cipher = seedCipher
+    def set_seed(self, seed):
+        self._seed = seed
 
     def set_node_data(self, name, descriptor, metadata, host):
         self.node_name = name
@@ -280,6 +280,7 @@ class PintheonMachine(object):
             self.url_host = DEBUG_URL_HOST
         else:
             self.join_collective()
+            self._update_token_book_balance(self.XLM_ID, self.stellar_xlm_balance())
             self.node_contract = self.deploy_node_token(name, descriptor)
 
         self.stellar_toml = self.TOML_GEN(
@@ -424,6 +425,16 @@ class PintheonMachine(object):
         self.logged_in = False
         self.session_active = False
         self.active_page = 'authorize'
+
+    def launch_token_verifier(self, launch_key, launch_token):
+        lock_keys = Keypair.from_secret(launch_key.strip())
+        lock_kp = Stellar25519KeyPair(lock_keys)
+        caveats = {
+        'network' : 'testnet'
+        }
+
+        return StellarSharedKeyTokenVerifier(lock_kp, launch_token.strip(), token_type=TokenType.SECRET, caveats=caveats)
+
     
     def new_node(self):
         keypair = self._new_keypair()
@@ -904,7 +915,7 @@ class PintheonMachine(object):
 
     def _create_stellar_keypair_from_seed(self, seed):
          print('create stellar keypair')
-         self.stellar_keypair = Keypair.from_mnemonic_phrase(seed)
+         self.stellar_keypair = Keypair.from_secret(seed)
          self.stellar_25519_keypair = Stellar25519KeyPair(self.stellar_keypair)
 
          keypair = { 'name': self.node_name, 'pub': self.stellar_keypair.public_key, 'priv': self.stellar_keypair.secret, '25519_pub' : self.stellar_25519_keypair.public_key() }
@@ -992,7 +1003,7 @@ class PintheonMachine(object):
         if self.DEBUG:
             seed = DEBUG_SEED
         else:
-            seed = self.decrypt_aes(self._seed_cipher, self.generate_shared_session_secret(self._client_session_pub))
+            seed = self._seed
 
         self._create_stellar_keypair_from_seed(seed)
 

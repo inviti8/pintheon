@@ -103,3 +103,4 @@ wsproto==1.2.0
 xdrlib3==0.1.1
 yarl==1.19.0
 zipp==3.21.0
+hvym-stellar>=0.8

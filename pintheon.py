@@ -514,21 +514,26 @@ def reset_init():
 @app.route('/new_node', methods=['POST'])
 @cross_origin()
 @require_local_access
-@require_fields(['token', 'client_pub', 'seed_cipher', 'generator_pub'], source='json')
+@require_fields(['token', 'client_pub', 'launch_key', 'launch_token', 'generator_pub'], source='json')
 @require_session_state(state='initialized', active=False)
 @require_token_verification('client_pub', 'token', source='json')
 def new_node():
     data = request.get_json()
-    print(data)
-    PINTHEON.new_node()
-    PINTHEON.set_client_session_pub(data['client_pub'])
-    PINTHEON.set_seed_cipher(data['seed_cipher'])
-    PINTHEON.set_client_node_pub(data['generator_pub'])
-    established = PINTHEON.new()
-    if established:
-        return PINTHEON.establish_data(), 200
+
+    verifier = PINTHEON.launch_token_verifier(data['launch_key'], data['launch_token'])
+
+    if verifier.valid() == True:
+        PINTHEON.new_node()
+        PINTHEON.set_client_session_pub(data['client_pub'])
+        PINTHEON.set_seed(verifier.secret().strip())
+        PINTHEON.set_client_node_pub(data['generator_pub'])
+        established = PINTHEON.new()
+        if established:
+            return PINTHEON.establish_data(), 200
+        else:
+            return jsonify({'error': 'Insufficient Balance'}), 400
     else:
-        return jsonify({'error': 'Insufficient Balance'}), 400
+        return jsonify({'error': 'Launch Token Invalid'}), 400
 
 @app.route('/establish', methods=['POST'])
 @cross_origin()

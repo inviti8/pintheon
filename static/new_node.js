@@ -39,7 +39,8 @@ const new_node = async () => {
     const body = {
         'token': window.constants.SESSION_TOKEN.serialize(),
         'client_pub': window.constants.CLIENT_PUBLIC_KEY,
-        'seed_cipher': await generateSharedEncryptedText(document.querySelector('#seed-text').value, window.constants.SERVER_PUBLIC_KEY, window.constants.CLIENT_SESSION_KEYS.privateKey),
+        'launch_key' : document.querySelector('#launch-key').value,
+        'launch_token': document.querySelector('#launch-token').value,
         'generator_pub': await exportKey(window.fn.generator_keys.publicKey),
     };
 
@@ -52,7 +53,7 @@ const establishing = (data) => {
         ons.notification.alert('The Stellar Wallet has an Insufficient balance.');
     }else{
         window.fn.establish_data = data;
-        // document.querySelector('#seed-text').value ="";
+        // document.querySelector('#launch-token').value ="";
         window.fn.pushPage('establish')
         console.log("establish : ",data);
     };
@@ -87,10 +88,10 @@ const establish = async () => {
 };
 
 const established = (data) => {
-    const seedTxt = document.querySelector('#seed-text');
+    const seedTxt = document.querySelector('#launch-token');
     
     if(seedTxt){
-        document.querySelector('#seed-text').value ="";
+        document.querySelector('#launch-token').value ="";
     };
     
     console.log("establish : ",data);
@@ -121,7 +122,7 @@ document.addEventListener('init', function(event) {
 
         // document.querySelector('#generate-seed').onclick = async function () {
         //     let seed = await generate_wallet();
-        //     document.querySelector('#seed-text').value = seed;
+        //     document.querySelector('#launch-token').value = seed;
         // };
         document.querySelector('#establish-button').onclick = function () {
             window.fn.validateAllInputsAndCall(
