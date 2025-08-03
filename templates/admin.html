@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='onsenui.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='onsen-css-components.min.css') }}">
   <link rel="stylesheet" href="{{ theme_css }}">
@@ -39,7 +40,7 @@
     window.constants.session_end = '{{session_data.time}}';
     window.constants.session_nonce = '{{session_data.nonce}}';
     window.constants.KEYSTORE = 'PINTHEON_KEYSTORE';
-    window.constants.LOGO = "{{ url_for('static', filename='hvym_logo.png') }}";
+    window.constants.LOGO = "{{ url_for('static', filename='pintheon_logo.png') }}";
     window.constants.CLIENT_SESSION_KEYS = await generateClientKeys();
     window.constants.SERVER_PUBLIC_KEY = await importServerPub("{{session_data.pub}}");
     window.constants.CLIENT_PUBLIC_KEY = await exportKey(window.constants.CLIENT_SESSION_KEYS.publicKey);

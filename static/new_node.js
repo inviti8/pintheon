@@ -139,6 +139,8 @@ document.addEventListener('init', function(event) {
                 );
         };
 
+        document.querySelector('#new-node-logo').src = window.constants.LOGO;
+
     } else if (page.id === 'establish') {
         // inputs.forEach(function(inp) {
         //     document.querySelector('#btn-'+inp).onclick = function () {
