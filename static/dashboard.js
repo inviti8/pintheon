@@ -98,9 +98,7 @@ function startHeartbeat() {
                 };
             })
             .then(data => {
-                console.log(data)
-                console.log('-------------------------------------------------------------------------------------')
-                console.log(window.dash.data)
+                check_for_balance_changes(data);
                 window.dash.updateDashData(data);
             })
             .catch(() => {
@@ -111,10 +109,75 @@ function startHeartbeat() {
                 }
             });
 
-    }, 7000);
+    }, 10000);
 }
 
 startHeartbeat();
+
+const check_for_balance_changes = async (loaded_dash_data) =>{
+    let tokens = loaded_dash_data['token_info'];
+    let xlm_changed = false;
+    let opus_changed = false;
+    let xlm = null;
+    let opus = null;
+    let old_xlm = null;
+    let old_opus = null;
+
+    for (let i = 0; i < tokens.length; i++) {
+        // console.log(tokens[i]['Balance'])
+        if(tokens[i]['Name'] == 'xlm'){
+            xlm = tokens[i];
+        }else if(tokens[i]['Name'] == 'opus'){
+            opus = tokens[i];
+        }
+    };
+    
+    let client_tokens = window.dash.data['token_info'];
+
+    for (let i = 0; i < client_tokens.length; i++) {
+        // console.log(client_tokens[i]['Balance'])
+        if(client_tokens[i]['Name'] == 'xlm'){
+            if(client_tokens[i]['Balance'] != xlm['Balance']){
+                xlm_changed = true;
+                old_xlm = client_tokens[i];
+            };
+            
+        }else if(client_tokens[i]['Name'] == 'opus'){
+            if(client_tokens[i]['Balance'] != opus['Balance']){
+                opus_changed = true;
+                old_opus = client_tokens[i];
+            };
+        }
+    };
+    
+    let toast_txt = null;
+    if(xlm_changed == true){
+        console.log(xlm_changed)
+        if(old_xlm['Balance'] < xlm['Balance']){
+            let recieved = xlm['Balance'] - old_xlm['Balance'];
+            toast_txt = "You have recieved "+recieved+" XLM. \n"
+        }else if(old_xlm['Balance'] > xlm['Balance']){
+            let debited = old_xlm['Balance'] - xlm['Balance'];
+            toast_txt = "A transaction for "+debited+" XLM has been debited from your account.\n"
+        }
+    };
+
+    if(opus_changed == true){
+        if(old_opus['Balance'] < opus['Balance']){
+            let recieved = opus['Balance'] - old_opus['Balance'];
+            toast_txt += "You have recieved "+recieved+" OPUS."
+        }else if(old_opus['Balance'] > opus['Balance']){
+            let debited = old_opus['Balance'] - opus['Balance'];
+            toast_txt += "A transaction for "+debited+" OPUS has been debited from your account."
+        }
+    };
+
+    if(toast_txt != null){
+        let anim = { 'timeout': 6000, 'animation': 'fall' }
+        ons.notification.toast(toast_txt, anim)
+    };
+
+};
 
 const load_encrypted_keystore = async () => {
     await window.fn.loadJSONFileObject( authorize, true, ['node_data'] );

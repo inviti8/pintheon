@@ -1019,6 +1019,7 @@ class PintheonMachine(object):
 
     def stellar_xlm_balance(self):
         xlm_balance = 0
+        self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
         for balance in self.stellar_account['balances']:
             if balance['asset_type'] == 'native':
                 xlm_balance = balance['balance']
