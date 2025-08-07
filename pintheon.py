@@ -386,7 +386,7 @@ def unauthorized_access(e):
 
 @app.route('/')
 def root():
-    """Root route - serve custom homepage if exists, otherwise redirect to admin"""
+    """Root route - serve custom homepage if exists, otherwise return 403"""
     if _custom_homepage_exists():
         index_file = _get_custom_homepage_file()
         # If the index file is in a subdirectory, we need to handle it properly
@@ -399,7 +399,7 @@ def root():
             # Index file is in the root directory
             return send_from_directory(CUSTOM_HOMEPAGE_PATH, index_file)
     else:
-        return redirect(url_for('admin'))
+        abort(403)
 
 @app.route('/custom_homepage/<path:filename>')
 def custom_homepage_static(filename):
