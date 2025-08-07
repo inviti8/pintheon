@@ -45,6 +45,7 @@ from hvym_stellar import *
 import py7zr
 from pathlib import Path
 import configparser
+import traceback
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
@@ -411,6 +412,8 @@ class PintheonMachine(object):
         if self.stellar_keypair == None:
              self._load_stellar_keypair()
 
+        self.update_xlm_balance()
+        self.update_opus_balance()
         self.auth_nonce = str(uuid.uuid4())
         self.auth_token = self._create_auth_token()
         self.logged_in = True
@@ -533,9 +536,26 @@ class PintheonMachine(object):
             return call_result
         try:
             tx = call_result['result']
-            tx.sign_and_submit()
-            res = tx.result()
-            return {'success': True, 'result': res}
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+                time.sleep(3)
+                attempts += 1
+            
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                try:
+                    res = tx.result()
+                    return {'success': True, 'result': res}
+                except Exception as result_error:
+                    print(f'Warning: Could not get result from tx.result(): {result_error}')
+                    return {'success': True, 'result': None}
+            else:
+                return {'success': False, 'error': f"Transaction status: {get_transaction_data.status}"}
         except Exception as e:
             print(f'Error in join_collective tx: {e}')
             return {'success': False, 'error': str(e)}
@@ -557,9 +577,26 @@ class PintheonMachine(object):
             return call_result
         try:
             tx = call_result['result']
-            tx.sign_and_submit()
-            address = tx.result().address
-            return {'success': True, 'address': address}
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+                time.sleep(3)
+                attempts += 1
+            
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                try:
+                    address = tx.result().address
+                    return {'success': True, 'address': address}
+                except Exception as addr_error:
+                    print(f'Warning: Could not get address from tx.result(): {addr_error}')
+                    return {'success': True, 'address': send_transaction.hash}
+            else:
+                return {'success': False, 'error': f"Transaction status: {get_transaction_data.status}"}
         except Exception as e:
             print(f'Error in deploy_node_token tx: {e}')
             return {'success': False, 'error': str(e)}
@@ -580,13 +617,47 @@ class PintheonMachine(object):
             return call_result
         try:
             tx = call_result['result']
-            tx.sign_and_submit()
-            self.update_opus_balance()
-            self.add_file_token_to_toml(name, ipfs_hash)
-            address = tx.result().address
-            return {'success': True, 'address': address}
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+                time.sleep(3)
+                attempts += 1
+            
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                self.update_opus_balance()
+                self.add_file_token_to_toml(name, ipfs_hash)
+                # For contract deployment, we need to extract the contract address
+                # Try to get the contract address from the transaction result
+                try:
+                    # First, try to get the address from the original transaction object
+                    # This might work if the transaction object still has the result cached
+                    address = tx.result().address
+                    return {'success': True, 'address': address}
+                except Exception as addr_error:
+                    print(f'Warning: Could not get address from tx.result(): {addr_error}')
+                    try:
+                        # Try to extract from transaction metadata
+                        if hasattr(get_transaction_data, 'result_meta_xdr') and get_transaction_data.result_meta_xdr:
+                            # The contract address might be in the transaction metadata
+                            # For now, use transaction hash as fallback
+                            address = send_transaction.hash
+                        else:
+                            address = send_transaction.hash
+                        return {'success': True, 'address': address}
+                    except Exception as meta_error:
+                        print(f'Warning: Could not extract from metadata: {meta_error}')
+                        # Return transaction hash as final fallback
+                        return {'success': True, 'address': send_transaction.hash}
+            else:
+                return {'success': False, 'error': f"Transaction status: {get_transaction_data.status}"}
         except Exception as e:
             print(f'Error in deploy_ipfs_token tx: {e}')
+            traceback.print_exc()
             return {'success': False, 'error': str(e)}
 
     def publish_file(self, ipfs_hash):
@@ -959,6 +1030,11 @@ class PintheonMachine(object):
         self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
         return self.stellar_account['balances']
     
+    def update_xlm_balance(self):
+        balance = self.stellar_xlm_balance()
+        if balance != None:
+            self._update_token_book_balance(self.XLM_ID, balance)
+    
     def stellar_set_logos(self, light_logo, dark_logo):
         self.stellar_logo_light = light_logo
         self.stellar_logo_dark = dark_logo
@@ -1051,6 +1127,7 @@ class PintheonMachine(object):
         self.active_page = 'authorize'
         node_keys = self._get_node_keys()
         node_data = self._get_node_data()
+        customization = self._get_customization()
         self.node_pub = node_keys['pub']
         self.node_priv = self.deserialize_private_key(node_keys['priv'])
         self.root_token = node_keys['root_token']
@@ -1061,6 +1138,11 @@ class PintheonMachine(object):
         self.url_host = node_data['url_host']
         self.node_contract = node_data['node_contract']
         self.root_token = node_data['root_token']
+        self.theme = customization['current_theme']
+        self.bg_img = customization['bg_img']
+        self.stellar_logo = customization['logo']
+        self.opus_logo = customization['opus_logo']
+        self.boros_logo = customization['boros_logo']
         self._update_state_data()
         self._update_customization()
         # Ensure stellar_toml is reinitialized on resume
@@ -1125,9 +1207,19 @@ class PintheonMachine(object):
         else:
             self.stellar_logo = self.stellar_logo_light
 
-        data = { 'current_theme': self.theme, 'themes': self.themes, 'bg_img': self.bg_img, 'logo': self.stellar_logo, 'opus_logo': self.opus_logo, 'boros_logo': self.boros_logo }
+        data = { 'id': 'CUSTOMIZATION', 'current_theme': self.theme, 'themes': self.themes, 'bg_img': self.bg_img, 'logo': self.stellar_logo, 'opus_logo': self.opus_logo, 'boros_logo': self.boros_logo }
         self._update_table_doc(self.customization, data)
         self.db.close()
+
+    def _get_customization(self):
+        result = None
+        self._open_db()
+        file = Query()
+        record = self.customization.get(file.id == 'CUSTOMIZATION')
+        if record != None:
+            result = record
+        self.db.close()
+        return result
 
     def _update_node_data(self, logo_url, name, descriptor, node_contract):
         self.logo_url = logo_url
@@ -1567,8 +1659,14 @@ class PintheonMachine(object):
             from urllib.parse import urlparse
             parsed = urlparse(host)
             host = parsed.netloc
+        address = None
+        key_25519 = None
+        if self.stellar_keypair != None:
+            address = self.stellar_keypair.public_key
+        if self.stellar_25519_keypair != None:
+            key_25519 = self.stellar_25519_keypair.public_key()
         
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': self.stellar_keypair.public_key, '25519_pub': self.stellar_25519_keypair.public_key(), 'logo': self.logo_url, 'host': host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None, 'access_tokens': []}
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': address, '25519_pub': key_25519, 'logo': self.logo_url, 'host': host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None, 'access_tokens': []}
         if self.FAKE_IPFS:
             #If FAKE IPFS we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}

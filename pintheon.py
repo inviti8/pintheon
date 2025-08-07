@@ -432,7 +432,7 @@ def admin():
     print(PINTHEON.soroban_online())
     print('-----------------------------------')
 
-    PINTHEON.logo_url = url_for('static', filename='hvym_logo.png')
+    PINTHEON.logo_url = url_for('static', filename='pintheon_logo.png')
     PINTHEON.stellar_logo_url = url_for('static', filename='stellar_logo.png')
     stellar_light_logo = url_for('static', filename='stellar_logo_light.png')
     stellar_dark_logo = url_for('static', filename='stellar_logo_dark.png')
@@ -693,6 +693,7 @@ def tokenize_file():
         return jsonify({'error': 'File already tokenized', 'success': False}), 400
     else:
         contract_result = PINTHEON.deploy_ipfs_token(file_data['Name'], request.form['cid'], file_data['Name'], PINTHEON.url_host)
+        print(contract_result)
         if isinstance(contract_result, dict) and not contract_result.get('success', True):
             data = PINTHEON.get_dashboard_data() or {}
             data['transaction_data'] = None
@@ -1062,9 +1063,19 @@ def api_upload_homepage():
         return jsonify({'error': f'Error processing file: {str(e)}'}), 400
 
 @app.route('/api/heartbeat', methods=['GET'])
+@cross_origin()
 @require_local_access
 def api_heartbeat():
-    return jsonify({'status': 'ok'}), 200
+    if PINTHEON.logged_in and PINTHEON.session_active:
+        PINTHEON.update_xlm_balance()
+        PINTHEON.update_opus_balance()
+        data = PINTHEON.get_dashboard_data()
+        if data != None:
+            return data, 200
+        else:
+            return jsonify({'status': 'ok'}), 200
+    else:
+        return jsonify({'status': 'ok'}), 200
         
 
 if __name__ == '__main__':

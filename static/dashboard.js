@@ -11,7 +11,7 @@ window.dash.node_data;
 
 
 
-async function _updateDashData(data){
+window.dash.updateDashData = async function (data){
     Object.keys(data).forEach((k, i) => {
         if (k in window.dash.data){
             window.dash.data[k] = data[k];
@@ -73,7 +73,7 @@ async function init() {
             console.log('GOT DASH DATA!!!!!!!')
             console.log(data)
             window.dlg.hide('loading-dialog');
-            _updateDashData(data)
+            window.dash.updateDashData(data)
             window.dash.AUTHORIZED = true;
             window.rndr.dashboard();
           });
@@ -87,16 +87,21 @@ init();
 // --- Heartbeat Logic ---
 function startHeartbeat() {
     let missed = 0;
+
     setInterval(() => {
-        fetch('/api/heartbeat', { method: 'GET' })
+            fetch('/api/heartbeat', { method: 'GET' })
             .then(res => {
                 if (!res.ok) throw new Error('Server error');
                 missed = 0; // Reset on success
-                
-                // Update dashboard data on successful heartbeat
-                // if (window.dash.AUTHORIZED) {
-                //     dash_data(dash_updated);
-                // }
+                if (res.status === 200) {
+                    return res.json();
+                };
+            })
+            .then(data => {
+                console.log(data)
+                console.log('-------------------------------------------------------------------------------------')
+                console.log(window.dash.data)
+                window.dash.updateDashData(data);
             })
             .catch(() => {
                 missed++;
@@ -105,7 +110,8 @@ function startHeartbeat() {
                     logged_out();
                 }
             });
-    }, 5000);
+
+    }, 7000);
 }
 
 startHeartbeat();
@@ -137,7 +143,7 @@ const on_authorized = async (node) => {
         session_jwk = {'privateKey': await exportJWKCryptoKey(window.constants.CLIENT_SESSION_KEYS.privateKey), 'publicKey': await exportJWKCryptoKey(window.constants.CLIENT_SESSION_KEYS.publicKey)};
         window.fn.store(window.dash.SESSION_KEYS, session_jwk, 'local');
         window.fn.store(window.dash.NODE, node, 'local');
-        _updateDashData(node);
+        window.dash.updateDashData(node);
         window.dash.AUTHORIZED = true;
 
         window.fn.pushPage('dashboard', node);
@@ -189,7 +195,7 @@ const update_logo = async (file) => {
 const logo_updated = (node_data) => {
 
     console.log(node_data)
-    _updateDashData(node_data);
+    window.dash.updateDashData(node_data);
     window.rndr.dashboard();
 
 };
@@ -230,7 +236,7 @@ const upload_file = async (file, id=undefined) => {
 const file_updated = (fileList) => {
 
     console.log(fileList)
-    _updateDashData({ 'file_list': fileList });
+    window.dash.updateDashData({ 'file_list': fileList });
     window.rndr.dashboard();
     //window.rndr.fileListItems(fileList)
 
@@ -360,12 +366,12 @@ const dash_data = async (callback) => {
 };
 
 const dash_updated = (node) => {
-    _updateDashData(node);
+    window.dash.updateDashData(node);
     window.rndr.dashboard();
 };
 
 const settings_updated = (node) => {
-    _updateDashData(node);
+    window.dash.updateDashData(node);
     window.fn.pushPage('settings', node, window.rndr.settings);
 };
 
@@ -384,7 +390,7 @@ const update_gateway = async (gateway) => {
 const gateway_updated = (node_data) => {
 
     console.log(node_data)
-    _updateDashData(node_data);
+    window.dash.updateDashData(node_data);
     window.rndr.settings();
     //window.location.reload();
 
@@ -404,7 +410,7 @@ const update_theme = async (theme) => {
 const theme_updated = (data) => {
 
     console.log(data)
-    _updateDashData({ 'customization': data.customization });
+    window.dash.updateDashData({ 'customization': data.customization });
     window.rndr.settings();
     window.location.reload();
     window.fn.pushPage('settings', data);
@@ -432,7 +438,7 @@ const update_bg_img = async (file) => {
 const bg_img_updated = (node_data) => {
 
     console.log(node_data)
-    _updateDashData(node_data);
+    window.dash.updateDashData(node_data);
     window.rndr.dashboard();
     window.location.reload();
 
@@ -524,7 +530,7 @@ const homepage_status_updated = (response) => {
 const bg_removed = (data) => {
 
     console.log(data)
-    _updateDashData({ 'customization': data.customization });
+    window.dash.updateDashData({ 'customization': data.customization });
     window.rndr.settings();
     window.location.reload();
     window.fn.pushPage('settings', data);
@@ -586,7 +592,7 @@ const access_token_added = async (response) => {
 const access_tokens_updated = async (data) => {
 
     console.log(data)
-    await _updateDashData({ 'access_tokens': data.access_tokens});
+    await window.dash.updateDashData({ 'access_tokens': data.access_tokens});
     window.rndr.settings();
 
 };
@@ -607,7 +613,7 @@ const remove_access_token = async (stellar_25519_pub) => {
 const access_token_removed = (node_data) => {
 
     console.log(node_data)
-    _updateDashData(node_data);
+    window.dash.updateDashData(node_data);
     window.rndr.settings();
     //window.location.reload();
 
@@ -961,7 +967,7 @@ document.addEventListener('init', function(event) {
     };
 
     window.rndr.file_tokenize_transaction_dlg = function  (transaction) {
-        let fileUrl = window.dash.data.customization.stellar_logo;
+        let fileUrl = window.dash.data.customization.logo;
         let transactionUrl = document.querySelector('#transaction-confirmed-dialog-url');
         let logo = document.querySelector('#transaction-confirmed-dialog-logo');
         let description= document.querySelector('#transaction-confirmed-dialog-description');;

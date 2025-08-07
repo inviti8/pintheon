@@ -2,6 +2,16 @@ VERSION = "0.0.1"
 NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"
 ACCOUNTS = [ "GAPZA4BG5RSQC2OSO5JYQJ4DEBXMQM2H7AWY4E4TYNDYR42GYA6E6ITE", "GCOQK3LGDQL7CUCC6M2JFNG7VO2DIBOB6YUOGSRMBDXHB4BFSSSJ3IW3",]
 
+[[CURRENCIES]]
+code = "HVYMFILE_test3.png"
+name = "test3.png"
+issuer = "GDR62VU7N6EYHT4JN2VKRYGR5IM7EXISLFNNUVMOFUSOKRDV4U4UT5K2"
+is_asset_anchored = false
+display_decimals = 0
+desc = "0bd978f3-b634-407e-ac47-b85c5728236d"
+image = "https://sapphire-giant-butterfly-891.mypinata.cloud/static/file_token.png"
+conditions = "This file is owned by the issuer."
+
 [DOCUMENTATION]
 ORG_NAME = "test3"
 ORG_DBA = "Pintheon Node"
