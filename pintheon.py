@@ -661,7 +661,7 @@ def update_gateway():
     if '/ipfs/' in PINTHEON.logo_url:
         cid = PINTHEON.logo_url.split('/ipfs/')[-1]
         PINTHEON.logo_url = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
-        PINTHEON.update_node_data()
+    PINTHEON.update_node_data()
     data = PINTHEON.get_dashboard_data()
     if data is None:
         return jsonify({'error': 'Cannot get dash data'}), 400

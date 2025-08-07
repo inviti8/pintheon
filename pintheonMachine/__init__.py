@@ -273,12 +273,13 @@ class PintheonMachine(object):
         if not self.url_host and host:
             self.url_host = host
 
-        if self.FAKE_IPFS:
+        if not self.url_host and self.FAKE_IPFS:
             self.url_host = FAKE_IPFS_HOST
 
         if self.DEBUG:
             self.node_contract = DEBUG_NODE_CONTRACT
-            self.url_host = DEBUG_URL_HOST
+            if not self.url_host:
+                self.url_host = DEBUG_URL_HOST
         else:
             self.join_collective()
             self._update_token_book_balance(self.XLM_ID, self.stellar_xlm_balance())
@@ -1040,6 +1041,7 @@ class PintheonMachine(object):
         self.stellar_logo_light = light_logo
         self.stellar_logo_dark = dark_logo
         self.stellar_logo = self.stellar_logo_light
+        self._update_customization()
 
     def xlm_to_stroops(self, xlm_amount):
         return int(xlm_amount * 10_000_000)
@@ -1136,6 +1138,7 @@ class PintheonMachine(object):
         self.node_name = node_data['node_name']
         self.logo_url = node_data['logo_url']
         self.node_descriptor = node_data['node_descriptor']
+        self.node_contract = node_data['node_contract']
         self.url_host = node_data['url_host']
         self.node_contract = node_data['node_contract']
         self.root_token = node_data['root_token']
@@ -1146,6 +1149,7 @@ class PintheonMachine(object):
         self.boros_logo = customization['boros_logo']
         self._update_state_data()
         self._update_customization()
+        self._update_node_data(self.logo_url, self.node_name, self.node_descriptor, self.node_contract)
         # Ensure stellar_toml is reinitialized on resume
         if self.stellar_toml is None and self.TOML_GEN is not None:
             self.stellar_toml = self.TOML_GEN(file_path=self.static_path)

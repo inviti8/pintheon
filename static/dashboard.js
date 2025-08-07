@@ -89,6 +89,7 @@ function startHeartbeat() {
     let missed = 0;
 
     setInterval(() => {
+        if(window.dash.AUTHORIZED){
             fetch('/api/heartbeat', { method: 'GET' })
             .then(res => {
                 if (!res.ok) throw new Error('Server error');
@@ -98,6 +99,7 @@ function startHeartbeat() {
                 };
             })
             .then(data => {
+                console.log(data)
                 check_for_balance_changes(data);
                 window.dash.updateDashData(data);
             })
@@ -108,7 +110,7 @@ function startHeartbeat() {
                     logged_out();
                 }
             });
-
+        };
     }, 10000);
 }
 
