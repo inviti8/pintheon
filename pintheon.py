@@ -620,7 +620,7 @@ def upload():
 def api_upload():
     token = request.form['access_token']
     encrypted = request.form['encrypted']
-    if not PINTHEON.auth_token(token):
+    if not PINTHEON.authorize_access_token(token):
         abort(403)
     else:
         required = ['access_token']
