@@ -1019,7 +1019,7 @@ def homepage_status():
 def api_upload_homepage():
     """Upload a ZIP file containing the custom homepage using access token authentication"""
     token = request.form['access_token']
-    if not PINTHEON.auth_token(token):
+    if not PINTHEON.authorize_access_token(token):
         abort(403)
     
     if 'file' not in request.files:

@@ -345,10 +345,6 @@ class PintheonMachine(object):
                 result = True
         
         return result
-    
-    def launch_token_valid(self, launch_token):
-        verifier = StellarSharedKeyTokenVerifier(self.stellar_25519_keypair, launch_token)
-        return verifier.valid()
 
     def verify_generator(self, client_generator_pub, client_root_token):
         result = False
