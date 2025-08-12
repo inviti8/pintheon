@@ -1547,7 +1547,7 @@ class PintheonMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None):
+    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None, return_file_info=False):
         if self.FAKE_IPFS:
             return self.create_fake_ipfs_data()
         else:
@@ -1602,7 +1602,11 @@ class PintheonMachine(object):
                     all_file_info = self.file_book.all()
                     self.db.close()
 
-                    return all_file_info
+                    result = all_file_info
+                    if return_file_info == True:
+                        result = ipfs_data
+
+                    return result
             else:
                 return None
         

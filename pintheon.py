@@ -232,7 +232,7 @@ def require_local_access(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False):
+def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False, return_file_info=False):
     if 'file' not in request.files:
         return "No file uploaded", 400
      
@@ -257,7 +257,7 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
         file_name = f"{file.filename}.7z"
         file_type = 'application/x-7z-compressed'
 
-    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub)
+    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub, return_file_info=return_file_info)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -624,7 +624,7 @@ def api_upload():
         abort(403)
     else:
         required = ['access_token']
-        return _handle_upload(required, request, False, False, encrypted)
+        return _handle_upload(required=required, request=request, is_logo=False, is_bg_img=False, encrypted=encrypted, return_file_info=True)
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()
