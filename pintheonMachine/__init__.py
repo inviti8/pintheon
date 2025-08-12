@@ -1597,7 +1597,13 @@ class PintheonMachine(object):
                     if is_bg_img:
                         self.file_book.update({'IsBgImg': False})
 
-                    self.file_book.insert(file_info)
+                    file = Query()
+                    record = self.file_book.get(file.CID == cid)
+
+                    if record != None:
+                        self.file_book.update(file_info)
+                    else:
+                        self.file_book.insert(file_info)
 
                     all_file_info = self.file_book.all()
                     self.db.close()

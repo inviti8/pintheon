@@ -317,6 +317,8 @@ const remove_file = async (cid) => {
         formData.append('token', session.token.serialize());
         formData.append('client_pub', session.pub);
         formData.append('cid', cid);
+
+        window.fn.removeFile(formData, '/remove_file', file_updated);
         
     };
 };
