@@ -604,11 +604,15 @@
       <ons-list-header>HOMEPAGE</ons-list-header>
       <ons-list-item style="width:100%;" >
             <header class="center-both">
-              <pre><span class="list-item__subtitle">status:   </span></pre>
-              <span id="settings-homepage-status" class="homepage-status">Checking...</span>
+              <pre><span class="list-item__subtitle">type:   </span></pre>
+              <span id="settings-homepage-status" class="homepage-status"></span>
+              <span >
+                <ons-select id="settings-homepage-select" onchange="" modifier="underbar">
+                </ons-select>
+              </span>
             </header>
       </ons-list-item>
-      <ons-list-item style="width:100%;" >
+      <ons-list-item id="settings-homepage-upload-section" style="width:100%;" >
             <header class="center-both">
               <pre><span class="list-item__subtitle">upload:   </span></pre>
               <span>
@@ -619,6 +623,13 @@
               <ons-button modifier="quiet" id="settings-homepage-remove-button" class="scale-on-hover-icon can-callback" ripple disabled>
                 <ons-icon icon="fa-remove"></ons-icon>
               </ons-button>
+            </span>
+            </header>
+      </ons-list-item>
+      <ons-list-item id="settings-homepage-ipfs-hash-section" style="width:100%;" >
+            <header class="center-both">
+              <pre><span class="list-item__subtitle">set ipfs hash:   </span></pre>
+              <span>
             </span>
             </header>
       </ons-list-item>

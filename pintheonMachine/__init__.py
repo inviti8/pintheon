@@ -55,11 +55,11 @@ STELLAR_BG_RGB = (255, 255, 255)
 STELLAR_FG_RGB = (0, 0, 0)
 
 XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_TESTNET = 'CC6T2LSDWVTZCDZBHEG22RPV4QL6C5KISLGAWWEDMMBXQ7AD6WYVGYRV'
-OPUS_TESTNET = 'CANXZXYPQKNUD7VAPVW4B5ZTIDYPRDHW2CFKLNQA4ZYM4UKDZRQZWEXC'
+COLLECTIVE_TESTNET = 'CDYWUJGUBWGBXAFI4JPN4SLSUSRJJFUT5T5JUAR7MXLLD4PXDJJUDVVA'
+OPUS_TESTNET = 'CCKH52X356WDIFTNPKA4RYP67G3UEN4HOP6OX66WB2DE5THJANCS3EJ2'
 XLM_MAINNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_MAINNET = 'CC6T2LSDWVTZCDZBHEG22RPV4QL6C5KISLGAWWEDMMBXQ7AD6WYVGYRV'
-OPUS_MAINNET = 'CANXZXYPQKNUD7VAPVW4B5ZTIDYPRDHW2CFKLNQA4ZYM4UKDZRQZWEXC'
+COLLECTIVE_MAINNET = 'CDYWUJGUBWGBXAFI4JPN4SLSUSRJJFUT5T5JUAR7MXLLD4PXDJJUDVVA'
+OPUS_MAINNET = 'CCKH52X356WDIFTNPKA4RYP67G3UEN4HOP6OX66WB2DE5THJANCS3EJ2'
 
 DEBUG_SEED = "puppy address situate future gown trade limb rival crane increase when faculty category vague alpha program remember pill waste light broom decade buddy knock"
 DEBUG_NODE_CONTRACT = "CBYP223JS7VYBIIFYUJ6ZQLAOOYXCIFZGMOHKIASMWKCZGFULVPNPV3H"
@@ -141,6 +141,8 @@ class PintheonMachine(object):
         self.theme = 0
         self.themes = ['default', 'dark', 'light']
         self.bg_img = None
+        self.homepage_type = 0
+        self.homepage_types = ['none', 'ipfs-hash', 'upload']
 
         #-------KEYS--------
         self.session_priv = None
@@ -1208,7 +1210,7 @@ class PintheonMachine(object):
         else:
             self.stellar_logo = self.stellar_logo_light
 
-        data = { 'id': 'CUSTOMIZATION', 'current_theme': self.theme, 'themes': self.themes, 'bg_img': self.bg_img, 'logo': self.stellar_logo, 'opus_logo': self.opus_logo, 'boros_logo': self.boros_logo }
+        data = { 'id': 'CUSTOMIZATION', 'current_theme': self.theme, 'themes': self.themes, 'homepage_type': self.homepage_type, 'homepage_types': self.homepage_types, 'bg_img': self.bg_img, 'logo': self.stellar_logo, 'opus_logo': self.opus_logo, 'boros_logo': self.boros_logo }
         self._update_table_doc(self.customization, data)
         self.db.close()
 

@@ -865,6 +865,23 @@ def update_theme():
         return jsonify({'error': 'Cannot get dash data'}), 400
     else:
         return data, 200
+    
+
+@app.route('/update_homepage_type', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'homepage_type'], source='json')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='json')
+def update_homepage_type():
+    req = request.get_json()
+    PINTHEON.homepage_type = req['homepage_type']
+    PINTHEON.update_customization()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        return data, 200
 
 @app.route('/update_bg_img', methods=['POST'])
 @cross_origin()

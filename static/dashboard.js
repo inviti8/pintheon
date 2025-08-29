@@ -484,6 +484,27 @@ const theme_updated = (data) => {
 
 };
 
+const update_homepage_type = async (homepage_type) => {
+
+    const body = {
+        'token': window.constants.SESSION_TOKEN.serialize(),
+        'client_pub': window.constants.CLIENT_PUBLIC_KEY,
+        'homepage_type': homepage_type,
+    };
+        
+    await window.fn.call(body, '/update_homepage_type', homepage_type_updated);
+};
+
+const homepage_type_updated = (data) => {
+
+    console.log(data)
+    window.dash.updateDashData({ 'homepage_type': data.homepage_type });
+    window.rndr.settings();
+    window.location.reload();
+    window.fn.pushPage('settings', data);
+
+};
+
 const upload_bg_img_dlg = async (callback) => {
     window.dlg.showLoadFileDlg('upload-bg-img-dialog', callback, false, [], 'FILE');
 };
@@ -854,12 +875,41 @@ document.addEventListener('init', function(event) {
 
     window.rndr.settingsHomepage = function(){
 
-        let _updateElem = function(clone, elem){
-            // Initialize homepage status
-            get_homepage_status();
+        // let _updateElem = function(clone, elem){
+        //     // Initialize homepage status
+        //     get_homepage_status();
+        // }
+
+        // window.rndr.RENDER_ELEM('settings-homepage', _updateElem);
+    };
+
+    window.rndr.settingsHomepageType = function(selected_type, types){
+
+        let _updateElem = function(clone, elem, selected_type, types){
+            let sel = clone.querySelector('#'+elem+'-select');
+            let upload = clone.querySelector('#'+elem+'-upload-section');
+            let hash = clone.querySelector('#'+elem+'-ipfs-hash-section');
+            
+            for (let i = 0; i < types.length; i++) {
+                sel.firstChild.insertAdjacentHTML('beforeend', '<option value="'+types[i]+'">'+types[i]+'</option>')
+
+                if(selected_type == 0){
+                    upload.style.display = 'none';
+                    hash.style.display = 'none';
+                }else if(selected_type == 1){
+                    upload.style.display = 'none';
+                    hash.style.display = '';
+                }else if(selected_type == 2){
+                    upload.style.display = '';
+                    hash.style.display = 'none';
+                };
+            }
+            sel.setAttribute('select-id', types[selected_type]);
+            sel.value = types[selected_type];
+
         }
 
-        window.rndr.RENDER_ELEM('settings-homepage', _updateElem);
+        window.rndr.RENDER_ELEM('settings-homepage', _updateElem, selected_type, types);
     };
 
     window.rndr.peerListItems = function(peerList){
@@ -903,11 +953,13 @@ document.addEventListener('init', function(event) {
     window.rndr.settings = function(){
         window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.dash.data.host);
         window.rndr.settingsAppearance(window.dash.data.customization.current_theme, window.dash.data.customization.themes, window.dash.data.customization.bg_img);
+        window.rndr.settingsHomepageType(window.dash.data.customization.homepage_type, window.dash.data.customization.homepage_types);
         window.rndr.settingsHomepage();
         
         let gateway = document.querySelector('#settings-info-gateway-url');
         let update_gateway_btn = document.querySelector('#settings-info-update-gateway');
         let theme_select = document.querySelector('#settings-appearance-select');
+        let homepage_select = document.querySelector('#settings-homepage-select');
         let upload_btn = document.querySelector('#settings-appearance-bg-button');
         let remove_btn = document.querySelector('#settings-appearance-remove-bg-button');
         let add_token_btn = document.querySelector('#settings-add-access-token-button');
@@ -927,6 +979,10 @@ document.addEventListener('init', function(event) {
 
         theme_select.onchange = function  (event) {
             update_theme(event.target.selectedIndex);
+        };
+
+        homepage_select.onchange = function  (event) {
+            update_homepage_type(event.target.selectedIndex);
         };
 
         upload_btn.onclick = function  () {
