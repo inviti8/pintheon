@@ -76,7 +76,6 @@ class PintheonMachine(object):
     states = ['spawned', 'initialized', 'establishing', 'idle', 'handling_file', 'redeeming']
 
     def __init__(self, static_path, db_path, ipfs_daemon='http://127.0.0.1:5001', toml_gen = None, testnet = False, debug = False, fake_ipfs=True):
-        self.custodian_25519_pub = 'br6Or4PeQFPJU0cmaQMKrGW__JCi3S-aY6bV6wFmi34='
         self.config = configparser.ConfigParser()
         self.config_path = Path(db_path).parent / 'pintheon.ini'
         if not os.path.isfile(self.config_path):
