@@ -387,7 +387,7 @@ def unauthorized_access(e):
 @app.route('/')
 def root():
     """Root route - serve custom homepage if exists, otherwise return 403"""
-    if _custom_homepage_exists():
+    if PINTHEON.homepage_type == 'upload' and _custom_homepage_exists():
         index_file = _get_custom_homepage_file()
         # If the index file is in a subdirectory, we need to handle it properly
         if '/' in index_file:
@@ -398,6 +398,9 @@ def root():
         else:
             # Index file is in the root directory
             return send_from_directory(CUSTOM_HOMEPAGE_PATH, index_file)
+    elif PINTHEON.homepage_type == 'ipfs-hash':
+        home = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+PINTHEON.homepage_hash
+        return redirect(home)
     else:
         abort(403)
 

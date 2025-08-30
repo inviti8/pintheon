@@ -1146,6 +1146,8 @@ class PintheonMachine(object):
         self.stellar_logo = customization['logo']
         self.opus_logo = customization['opus_logo']
         self.boros_logo = customization['boros_logo']
+        self.homepage_type = customization['homepage_type']
+        self.homepage_hash = customization['homepage_hash']
         self._update_state_data()
         self._update_customization()
         self._update_node_data(self.logo_url, self.node_name, self.node_descriptor, self.node_contract)

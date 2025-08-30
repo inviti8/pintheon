@@ -496,9 +496,8 @@ const update_homepage_type = async (homepage_type) => {
 };
 
 const homepage_type_updated = (response) => {
-
     if(response.success){
-        window.dash.updateDashData({ 'homepage_type': response.homepage_type });
+        window.dash.updateDashData({ 'customization': response.customization });
         window.rndr.settings();
     } else {
         ons.notification.alert('Error updating homepage');
@@ -628,7 +627,8 @@ const set_homepage_hash = async (hash) => {
 const hash_updated= async (response) => {
     console.log(response)
     if(response.success){
-        ons.notification.confirm('Homepage hash updated.')
+        ons.notification.confirm('Homepage hash updated.');
+        window.dash.updateDashData({ 'customization': response.customization });
         window.rndr.settings();
     }else{
         ons.notification.alert('IPFS Hash not set');
