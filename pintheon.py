@@ -398,7 +398,7 @@ def root():
         else:
             # Index file is in the root directory
             return send_from_directory(CUSTOM_HOMEPAGE_PATH, index_file)
-    elif PINTHEON.homepage_type == 'ipfs-hash':
+    elif PINTHEON.homepage_hash != 'none' and PINTHEON.homepage_type == 'ipfs-hash' and PINTHEON.file_hash_exists(PINTHEON.homepage_hash, 'text/html'):
         home = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+PINTHEON.homepage_hash
         return redirect(home)
     else:
@@ -638,7 +638,7 @@ def api_upload():
 def update_logo():
     file = request.files['file']
     cid = None
-    if PINTHEON.file_exists(file.filename, file.mimetype):
+    if PINTHEON.file_name_exists(file.filename, file.mimetype):
         PINTHEON.update_file_as_logo(file.filename)
     else:
         files = _handle_upload(required=['token', 'client_pub'], request=request, is_logo=True)
@@ -930,7 +930,7 @@ def update_bg_img():
     cid = None
     PINTHEON.all_file_info()
     print(file.mimetype)
-    if PINTHEON.file_exists(file.filename, file.mimetype):
+    if PINTHEON.file_name_exists(file.filename, file.mimetype):
         print('HERE!!!')
         files = PINTHEON.update_file_as_bg_img(file.filename)
         cid = _get_file_cid(file, files)

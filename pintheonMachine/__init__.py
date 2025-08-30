@@ -1377,6 +1377,9 @@ class PintheonMachine(object):
                 url = f'{self.ipfs_endpoint}/repo/gc'
                 data = response.json()
                 print(data)
+                if cid == self.homepage_hash:
+                    self.homepage_hash = 'none'
+                    
                 response = requests.post(url)
                 if response.status_code == 200:
                     print(response)
@@ -1423,11 +1426,24 @@ class PintheonMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def file_exists(self, file_name, file_type):
+    def file_name_exists(self, file_name, file_type):
         result = False
         self._open_db()
         file = Query()
         record = self.file_book.get(file.Name == file_name)
+
+        if record != None:
+            result = True
+
+        self.db.close()
+
+        return result
+    
+    def file_hash_exists(self, file_name, file_type):
+        result = False
+        self._open_db()
+        file = Query()
+        record = self.file_book.get(file.Name == file_name and file.Type == file_type)
 
         if record != None:
             result = True
