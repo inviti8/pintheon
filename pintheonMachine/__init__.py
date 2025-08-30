@@ -1379,6 +1379,7 @@ class PintheonMachine(object):
                 print(data)
                 if cid == self.homepage_hash:
                     self.homepage_hash = 'none'
+                    self.update_customization()
                     
                 response = requests.post(url)
                 if response.status_code == 200:
