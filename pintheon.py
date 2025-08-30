@@ -879,9 +879,42 @@ def update_homepage_type():
     PINTHEON.update_customization()
     data = PINTHEON.get_dashboard_data()
     if data is None:
-        return jsonify({'error': 'Cannot get dash data'}), 400
+        return jsonify({'success': False, 'error': 'Cannot get dash data'}), 400
     else:
+        data['success'] = True
         return data, 200
+    
+@app.route('/update_homepage_hash', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'hash'], source='json')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='json')
+def update_homepage_hash():
+    req = request.get_json()
+    PINTHEON.homepage_hash = req['hash']
+    PINTHEON.update_customization()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'success': False, 'error': 'Cannot get dash data'}), 400
+    else:
+        data['success'] = True
+        return data, 200
+    
+@app.route('/hash_is_html', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'hash'], source='json')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='json')
+def hash_is_html():
+    req = request.get_json()
+    result = PINTHEON.is_html_file(req['hash'])
+
+    if result is False:
+        return jsonify({'success': False, 'message': 'File not found, ot not valid.'}), 400
+    else:
+        return jsonify({'success': True, 'message': 'File is html.'})
 
 @app.route('/update_bg_img', methods=['POST'])
 @cross_origin()

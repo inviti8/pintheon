@@ -492,16 +492,17 @@ const update_homepage_type = async (homepage_type) => {
         'homepage_type': homepage_type,
     };
         
-    await window.fn.call(body, '/update_homepage_type', homepage_type_updated);
+    await window.fn.quiet_call(body, '/update_homepage_type', homepage_type_updated);
 };
 
-const homepage_type_updated = (data) => {
+const homepage_type_updated = (response) => {
 
-    console.log(data)
-    window.dash.updateDashData({ 'homepage_type': data.homepage_type });
-    window.rndr.settings();
-    window.location.reload();
-    window.fn.pushPage('settings', data);
+    if(response.success){
+        window.dash.updateDashData({ 'homepage_type': response.homepage_type });
+        window.rndr.settings();
+    } else {
+        ons.notification.alert('Error updating homepage');
+    };
 
 };
 
@@ -558,7 +559,7 @@ const upload_homepage = async (file) => {
 const homepage_updated = (response) => {
     console.log(response)
     if(response.success){
-        ons.notification.alert('Homepage uploaded successfully!');
+        ons.notification.alert('Homepage updated successfully!');
         get_homepage_status();
     } else {
         ons.notification.alert('Error uploading homepage: ' + response.error);
@@ -583,6 +584,55 @@ const homepage_removed = (response) => {
     } else {
         ons.notification.alert('Error removing homepage: ' + response.error);
     }
+};
+
+const check_homepage_hash = async (hash) => {
+    const session = _getSessionData();
+
+    if(hash){
+
+        const body = {
+            'token': session.token.serialize(),
+            'client_pub': session.pub,
+            'hash': hash,
+        };
+
+        await window.fn.quiet_call(body, '/hash_is_html', hash_checked);
+    };
+};
+
+const hash_checked = async (response) => {
+    console.log(response)
+    if(response.success){
+        let hash = document.querySelector('#settings-homepage-ipfs-hash-input').value;
+        set_homepage_hash(hash);
+    }else{
+        ons.notification.alert('IPFS Hash not set');
+    }
+};
+
+const set_homepage_hash = async (hash) => {
+    const session = _getSessionData();
+
+    if(hash){
+        const body = {
+            'token': session.token.serialize(),
+            'client_pub': session.pub,
+            'hash': hash,
+        };
+
+        await window.fn.quiet_call(body, '/update_homepage_hash', hash_updated);
+    };
+};
+
+const hash_updated= async (response) => {
+    console.log(response)
+    if(response.success){
+        ons.notification.confirm('Homepage hash updated.')
+        window.rndr.settings();
+    }else{
+        ons.notification.alert('IPFS Hash not set');
+    };
 };
 
 const get_homepage_status = async () => {
@@ -883,12 +933,13 @@ document.addEventListener('init', function(event) {
         // window.rndr.RENDER_ELEM('settings-homepage', _updateElem);
     };
 
-    window.rndr.settingsHomepageType = function(selected_type, types){
+    window.rndr.settingsHomepageType = function(selected_type, types, homepage_hash){
 
         let _updateElem = function(clone, elem, selected_type, types){
             let sel = clone.querySelector('#'+elem+'-select');
             let upload = clone.querySelector('#'+elem+'-upload-section');
             let hash = clone.querySelector('#'+elem+'-ipfs-hash-section');
+            let hash_input = clone.querySelector('#'+elem+'-ipfs-hash-input');
             
             for (let i = 0; i < types.length; i++) {
                 sel.firstChild.insertAdjacentHTML('beforeend', '<option value="'+types[i]+'">'+types[i]+'</option>')
@@ -906,6 +957,7 @@ document.addEventListener('init', function(event) {
             }
             sel.setAttribute('select-id', types[selected_type]);
             sel.value = types[selected_type];
+            hash_input.value = homepage_hash;
 
         }
 
@@ -953,13 +1005,15 @@ document.addEventListener('init', function(event) {
     window.rndr.settings = function(){
         window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.dash.data.host);
         window.rndr.settingsAppearance(window.dash.data.customization.current_theme, window.dash.data.customization.themes, window.dash.data.customization.bg_img);
-        window.rndr.settingsHomepageType(window.dash.data.customization.homepage_type, window.dash.data.customization.homepage_types);
+        window.rndr.settingsHomepageType(window.dash.data.customization.homepage_type, window.dash.data.customization.homepage_types, window.dash.data.customization.homepage_hash);
         window.rndr.settingsHomepage();
         
         let gateway = document.querySelector('#settings-info-gateway-url');
         let update_gateway_btn = document.querySelector('#settings-info-update-gateway');
         let theme_select = document.querySelector('#settings-appearance-select');
         let homepage_select = document.querySelector('#settings-homepage-select');
+        let homepage_hash_input = document.querySelector('#settings-homepage-ipfs-hash-input')
+        let homepage_hash_btn = document.querySelector('#settings-homepage-ipfs-hash-button')
         let upload_btn = document.querySelector('#settings-appearance-bg-button');
         let remove_btn = document.querySelector('#settings-appearance-remove-bg-button');
         let add_token_btn = document.querySelector('#settings-add-access-token-button');
@@ -1015,6 +1069,13 @@ document.addEventListener('init', function(event) {
         if(homepage_remove_btn){
             homepage_remove_btn.onclick = function () {
                 remove_homepage();
+            };
+        }
+
+        if(homepage_hash_btn){
+            homepage_hash_btn.onclick = function () {
+                let hash = homepage_hash_input.value;
+                check_homepage_hash(hash)
             };
         }
 

@@ -21,6 +21,11 @@ header {
   align-items: center;
   width:100%;
 }
+.horiz-span {
+  display: flex;
+  align-items: center; /* Vertically aligns items in the center */
+  gap: 10px; /* Adds spacing between the input and button */
+}
 .hidden {
   display: none;
 }

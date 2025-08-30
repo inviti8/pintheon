@@ -143,6 +143,7 @@ class PintheonMachine(object):
         self.bg_img = None
         self.homepage_type = 0
         self.homepage_types = ['none', 'ipfs-hash', 'upload']
+        self.homepage_hash = 'none'
 
         #-------KEYS--------
         self.session_priv = None
@@ -1210,7 +1211,7 @@ class PintheonMachine(object):
         else:
             self.stellar_logo = self.stellar_logo_light
 
-        data = { 'id': 'CUSTOMIZATION', 'current_theme': self.theme, 'themes': self.themes, 'homepage_type': self.homepage_type, 'homepage_types': self.homepage_types, 'bg_img': self.bg_img, 'logo': self.stellar_logo, 'opus_logo': self.opus_logo, 'boros_logo': self.boros_logo }
+        data = { 'id': 'CUSTOMIZATION', 'current_theme': self.theme, 'themes': self.themes, 'homepage_type': self.homepage_type, 'homepage_types': self.homepage_types, 'homepage_hash': self.homepage_hash, 'bg_img': self.bg_img, 'logo': self.stellar_logo, 'opus_logo': self.opus_logo, 'boros_logo': self.boros_logo }
         self._update_table_doc(self.customization, data)
         self.db.close()
 
@@ -1433,6 +1434,19 @@ class PintheonMachine(object):
         self.db.close()
 
         return result
+    
+    def is_html_file(self, cid):
+        result = False
+        self._open_db()
+        file = Query()
+        record = self.file_book.get(file.CID == cid and file.Type == 'text/html')
+
+        if record != None :
+            result = True
+
+        self.db.close()
+
+        return result
 
     def update_file_as_logo(self, file_name):
         self._open_db()
@@ -1620,7 +1634,7 @@ class PintheonMachine(object):
         
     def create_fake_ipfs_data(self):
         names = ['test1.png', 'test2.png', 'test3.png']
-        types = ['image/png', 'image/png', 'image/png']
+        types = ['image/png', 'text/html', 'image/png']
         logo = [False, True, False]
         bg_img = [False, False, False]
 

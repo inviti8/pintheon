@@ -179,6 +179,29 @@ document.addEventListener('init', function(event) {
         return result
     };
 
+    window.fn.quiet_call = async (body, endpoint, callback, method='POST') => {
+        let requestBody = JSON.stringify(body);
+    
+        fetch(endpoint, {
+            method: method,
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: requestBody
+          })
+          .then(response => {
+            console.log(response)
+            if (response.status) {
+                return response.json();
+            } else {
+                throw new Error('Request failed with status: ' + response.status );
+            }
+          })
+          .then(data => {
+            callback(data);
+          });
+    };
+
     window.fn.call = async (body, endpoint, callback, method='POST') => {
         window.dlg.show('loading-dialog');
     
