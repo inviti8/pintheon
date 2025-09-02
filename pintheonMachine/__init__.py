@@ -1535,7 +1535,7 @@ class PintheonMachine(object):
 
         return all_file_info
     
-    def add_access_token(self, name, stellar_25519_pub, timestamped=False, timestamp=300):
+    def add_access_token(self, name, stellar_25519_pub, timestamped=False, timestamp=5):
         builder = StellarSharedKeyTokenBuilder(self.stellar_25519_keypair, stellar_25519_pub)
         if timestamped:
             builder = StellarSharedKeyTokenBuilder(self.stellar_25519_keypair, stellar_25519_pub, expires_in=timestamp)

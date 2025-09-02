@@ -827,7 +827,7 @@ def add_access_token():
         timestamped = False
 
     stellar_25519_pub = request.form['stellar_25519_pub']
-    token = PINTHEON.add_access_token(name, stellar_25519_pub)
+    token = PINTHEON.add_access_token(name, stellar_25519_pub, timestamped=timestamped, timestamp=timestamp)
     if token is None:
         return jsonify({'error': 'Cannot create new access token'}), 400
     else:
