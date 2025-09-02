@@ -684,18 +684,47 @@ const add_access_token_dlg = async (callback) => {
     await window.dlg.show('add-access-token-dialog', callback);
     let name = document.querySelector('#add-access-token-dialog-name');
     let pub = document.querySelector('#add-access-token-dialog-pub');
+    let use_timestamp = document.querySelector('#add-access-token-timestamped');
+    let item = document.querySelector('#add-access-token-timestamp-item');
+
+    if(item){
+        item.style.display = 'none';
+    };
+
     if(name != undefined && pub != undefined){
         name.value = "";
         pub.value = "";
-    }
+    };
+
+    if(use_timestamp != undefined){
+
+        use_timestamp.onchange = function (e){
+            console.log(item)
+            let checked = e.target.checked;
+            if(checked){
+                item.style.display = '';
+            }else{
+                item.style.display = 'none';
+            };
+        };
+    };
+
+    
+
 };
 
 const add_access_token = async () => {
     let name = document.querySelector('#add-access-token-dialog-name');
     let pub = document.querySelector('#add-access-token-dialog-pub');
+    let use_timestamp = document.querySelector('#add-access-token-timestamped');
+    let timestamp = document.querySelector('#add-access-token-timestamp');
     const session = _getSessionData();
 
     const formData = new FormData();
+
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    console.log(use_timestamp.checked)
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
     if(name != undefined && pub != undefined){
         if (approve.value(name.value, window.fn.input_rules).approved && approve.value(pub.value, window.fn.input_rules).approved){
@@ -703,6 +732,8 @@ const add_access_token = async () => {
             formData.append('client_pub', session.pub);
             formData.append('name', name.value);
             formData.append('stellar_25519_pub', pub.value)
+            formData.append('timestamped', use_timestamp.checked)
+            formData.append('timestamp', timestamp.value)
             await window.fn.addAccessToken(formData, '/add_access_token', access_token_added);
         }else{
             ons.notification.alert('All fields must be filled out');

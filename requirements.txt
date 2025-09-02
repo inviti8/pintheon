@@ -36,7 +36,7 @@ frozenlist==1.5.0
 gunicorn==23.0.0
 h11==0.16.0
 hexbytes==1.2.1
-hvym_stellar==0.8
+hvym_stellar==0.10
 idna==3.10
 importlib_metadata==8.6.1
 importlib_resources==6.5.2

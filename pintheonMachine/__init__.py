@@ -1535,9 +1535,12 @@ class PintheonMachine(object):
 
         return all_file_info
     
-    def add_access_token(self, name, stellar_25519_pub):
+    def add_access_token(self, name, stellar_25519_pub, timestamped=False, timestamp=300):
         builder = StellarSharedKeyTokenBuilder(self.stellar_25519_keypair, stellar_25519_pub)
-        data = { 'name': name, 'pub': stellar_25519_pub }
+        if timestamped:
+            builder = StellarSharedKeyTokenBuilder(self.stellar_25519_keypair, stellar_25519_pub, expires_in=timestamp)
+
+        data = { 'name': name, 'pub': stellar_25519_pub, 'timestamped' : timestamped }
         self._open_db()
         file = Query()
 
@@ -1562,8 +1565,20 @@ class PintheonMachine(object):
         return all_token_info
     
     def authorize_access_token(self, access_token):
+        result = False
         tokenVerifier = StellarSharedKeyTokenVerifier(self.stellar_25519_keypair, access_token)
-        return tokenVerifier.valid()
+        sender_pub = tokenVerifier.sender_pub()
+        result = tokenVerifier.valid()
+        file = Query()
+
+        record = self.access_tokens.get(file.pub == sender_pub)
+
+        if record.timestamped:
+            result = tokenVerifier.is_expired()
+
+        self.db.close()
+
+        return result
     
     def all_access_token_info(self):
         self._open_db()

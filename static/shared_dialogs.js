@@ -100,7 +100,7 @@ window.dlg.show = async function(id, callback, ...args) {
     if (dialog) {
         dialog.show();
     } else {
-      ons.createElement(id+'.html', { append: true })
+      await ons.createElement(id+'.html', { append: true })
         .then(function(dialog) {
           if(callback){
             dialog.querySelector('.can-callback').onclick = function () {

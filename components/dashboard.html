@@ -521,7 +521,7 @@
   </template>
 
     <template id="access-token-list-items-template">
-    <ons-list-item ripple>
+    <ons-list-item>
       <div class="fab-container left">
         <span class="left"><ons-icon icon="fa-ticket"></ons-icon></span>
         <pre>   </pre><span id="access-token-name"></span>
@@ -542,6 +542,15 @@
           <ons-list-header><ons-icon class="right" icon="fa-ticket"></ons-icon>__NEW ACCESS TOKEN</ons-list-header>
           <ons-list-item class="node-data-card-header-list-item">
             <ons-input class="dash-input" id="add-access-token-dialog-name" modifier="large" placeholder="Token Name" float></ons-input>
+          </ons-list-item>
+          <ons-list-item class="node-data-card-header-list-item">
+            <label class="left"><ons-checkbox id="add-access-token-timestamped" value="off"></ons-checkbox></label>
+            <pre>   </pre>
+            <label for="add-access-token-timestamped" class="center">Timestamped</label>
+            <pre>   </pre>
+          </ons-list-item>
+          <ons-list-item id="add-access-token-timestamp-item" class="node-data-card-header-list-item">
+            <ons-input id="add-access-token-timestamp" type="number" min="60" max="31536000" value="60"></ons-input>
           </ons-list-item>
           <ons-list-item class="node-data-card-header-list-item">
             <ons-input class="dash-input" id="add-access-token-dialog-pub" modifier="large" placeholder="Stellar 25519 Public Key" float></ons-input>

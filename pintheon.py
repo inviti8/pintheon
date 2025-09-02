@@ -813,11 +813,19 @@ def add_to_namespace():
 @app.route('/add_access_token', methods=['POST'])
 @cross_origin()
 @require_local_access
-@require_fields(['token', 'client_pub', 'name', 'stellar_25519_pub'], source='form')
+@require_fields(['token', 'client_pub', 'name', 'stellar_25519_pub', 'timestamped', 'timestamp'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def add_access_token():
     name = request.form['name']
+    timestamped = request.form['timestamped']
+    timestamp = int(request.form['timestamp'])
+
+    if timestamped == 'true':
+        timestamped = True
+    else:
+        timestamped = False
+
     stellar_25519_pub = request.form['stellar_25519_pub']
     token = PINTHEON.add_access_token(name, stellar_25519_pub)
     if token is None:
