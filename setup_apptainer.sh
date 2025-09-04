@@ -3,11 +3,11 @@ echo "Installing nginx:"
 apt install nginx -y
 echo "Configuring Nginx"
 
-echo "Generate SSL Certs."
-mkcert -install
-mkcert local.pintheon.com localhost 127.0.0.1 ::1
-mv -f local.pintheon.com+3.pem /etc/ssl/pintheon.crt
-mv -f local.pintheon.com+3-key.pem /etc/ssl/pintheon.key
+# echo "Generate SSL Certs."
+# mkcert -install
+# mkcert local.pintheon.com localhost 127.0.0.1 ::1
+# mv -f local.pintheon.com+3.pem /etc/ssl/pintheon.crt
+# mv -f local.pintheon.com+3-key.pem /etc/ssl/pintheon.key
 
 cat > /etc/nginx/sites-available/default<<  EOF
 
