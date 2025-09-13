@@ -70,6 +70,12 @@ FAKE_IPFS_FILE2 = str(uuid.uuid4())
 FAKE_IPFS_FILE3 = str(uuid.uuid4())
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
+TESTNET_SOROBAN_SERVER = 'https://soroban-testnet.stellar.org:443'
+TESTNET_HORIZON_SERVER = 'https://horizon-testnet.stellar.org'
+
+MAINNET_SOROBAN_SERVER = 'https://soroban-rpc.stellar.org:443'
+MAINNET_HORIZON_SERVER = 'https://horizon.stellar.org'
+
 
 class PintheonMachine(object):
 
@@ -154,22 +160,24 @@ class PintheonMachine(object):
         self.block_explorer = "https://stellar.expert/explorer"
         self.testnet_transaction = "/testnet/tx/"
         self.mainnet_transaction = "/public/tx/"
-        self.soroban_rpc_url = "https://soroban-testnet.stellar.org:443"
-        self.stellar_server = Server("https://horizon-testnet.stellar.org")
-        self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.stellar_initializing_keypair = Keypair.random()
         self.stellar_initializing_25519_keypair = Stellar25519KeyPair(self.stellar_initializing_keypair)
         self.XLM_REQUIRED_START_BALANCE = 100
         if self.use_testnet:
+            self.soroban_rpc_url = TESTNET_SOROBAN_SERVER
+            self.stellar_server = Server(TESTNET_HORIZON_SERVER)
             self.XLM_ID = XLM_TESTNET
             self.COLLECTIVE_ID = COLLECTIVE_TESTNET
             self.OPUS_ID = OPUS_TESTNET
             self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
         else:
+            self.soroban_rpc_url = MAINNET_SOROBAN_SERVER
+            self.stellar_server = Server(MAINNET_HORIZON_SERVER)
             self.XLM_ID = XLM_MAINNET
             self.COLLECTIVE_ID = COLLECTIVE_MAINNET
             self.OPUS_ID = OPUS_MAINNET
             self.NETWORK_PASSPHRASE = Network.PUBLIC_NETWORK_PASSPHRASE
+        self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.BASE_FEE = self.stellar_server.fetch_base_fee()
         self.stellar_account = None
         self.stellar_keypair = None
