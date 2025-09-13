@@ -87,7 +87,11 @@ class PintheonMachine(object):
         if not os.path.isfile(self.config_path):
             self.config['Init'] = {
                 'uid': str(uuid.uuid4()),
-                'master_key': base64.b64encode(Fernet.generate_key()).decode('utf-8')
+                'master_key': base64.b64encode(Fernet.generate_key()).decode('utf-8'),
+                'testnet_soroban_server': TESTNET_SOROBAN_SERVER,
+                'testnet_horizon_server': TESTNET_HORIZON_SERVER,
+                'mainnet_soroban_server': MAINNET_SOROBAN_SERVER,
+                'mainnet_horizon_server': MAINNET_HORIZON_SERVER
                 }
             with open(self.config_path, 'w') as configfile:
                 self.config.write(configfile)
@@ -164,15 +168,15 @@ class PintheonMachine(object):
         self.stellar_initializing_25519_keypair = Stellar25519KeyPair(self.stellar_initializing_keypair)
         self.XLM_REQUIRED_START_BALANCE = 100
         if self.use_testnet:
-            self.soroban_rpc_url = TESTNET_SOROBAN_SERVER
-            self.stellar_server = Server(TESTNET_HORIZON_SERVER)
+            self.soroban_rpc_url = self.config['testnet_soroban_server']
+            self.stellar_server = Server(self.config['testnet_horizon_server'])
             self.XLM_ID = XLM_TESTNET
             self.COLLECTIVE_ID = COLLECTIVE_TESTNET
             self.OPUS_ID = OPUS_TESTNET
             self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
         else:
-            self.soroban_rpc_url = MAINNET_SOROBAN_SERVER
-            self.stellar_server = Server(MAINNET_HORIZON_SERVER)
+            self.soroban_rpc_url = self.config['mainnet_soroban_server']
+            self.stellar_server = Server(self.config['testnet_horizon_server'])
             self.XLM_ID = XLM_MAINNET
             self.COLLECTIVE_ID = COLLECTIVE_MAINNET
             self.OPUS_ID = OPUS_MAINNET
