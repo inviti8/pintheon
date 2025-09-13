@@ -1,4 +1,5 @@
 #!/bin/bash
+BRANCH=${1:-"master"}
 cd /home
 echo "Installing requirements"
 # cd /home/test
@@ -22,7 +23,7 @@ chmod +x mkcert-v1.4.4-linux-amd64
 cp mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
 
 echo "Cloning pintheon"
-git clone https://github.com/inviti8/pintheon.git
+git clone -b $BRANCH https://github.com/inviti8/pintheon.git
 echo "------------------------------------"
 echo "$PWD"
 echo "$(ls)"
