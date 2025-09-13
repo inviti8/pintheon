@@ -38,8 +38,8 @@ pip install -r /home/pintheon/requirements.txt
 echo "Deactivate the environment"
 deactivate
 usermod -a -G root www-data
-chmod +x pintheon/setup_apptainer.sh
-./pintheon/setup_apptainer.sh
+chmod +x pintheon/setup_pintheon.sh
+./pintheon/setup_pintheon.sh
 
 # ufw reset
 # ufw default allow outgoing
