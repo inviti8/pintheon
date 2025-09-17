@@ -55,11 +55,11 @@ STELLAR_BG_RGB = (255, 255, 255)
 STELLAR_FG_RGB = (0, 0, 0)
 
 XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_TESTNET = 'CDYWUJGUBWGBXAFI4JPN4SLSUSRJJFUT5T5JUAR7MXLLD4PXDJJUDVVA'
-OPUS_TESTNET = 'CCKH52X356WDIFTNPKA4RYP67G3UEN4HOP6OX66WB2DE5THJANCS3EJ2'
+COLLECTIVE_TESTNET = 'CBKCM5D6XBVYH3TLOH5PDDLPVVEPXYJMUATFXVTFWKEEEOLPQSCGCGNW'
+OPUS_TESTNET = 'CBZEHJPNVLJZQDHMM4BMDP5QUAEUOP7KUPGMPHI26YK4LLFB52HIN2A4'
 XLM_MAINNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_MAINNET = 'CDYWUJGUBWGBXAFI4JPN4SLSUSRJJFUT5T5JUAR7MXLLD4PXDJJUDVVA'
-OPUS_MAINNET = 'CCKH52X356WDIFTNPKA4RYP67G3UEN4HOP6OX66WB2DE5THJANCS3EJ2'
+COLLECTIVE_MAINNET = 'CBKCM5D6XBVYH3TLOH5PDDLPVVEPXYJMUATFXVTFWKEEEOLPQSCGCGNW'
+OPUS_MAINNET = 'CBZEHJPNVLJZQDHMM4BMDP5QUAEUOP7KUPGMPHI26YK4LLFB52HIN2A4'
 
 DEBUG_SEED = "puppy address situate future gown trade limb rival crane increase when faculty category vague alpha program remember pill waste light broom decade buddy knock"
 DEBUG_NODE_CONTRACT = "CBYP223JS7VYBIIFYUJ6ZQLAOOYXCIFZGMOHKIASMWKCZGFULVPNPV3H"
@@ -70,10 +70,10 @@ FAKE_IPFS_FILE2 = str(uuid.uuid4())
 FAKE_IPFS_FILE3 = str(uuid.uuid4())
 FAKE_IPFS_FILES = [FAKE_IPFS_FILE1, FAKE_IPFS_FILE2, FAKE_IPFS_FILE3]
 
-TESTNET_SOROBAN_SERVER = 'https://soroban-testnet.stellar.org:443'
+TESTNET_SOROBAN_SERVER = 'https://soroban-testnet.stellar.org'
 TESTNET_HORIZON_SERVER = 'https://horizon-testnet.stellar.org'
 
-MAINNET_SOROBAN_SERVER = 'https://soroban-rpc.stellar.org:443'
+MAINNET_SOROBAN_SERVER = 'https://mainnet.sorobanrpc.com'
 MAINNET_HORIZON_SERVER = 'https://horizon.stellar.org'
 
 
@@ -166,17 +166,17 @@ class PintheonMachine(object):
         self.mainnet_transaction = "/public/tx/"
         self.stellar_initializing_keypair = Keypair.random()
         self.stellar_initializing_25519_keypair = Stellar25519KeyPair(self.stellar_initializing_keypair)
-        self.XLM_REQUIRED_START_BALANCE = 100
+        self.XLM_REQUIRED_START_BALANCE = 22
         if self.use_testnet:
-            self.soroban_rpc_url = self.config['testnet_soroban_server']
-            self.stellar_server = Server(self.config['testnet_horizon_server'])
+            self.soroban_rpc_url = self.config['Init']['testnet_soroban_server']
+            self.stellar_server = Server(self.config['Init']['testnet_horizon_server'])
             self.XLM_ID = XLM_TESTNET
             self.COLLECTIVE_ID = COLLECTIVE_TESTNET
             self.OPUS_ID = OPUS_TESTNET
             self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
         else:
-            self.soroban_rpc_url = self.config['mainnet_soroban_server']
-            self.stellar_server = Server(self.config['testnet_horizon_server'])
+            self.soroban_rpc_url = self.config['Init']['mainnet_soroban_server']
+            self.stellar_server = Server(self.config['Init']['testnet_horizon_server'])
             self.XLM_ID = XLM_MAINNET
             self.COLLECTIVE_ID = COLLECTIVE_MAINNET
             self.OPUS_ID = OPUS_MAINNET
@@ -576,6 +576,7 @@ class PintheonMachine(object):
         return tx.result()
     
     def deploy_node_token(self, name, descriptor):
+        print('deploy node token')
         call_result = self._safe_contract_call(
             self.hvym_collective.deploy_node_token,
             caller=self.stellar_keypair.public_key,
@@ -585,6 +586,7 @@ class PintheonMachine(object):
             signer=self.stellar_keypair
         )
         if not call_result['success']:
+            print(f'Error in deploy_node_token: {call_result}')
             return call_result
         try:
             tx = call_result['result']
