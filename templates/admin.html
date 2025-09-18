@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   <script src="{{ url_for('static', filename='onsenui.min.js') }}"></script>
   <script src="{{ url_for('static', filename='stellar-sdk.min.js') }}"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/approvejs/3.1.2/approve.min.js"></script>
-  <script src="https://bundle.run/@iarna/toml@2.2.5"></script>
+  <script src="{{ url_for('static', filename='approve.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='iarna-toml-2.2.5.js') }}"></script>
   <style>
     .page--full_bg__background {
         background: url("{{ bg_img }}");
@@ -61,8 +61,6 @@
     window.icons.EPS = "{{ url_for('static', filename='eps-file.png') }}";
     window.icons.DLL = "{{ url_for('static', filename='dll-file.png') }}";
     window.icons.AVI = "{{ url_for('static', filename='avi-file.png') }}";
-
-    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
     // Verify TOML parser is loaded
     console.log('TOML parser loaded:', typeof _iarna_toml !== 'undefined' ? 'Success' : 'Failed');
