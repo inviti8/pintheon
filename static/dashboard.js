@@ -1135,7 +1135,6 @@ document.addEventListener('init', function(event) {
             'ORG_NAME',
             'ORG_URL',
             'ORG_LOGO',
-            'ORG_PHYSICAL_ADDRESS',
             'ORG_OFFICIAL_EMAIL',
             'ORG_SUPPORT_EMAIL'
         ];
