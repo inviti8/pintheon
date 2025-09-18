@@ -2,6 +2,7 @@ window.dash = {};
 window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'XRO Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': [],};
 window.dash.SESSION_KEYS = 'PINTHEON_SESSION';
 window.dash.NODE = 'PINTHEON_NODE';
+window.dash.CURRENT_PAGE = 'PINTHEON_CURRENT_PAGE';
 window.dash.AUTHORIZED = false;
 window.dash.USING_STORED_SESSION = false;
 
@@ -70,12 +71,25 @@ async function init() {
             }
           })
           .then(data => {
-            console.log('GOT DASH DATA!!!!!!!')
-            console.log(data)
             window.dlg.hide('loading-dialog');
-            window.dash.updateDashData(data)
+            window.dash.updateDashData(data);
             window.dash.AUTHORIZED = true;
+            
+            // Render the dashboard first
             window.rndr.dashboard();
+            
+            // Check if there's a saved page to load
+            const savedPage = localStorage.getItem(window.dash.CURRENT_PAGE);
+            if (savedPage && savedPage !== 'dashboard') {
+                // Push the saved page
+                window.fn.pushPage(savedPage, null, () => {
+                    // After page is loaded, call its specific render function if it exists
+                    const pageRenderFunction = window.rndr[savedPage];
+                    if (pageRenderFunction && typeof pageRenderFunction === 'function') {
+                        pageRenderFunction();
+                    }
+                });
+            }
           });
     
     };
@@ -231,6 +245,7 @@ const deauthorize = async () => {
 const logged_out = () => {
     localStorage.removeItem(window.dash.SESSION_KEYS);
     localStorage.removeItem(window.dash.NODE);
+    localStorage.removeItem(window.dash.CURRENT_PAGE);
     window.dash.AUTHORIZED = false;
     location.reload();
 };
@@ -1701,15 +1716,34 @@ document.addEventListener('init', function(event) {
 
     }else if (page.id === 'settings') {
         document.querySelector('#settings-back-button').options.callback = function () {
+            // Update current page to dashboard when going back
+            localStorage.setItem(window.dash.CURRENT_PAGE, 'dashboard');
             dash_data(dash_updated);
         };
     };
+    
+    // Add event listener for navigation changes
+    const nav = document.querySelector('#Nav');
+    if (nav) {
+        nav.addEventListener('postpop', function(event) {
+            // Get the current page after navigation
+            const currentPage = nav.topPage.id;
+            if (currentPage && currentPage !== 'authorize') {
+                // Remove .html extension if present and update current page
+                const pageName = currentPage.replace('.html', '');
+                localStorage.setItem(window.dash.CURRENT_PAGE, pageName);
+            }
+        });
+    }
 
     window.rndr.updateBg();
 });
 
 window.fn.pushPage = function(page, node_data, callback = null, ...args) {
     let nav = document.querySelector('#Nav');
+    // Save the current page to localStorage
+    localStorage.setItem(window.dash.CURRENT_PAGE, page);
+    
     nav.pushPage(page+'.html')
     .then(function(){
         if(callback){
