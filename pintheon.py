@@ -14,6 +14,7 @@ from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 from functools import wraps
 import mimetypes
 import shutil
+import toml
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -471,14 +472,45 @@ def admin():
 @app.route('/.well-known/stellar.toml')
 def stellar_toml():
     toml_file = os.path.join(SCRIPT_DIR, "static", "stellar.toml")
-
-    print(toml_file)
-    print(os.path.exists(toml_file))
     if not os.path.exists(toml_file):
         abort(404)
     response = make_response(send_file(toml_file, mimetype='text/plain'))
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    return response
+
+@app.route('/update_stellar_toml', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def update_stellar_toml():
+    custom_path = os.path.join(SCRIPT_DIR, 'static', 'stellar.toml')
+    
+    # Handle file upload
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    if file and file.filename.endswith('.toml'):
+        try:
+            # Validate TOML
+            content = file.read().decode('utf-8')
+            toml.loads(content)  # Will raise exception if invalid
+            
+            # Save the file
+            with open(custom_path, 'w') as f:
+                f.write(content)
+            
+            return jsonify({'success': True, 'message': 'stellar.toml updated'})
+        except Exception as e:
+            return jsonify({'error': f'Invalid TOML file: {str(e)}'}), 400
+    else:
+        return jsonify({'error': 'Invalid file type. Please upload a .toml file'}), 400
     return response
 
 @app.route('/top_up_stellar')
