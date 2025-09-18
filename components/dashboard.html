@@ -131,6 +131,7 @@
                       <ons-lazy-repeat id="settings-info"></ons-lazy-repeat>
                       <ons-lazy-repeat id="settings-appearance"></ons-lazy-repeat>
                       <ons-lazy-repeat id="settings-homepage"></ons-lazy-repeat>
+                      <ons-lazy-repeat id="settings-stellar"></ons-lazy-repeat>
 
                     </div>  
                   </div>
@@ -492,34 +493,6 @@
     </ons-list-item>
   </template>
 
-  <template id="settings-info-template">
-    <ons-list class="stat-ul" style="width:60%; height:200px;">
-      <ons-list-header>NODE INFO</ons-list-header>
-      <ons-list-item style="width:100%;" >
-            <header class="center-both">
-              <pre><span class="list-item__subtitle">id:   </span></pre>
-              <span ><ons-input class="dash-input" id="settings-info-multiaddress" modifier="large" placeholder="Multiaddress"  style="width:80%;"></ons-input>
-                <ons-button modifier="quiet" onclick="" id="settings-info-copy-peer-id" class="scale-on-hover-icon">
-                <ons-icon icon="fa-clipboard"></ons-icon>
-              </ons-button></span>
-            </header>
-      </ons-list-item>
-      <ons-list-item style="width:100%;" >
-            <header class="center-both">
-              <pre><span class="list-item__subtitle">gateway:   </span></pre>
-              <span>
-                <ons-input class="dash-input" id="settings-info-gateway-url" modifier="large" value="127.0.0.1:9500" float></ons-input>
-              </span>
-              <span>
-                <ons-button modifier="quiet" id="settings-info-update-gateway" class="scale-on-hover-icon can-callback" ripple>
-                  <ons-icon icon="fa-wrench"></ons-icon>
-                </ons-button>
-              </span>
-            </header>
-      </ons-list-item>
-    </ons-list>
-  </template>
-
     <template id="access-token-list-items-template">
     <ons-list-item>
       <div class="fab-container left">
@@ -579,13 +552,41 @@
     </ons-dialog>
   </template>
 
+  <template id="settings-info-template">
+    <ons-list class="stat-ul" style="width:30%; height:200px;">
+      <ons-list-header>NODE INFO</ons-list-header>
+      <ons-list-item style="width:100%;" >
+            <header class="center-both">
+              <pre><span class="list-item__subtitle">id:   </span></pre>
+              <span ><ons-input class="dash-input" id="settings-info-multiaddress" modifier="large" placeholder="Multiaddress"  style="width:80%;"></ons-input>
+                <ons-button modifier="quiet" onclick="" id="settings-info-copy-peer-id" class="scale-on-hover-icon">
+                <ons-icon icon="fa-clipboard"></ons-icon>
+              </ons-button></span>
+            </header>
+      </ons-list-item>
+      <ons-list-item style="width:100%;" >
+            <header class="center-both">
+              <pre><span class="list-item__subtitle">gateway:   </span></pre>
+              <span>
+                <ons-input class="dash-input" id="settings-info-gateway-url" modifier="large" value="127.0.0.1:9500" float></ons-input>
+              </span>
+              <span>
+                <ons-button modifier="quiet" id="settings-info-update-gateway" class="scale-on-hover-icon can-callback" ripple>
+                  <ons-icon icon="fa-wrench"></ons-icon>
+                </ons-button>
+              </span>
+            </header>
+      </ons-list-item>
+    </ons-list>
+  </template>
+
   <template id="settings-appearance-template">
-    <ons-list class="stat-ul" style="width:40%; height:200px;">
+    <ons-list class="stat-ul" style="width:20%; height:200px;">
       <ons-list-header>APPEARANCE</ons-list-header>
       <ons-list-item style="width:100%;" >
             <header class="center-both">
               <pre><span class="list-item__subtitle">theme:   </span></pre>
-              <span >
+              <span>
                 <ons-select id="settings-appearance-select" onchange="" modifier="underbar">
                 </ons-select>
               </span>
@@ -609,7 +610,7 @@
   </template>
 
   <template id="settings-homepage-template">
-    <ons-list class="stat-ul" style="width:40%; height:200px;">
+    <ons-list class="stat-ul" style="width:25%; height:200px;">
       <ons-list-header>HOMEPAGE</ons-list-header>
       <ons-list-item style="width:100%;" >
             <header class="center-both">
@@ -645,6 +646,20 @@
                 </ons-button>
               </span>
             </header>
+      </ons-list-item>
+    </ons-list>
+  </template>
+
+  <template id="settings-stellar-template">
+    <ons-list class="stat-ul" style="width:25%; height:200px;">
+      <ons-list-header>STELLAR</ons-list-header>
+      <ons-list-item style="width:100%;">
+        <div class="center" style="width: 100%;">
+          <ons-button id="upload-stellar-toml" modifier="large" ripple>
+            <ons-icon icon="fa-upload"></ons-icon> Upload stellar.toml
+          </ons-button>
+          <input type="file" id="stellar-toml-file" accept=".toml" style="display: none;">
+        </div>
       </ons-list-item>
     </ons-list>
   </template>

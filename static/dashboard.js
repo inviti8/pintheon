@@ -1033,11 +1033,466 @@ document.addEventListener('init', function(event) {
 
     };
 
+    
+    // Function to validate Stellar.toml content
+    function validateStellarToml(tomlContent) {
+        const errors = [];
+        const warnings = [];
+        
+        // Helper functions for validation
+        const isValidUrl = (url) => {
+            try {
+                new URL(url);
+                return url.startsWith('https://');
+            } catch {
+                return false;
+            }
+        };
+        
+        const isValidEmail = (email) => {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        };
+        
+        const isValidStellarPublicKey = (key) => {
+            return /^[A-Z0-9]{56}$/.test(key);
+        };
+        
+        // Parse TOML content
+        let tomlData;
+        try {
+            console.log('Validating TOML content:', tomlContent.substring(0, 200) + '...'); // Log first 200 chars of TOML
+            
+            if (typeof window.TOML === 'undefined') {
+                const errorMsg = 'TOML parser not found. Make sure the TOML library is loaded.';
+                console.error(errorMsg);
+                throw new Error(errorMsg);
+            }
+            
+            console.log('TOML parser available, parsing...');
+            tomlData = window.TOML.parse(tomlContent);
+            console.log('TOML parsed successfully:', Object.keys(tomlData));
+            
+        } catch (e) {
+            console.error('TOML parsing error details:', {
+                error: e,
+                message: e.message,
+                stack: e.stack,
+                tomlContentType: typeof tomlContent,
+                tomlContentLength: tomlContent ? tomlContent.length : 0,
+                windowTOML: typeof window.TOML
+            });
+            
+            // Try to get more specific error information
+            let errorMessage = 'Invalid TOML format';
+            if (e.message) {
+                errorMessage += ': ' + e.message;
+            }
+            if (e.line && e.column) {
+                errorMessage += ` at line ${e.line}, column ${e.column}`;
+                // Try to show the problematic line
+                const lines = tomlContent.split('\n');
+                if (lines[e.line - 1]) {
+                    errorMessage += `\nProblematic line: ${lines[e.line - 1]}`;
+                }
+            }
+            
+            return {
+                isValid: false,
+                errors: [errorMessage],
+                warnings: []
+            };
+        }
+    
+        // 1. Check required top-level fields - ACCOUNTS
+        try {
+            console.log('Validating ACCOUNTS field...');
+            if (!Array.isArray(tomlData.ACCOUNTS) || tomlData.ACCOUNTS.length === 0) {
+                const errorMsg = 'ACCOUNTS: At least one Stellar account public key is required';
+                console.error(errorMsg);
+                errors.push(errorMsg);
+            } else {
+                console.log('Validating ACCOUNTS array:', tomlData.ACCOUNTS);
+                tomlData.ACCOUNTS.forEach((account, index) => {
+                    if (typeof account !== 'string') {
+                        const errorMsg = `ACCOUNTS[${index}]: Expected string, got ${typeof account}`;
+                        console.error(errorMsg);
+                        errors.push(errorMsg);
+                    } else if (!isValidStellarPublicKey(account)) {
+                        const errorMsg = `ACCOUNTS[${index}]: Invalid Stellar public key format`;
+                        console.error(errorMsg);
+                        errors.push(errorMsg);
+                    }
+                });
+            }
+        } catch (e) {
+            const errorMsg = `Error validating ACCOUNTS: ${e.message}`;
+            console.error('Validation error in ACCOUNTS:', e);
+            errors.push(errorMsg);
+        }
+    
+        // 2. Check DOCUMENTATION section
+        const requiredDocFields = [
+            'ORG_NAME',
+            'ORG_URL',
+            'ORG_LOGO',
+            'ORG_PHYSICAL_ADDRESS',
+            'ORG_OFFICIAL_EMAIL',
+            'ORG_SUPPORT_EMAIL'
+        ];
+        
+        try {
+            console.log('Validating DOCUMENTATION section...');
+            if (!tomlData.DOCUMENTATION) {
+                errors.push('DOCUMENTATION: Section is required');
+            } else {
+                const doc = tomlData.DOCUMENTATION;
+                console.log('DOCUMENTATION section found:', doc);
+                
+                // Check required fields
+                requiredDocFields.forEach(field => {
+                    if (!doc[field]) {
+                        errors.push(`DOCUMENTATION.${field}: Field is required`);
+                    }
+                });
+                
+                // Validate URLs and emails
+                if (doc.ORG_URL) {
+                    if (!isValidUrl(doc.ORG_URL)) {
+                        errors.push('DOCUMENTATION.ORG_URL: Must be a valid HTTPS URL');
+                    } else if (!doc.ORG_URL.startsWith('https://')) {
+                        warnings.push('DOCUMENTATION.ORG_URL: Should use HTTPS for security');
+                    }
+                }
+                
+                if (doc.ORG_LOGO && !isValidUrl(doc.ORG_LOGO)) {
+                    errors.push('DOCUMENTATION.ORG_LOGO: Must be a valid URL');
+                }
+                
+                if (doc.ORG_OFFICIAL_EMAIL && !isValidEmail(doc.ORG_OFFICIAL_EMAIL)) {
+                    errors.push('DOCUMENTATION.ORG_OFFICIAL_EMAIL: Must be a valid email address');
+                }
+                
+                if (doc.ORG_SUPPORT_EMAIL && !isValidEmail(doc.ORG_SUPPORT_EMAIL)) {
+                    errors.push('DOCUMENTATION.ORG_SUPPORT_EMAIL: Must be a valid email address');
+                }
+                
+                // Check if official email matches domain
+                if (doc.ORG_URL && doc.ORG_OFFICIAL_EMAIL) {
+                    try {
+                        const domain = new URL(doc.ORG_URL).hostname;
+                        const emailDomain = doc.ORG_OFFICIAL_EMAIL.split('@')[1];
+                        if (emailDomain && domain && !domain.endsWith(emailDomain)) {
+                            warnings.push('DOCUMENTATION.ORG_OFFICIAL_EMAIL: Email domain should match organization URL domain');
+                        }
+                    } catch (e) {
+                        // URL parsing failed, error already reported
+                        console.warn('Error checking email domain:', e);
+                    }
+                }
+            }
+        } catch (e) {
+            const errorMsg = `Error validating DOCUMENTATION section: ${e.message}`;
+            console.error('Validation error in DOCUMENTATION section:', e);
+            errors.push(errorMsg);
+        }
+    
+        // // 3. Check PRINCIPALS section
+        // try {
+        //     if (!Array.isArray(tomlData.PRINCIPALS) || tomlData.PRINCIPALS.length === 0) {
+        //         errors.push('PRINCIPALS: At least one principal contact is required');
+        //     } else {
+        //         console.log('Validating PRINCIPALS array...');
+        //         tomlData.PRINCIPALS.forEach((principal, index) => {
+        //             console.log(`Validating principal ${index}:`, principal);
+                    
+        //             if (!principal || typeof principal !== 'object') {
+        //                 const errorMsg = `PRINCIPALS[${index}]: Expected an object`;
+        //                 console.error(errorMsg);
+        //                 errors.push(errorMsg);
+        //                 return;
+        //             }
+                    
+        //             // Check required fields
+        //             if (!principal.name) {
+        //                 errors.push(`PRINCIPALS[${index}]: Name is required`);
+        //             }
+                    
+        //             if (!principal.email) {
+        //                 errors.push(`PRINCIPALS[${index}]: Email is required`);
+        //             } else if (typeof principal.email !== 'string') {
+        //                 const errorMsg = `PRINCIPALS[${index}].email: Expected string, got ${typeof principal.email}`;
+        //                 console.error(errorMsg);
+        //                 errors.push(errorMsg);
+        //             } else if (!isValidEmail(principal.email)) {
+        //                 const errorMsg = `PRINCIPALS[${index}].email: Invalid email format`;
+        //                 console.error(errorMsg);
+        //                 errors.push(errorMsg);
+        //             }
+                    
+        //             // Validate keybase if present
+        //             if (principal.keybase && typeof principal.keybase !== 'string') {
+        //                 const errorMsg = `PRINCIPALS[${index}].keybase: Expected string, got ${typeof principal.keybase}`;
+        //                 console.error(errorMsg);
+        //                 errors.push(errorMsg);
+        //             }
+        //         });
+        //     }
+        // } catch (e) {
+        //     const errorMsg = `Error validating PRINCIPALS: ${e.message}`;
+        //     console.error('Validation error in PRINCIPALS:', e);
+        //     errors.push(errorMsg);
+        // }
+    
+        // 4. Check CURRENCIES section
+        try {
+            if (Array.isArray(tomlData.CURRENCIES)) {
+                console.log('Validating CURRENCIES array...');
+                tomlData.CURRENCIES.forEach((currency, index) => {
+                    console.log(`Validating currency ${index}:`, currency);
+                    const prefix = `CURRENCIES[${index}]`;
+                    
+                    if (!currency || typeof currency !== 'object') {
+                        const errorMsg = `${prefix}: Expected an object`;
+                        console.error(errorMsg);
+                        errors.push(errorMsg);
+                        return;
+                    }
+                    
+                    // Check required fields
+                    if (!currency.code) {
+                        const errorMsg = `${prefix}: Missing required field 'code'`;
+                        console.error(errorMsg);
+                        errors.push(errorMsg);
+                    }
+                    
+                    // Validate issuer if present
+                    if (currency.issuer) {
+                        if (typeof currency.issuer !== 'string') {
+                            const errorMsg = `${prefix}.issuer: Expected string, got ${typeof currency.issuer}`;
+                            console.error(errorMsg);
+                            errors.push(errorMsg);
+                        } else if (!isValidStellarPublicKey(currency.issuer)) {
+                            const errorMsg = `${prefix}.issuer: Invalid Stellar public key format`;
+                            console.error(errorMsg);
+                            errors.push(errorMsg);
+                        }
+                    }
+                    
+                    // Validate image URL if present
+                    if (currency.image && !isValidUrl(currency.image)) {
+                        const errorMsg = `${prefix}.image: Must be a valid URL`;
+                        console.error(errorMsg);
+                        errors.push(errorMsg);
+                    }
+                    
+                    // Validate display_decimals if present
+                    if (currency.display_decimals !== undefined && 
+                        (typeof currency.display_decimals !== 'number' || 
+                         !Number.isInteger(currency.display_decimals) ||
+                         currency.display_decimals < 0 || currency.display_decimals > 7)) {
+                        const errorMsg = `${prefix}.display_decimals: Must be an integer between 0 and 7`;
+                        console.error(errorMsg);
+                        errors.push(errorMsg);
+                    }
+                    
+                    // Check for recommended fields
+                    if (!currency.name) {
+                        warnings.push(`${prefix}.name: Recommended for better display`);
+                    }
+                    
+                    if (!currency.issuer) {
+                        warnings.push(`${prefix}.issuer: Recommended for better asset identification`);
+                    }
+                });
+            } else if (tomlData.CURRENCIES) {
+                const errorMsg = 'CURRENCIES should be an array';
+                console.error(errorMsg);
+                errors.push(errorMsg);
+            }
+        } catch (e) {
+            const errorMsg = `Error validating CURRENCIES: ${e.message}`;
+            console.error('Validation error in CURRENCIES:', e);
+            errors.push(errorMsg);
+        }
+        
+        // Return validation results
+        console.log('Validation completed with', errors.length, 'errors and', warnings.length, 'warnings');
+        return {
+            isValid: errors.length === 0,
+            errors,
+            warnings
+        };
+    }
+    
+    // Function to handle stellar.toml file upload
+    async function handleStellarToml(file) {
+        try {
+            console.log('Handling Stellar.toml file upload...');
+            
+            // Read the file content
+            const content = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => {
+                    console.error('Error reading file:', e);
+                    reject(new Error('Failed to read file: ' + (e.target.error ? e.target.error.message : 'Unknown error')));
+                };
+                reader.readAsText(file);
+            });
+            
+            // Validate the TOML content
+            const validation = validateStellarToml(content);
+            console.log('Validation results:', validation);
+            
+            // Check if there are any validation errors or warnings
+            if (!validation) {
+                throw new Error('Validation failed - no validation results returned');
+            }
+            
+            // Show warnings if any
+            if (validation.warnings.length > 0) {
+                console.log('Showing warnings to user...');
+                const warningMessage = 'Warnings:\n' + validation.warnings.join('\n');
+                const shouldContinue = await new Promise((resolve) => {
+                    ons.notification.confirm({
+                        title: 'Validation Warnings',
+                        message: warningMessage + '\n\nDo you want to continue with the upload?',
+                        buttonLabels: ['Cancel', 'Continue'],
+                        callback: (index) => resolve(index === 1) // Resolve with true if Continue (index 1) is selected
+                    });
+                });
+                
+                if (!shouldContinue) {
+                    console.log('User cancelled due to warnings');
+                    return { success: false, message: 'Upload cancelled by user' };
+                }
+            }
+            
+            // Show errors if any
+            if (!validation.isValid) {
+                const errorMessage = 'Please fix the following issues before uploading:\n\n' + 
+                    validation.errors.join('\n') + 
+                    (validation.warnings.length > 0 ? '\n\nWarnings (can be ignored):\n' + validation.warnings.join('\n') : '');
+                
+                await new Promise((resolve) => {
+                    ons.notification.alert({
+                        title: 'Validation Failed',
+                        message: errorMessage,
+                        callback: resolve
+                    });
+                });
+                return { success: false, message: 'Validation failed', errors: validation.errors };
+            }
+            
+            // If validation passed, proceed with upload
+            console.log('Validation passed, uploading file...');
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Get session data for authentication
+            const session = _getSessionData();
+            if (!session || !session.token) {
+                throw new Error('Authentication required. Please log in again.');
+            }
+            
+            // Add authentication data to form
+            formData.append('token', session.token.serialize());
+            formData.append('client_pub', session.pub);
+            
+            console.log('Sending request to /update_stellar_toml with authentication...');
+            const response = await fetch('/update_stellar_toml', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const errorResponse = await response.json().catch(() => ({}));
+                throw new Error(errorResponse.error || `Server returned ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            console.log('Upload successful:', result);
+            
+            ons.notification.toast('stellar.toml uploaded and validated successfully', { 
+                timeout: 5000,
+                animation: 'fall'
+            });
+            
+            return { 
+                success: true, 
+                message: 'File uploaded successfully',
+                data: result
+            };
+            
+        } catch (error) {
+            console.error('Error in handleStellarToml:', error);
+            const errorMessage = error.message || 'An unknown error occurred';
+            
+            await new Promise((resolve) => {
+                ons.notification.alert({
+                    title: 'Error',
+                    message: 'Failed to process stellar.toml: ' + errorMessage + '\n\nPlease check the console for more details.',
+                    callback: resolve
+                });
+            });
+            
+            return { 
+                success: false, 
+                message: errorMessage,
+                error: error
+            };
+        }
+    }
+    
+    window.rndr.settingsStellar = function() {
+        // Initialize the lazy repeat for Stellar settings
+        const settingsStellar = document.getElementById('settings-stellar');
+        if (settingsStellar) {
+            settingsStellar.delegate = {
+                createItemContent: function() {
+                    // Create a container div and append the template content to it
+                    const container = document.createElement('div');
+                    const template = document.querySelector('#settings-stellar-template').content.cloneNode(true);
+                    container.appendChild(template);
+                    return container.firstElementChild; // Return the first child which is the actual element
+                },
+                countItems: function() {
+                    return 1;
+                },
+                calculateItemHeight: function() {
+                    return 200; // px - match other settings sections
+                }
+            };
+            settingsStellar.refresh();
+        }
+    };
+
     window.rndr.settings = function(){
         window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.dash.data.host);
         window.rndr.settingsAppearance(window.dash.data.customization.current_theme, window.dash.data.customization.themes, window.dash.data.customization.bg_img);
         window.rndr.settingsHomepageType(window.dash.data.customization.homepage_type, window.dash.data.customization.homepage_types, window.dash.data.customization.homepage_hash);
         window.rndr.settingsHomepage();
+        window.rndr.settingsStellar();
+        
+        // Set up event listeners for Stellar.toml upload
+        const uploadBtn = document.querySelector('#upload-stellar-toml');
+        const fileInput = document.querySelector('#stellar-toml-file');
+        
+        if (uploadBtn && fileInput) {
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    handleStellarToml(file);
+                }
+                // Reset the input to allow re-uploading the same file
+                e.target.value = '';
+            });
+        }
         
         let gateway = document.querySelector('#settings-info-gateway-url');
         let update_gateway_btn = document.querySelector('#settings-info-update-gateway');
