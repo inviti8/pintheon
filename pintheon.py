@@ -693,14 +693,26 @@ def update_logo():
 def update_gateway():
     host = request.form['gateway']
     PINTHEON.url_host = host
+    tx_result = PINTHEON.stellar_set_home_domain(host)
     if '/ipfs/' in PINTHEON.logo_url:
         cid = PINTHEON.logo_url.split('/ipfs/')[-1]
         PINTHEON.logo_url = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
     PINTHEON.update_node_data()
     data = PINTHEON.get_dashboard_data()
+
     if data is None:
         return jsonify({'error': 'Cannot get dash data'}), 400
     else:
+        if isinstance(tx_result, dict) and not tx_result.get('success', True):
+            data['transaction_data'] = None
+            data['error'] = tx_result.get('error', 'home domain assignment failed')
+            data['success'] = False
+
+        # Always return the original transaction structure
+        if isinstance(tx_result, dict) and 'tx' in tx_result:
+            data['transaction_data'] = tx_result['tx']
+        else:
+            data['transaction_data'] = tx_result
         return data, 200
 
 @app.route('/remove_file', methods=['POST'])

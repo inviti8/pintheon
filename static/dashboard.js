@@ -1471,6 +1471,60 @@ document.addEventListener('init', function(event) {
                     const container = document.createElement('div');
                     const template = document.querySelector('#settings-stellar-template').content.cloneNode(true);
                     container.appendChild(template);
+                    
+                    // Set up the download button event listener
+                    const downloadBtn = container.querySelector('#download-stellar-toml');
+                    if (downloadBtn) {
+                        downloadBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            try {
+                                // Get the current protocol and host from window.location
+                                const protocol = window.location.protocol;
+                                const host = window.location.host;
+                                
+                                // Create a temporary anchor element to trigger the download
+                                const a = document.createElement('a');
+                                a.href = `${protocol}//${host}/.well-known/stellar.toml`;
+                                a.download = 'stellar.toml';
+                                a.target = '_blank'; // Open in new tab as fallback
+                                
+                                // Append to body, trigger download, and clean up
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                
+                                // Show success message
+                                ons.notification.toast('Downloading stellar.toml...', { 
+                                    timeout: 2000,
+                                    animation: 'fall'
+                                });
+                            } catch (error) {
+                                console.error('Error downloading stellar.toml:', error);
+                                ons.notification.alert({
+                                    title: 'Download Failed',
+                                    message: 'Could not download stellar.toml. Please try again or check the console for errors.'
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Set up the upload button and file input
+                    const uploadBtn = container.querySelector('#upload-stellar-toml');
+                    const fileInput = container.querySelector('#stellar-toml-file');
+                    
+                    if (uploadBtn && fileInput) {
+                        uploadBtn.addEventListener('click', () => fileInput.click());
+                        
+                        fileInput.addEventListener('change', (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                                handleStellarToml(file);
+                            }
+                            // Reset the input to allow re-uploading the same file
+                            e.target.value = '';
+                        });
+                    }
+                    
                     return container.firstElementChild; // Return the first child which is the actual element
                 },
                 countItems: function() {
@@ -1482,7 +1536,80 @@ document.addEventListener('init', function(event) {
             };
             settingsStellar.refresh();
         }
-    };
+        
+        let gateway = document.querySelector('#settings-info-gateway-url');
+        let update_gateway_btn = document.querySelector('#settings-info-update-gateway');
+        let theme_select = document.querySelector('#settings-appearance-select');
+        let homepage_select = document.querySelector('#settings-homepage-select');
+        let homepage_hash_input = document.querySelector('#settings-homepage-ipfs-hash-input')
+        let homepage_hash_btn = document.querySelector('#settings-homepage-ipfs-hash-button')
+        let upload_btn = document.querySelector('#settings-appearance-bg-button');
+        let remove_btn = document.querySelector('#settings-appearance-remove-bg-button');
+        let add_token_btn = document.querySelector('#settings-add-access-token-button');
+        
+        // Homepage settings elements
+        let homepage_upload_btn = document.querySelector('#settings-homepage-upload-button');
+        let homepage_remove_btn = document.querySelector('#settings-homepage-remove-button');
+        let homepage_upload_input = document.querySelector('#settings-homepage-upload-input');
+
+        if(window.constants.HAS_BG_IMG){
+            remove_btn.disabled = false;
+        };
+
+        update_gateway_btn.onclick = function (){
+            update_gateway(gateway.value);
+        };
+
+        theme_select.onchange = function  (event) {
+            update_theme(event.target.selectedIndex);
+        };
+
+        homepage_select.onchange = function  (event) {
+            update_homepage_type(event.target.selectedIndex);
+        };
+
+        upload_btn.onclick = function  () {
+            upload_bg_img_dlg(update_bg_img);
+        };
+
+        remove_btn.onclick = function  () {
+            remove_bg();
+        };
+
+        add_token_btn.onclick = function (){
+            add_access_token_dlg(add_access_token);
+        };
+
+        // Homepage event handlers
+        if(homepage_upload_btn){
+            homepage_upload_btn.onclick = function () {
+                homepage_upload_input.click();
+            };
+        }
+
+        if(homepage_upload_input){
+            homepage_upload_input.onchange = function (event) {
+                if(event.target.files.length > 0){
+                    upload_homepage(event.target.files[0]);
+                }
+            };
+        }
+
+        if(homepage_remove_btn){
+            homepage_remove_btn.onclick = function () {
+                remove_homepage();
+            };
+        }
+
+        if(homepage_hash_btn){
+            homepage_hash_btn.onclick = function () {
+                let hash = homepage_hash_input.value;
+                check_homepage_hash(hash)
+            };
+        }
+
+        window.rndr.accessTokenListItems(window.dash.data.access_tokens)
+    }
 
     window.rndr.settings = function(){
         window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.dash.data.host);
@@ -1490,23 +1617,6 @@ document.addEventListener('init', function(event) {
         window.rndr.settingsHomepageType(window.dash.data.customization.homepage_type, window.dash.data.customization.homepage_types, window.dash.data.customization.homepage_hash);
         window.rndr.settingsHomepage();
         window.rndr.settingsStellar();
-        
-        // Set up event listeners for Stellar.toml upload
-        const uploadBtn = document.querySelector('#upload-stellar-toml');
-        const fileInput = document.querySelector('#stellar-toml-file');
-        
-        if (uploadBtn && fileInput) {
-            uploadBtn.addEventListener('click', () => fileInput.click());
-            
-            fileInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    handleStellarToml(file);
-                }
-                // Reset the input to allow re-uploading the same file
-                e.target.value = '';
-            });
-        }
         
         let gateway = document.querySelector('#settings-info-gateway-url');
         let update_gateway_btn = document.querySelector('#settings-info-update-gateway');
