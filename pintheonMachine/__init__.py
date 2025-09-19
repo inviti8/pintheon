@@ -1030,6 +1030,40 @@ class PintheonMachine(object):
          except Exception as e:
             print("Insufficient balance: "+str(e))
 
+    def stellar_set_home_domain(self, domain):
+        try:
+            # Load the issuer account from Horizon
+            account = server.load_account(account_id=self.stellar_keypair.public_key)
+
+            # Build the transaction to set home_domain
+            transaction = (
+                TransactionBuilder(
+                    source_account=account,
+                    network_passphrase=self.NETWORK_PASSPHRASE,
+                    base_fee=self.BASE_FEE,
+                )
+                .append_set_options_op(home_domain=domain)
+                .set_timeout(60)
+                .build()
+            )
+
+            # Sign with the issuer account
+            transaction.sign(self.stellar_keypair)
+
+            # Submit to the network
+            response = server.submit_transaction(transaction)
+            return {'success': True, 'result': response}
+            
+        except Exception as e:
+            error_info = {
+                'error': str(e),
+                'type': type(e).__name__,
+                'account': self.stellar_keypair.public_key,
+                'domain': domain
+            }
+            return {'success': False, 'error': error_info}
+        
+
     def stellar_xlm_balance(self):
         xlm_balance = 0
         self.stellar_account = self.stellar_server.accounts().account_id(self.stellar_keypair.public_key).call()
@@ -1127,6 +1161,7 @@ class PintheonMachine(object):
         self.is_established = True
         self._update_state_data()
         self._update_customization()
+        self.stellar_toml.add_account(public_key=self.stellar_keypair.public_key)
         return True
     
     @property

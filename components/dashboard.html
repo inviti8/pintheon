@@ -654,12 +654,19 @@
     <ons-list class="stat-ul" style="width:25%; height:200px;">
       <ons-list-header>STELLAR</ons-list-header>
       <ons-list-item style="width:100%;">
-        <div class="center" style="width: 100%;">
-          <ons-button id="upload-stellar-toml" modifier="large" ripple>
-            <ons-icon icon="fa-upload"></ons-icon> Upload stellar.toml
-          </ons-button>
+        <div class="center" style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; gap: 10px; width: 100%;">
+            <ons-button id="upload-stellar-toml" modifier="large" ripple style="flex: 1;">
+              <ons-icon icon="fa-upload"></ons-icon> Upload stellar.toml
+            </ons-button>
+          </div>
           <input type="file" id="stellar-toml-file" accept=".toml" style="display: none;">
         </div>
+      </ons-list-item>
+      <ons-list-item style="width:100%;">
+        <ons-button id="download-stellar-toml" modifier="large" ripple style="flex: 1;">
+          <ons-icon icon="fa-download"></ons-icon> Download stellar.toml
+        </ons-button>
       </ons-list-item>
     </ons-list>
   </template>
