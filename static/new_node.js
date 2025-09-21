@@ -113,7 +113,7 @@ const complete = () => {
 };
 
 const open_token_gen = () => {
-    window.open('https://https://pintheon-token.anvil.app/', '_blank').focus();
+    window.open('https://pintheon-token.anvil.app/', '_blank').focus();
 };
 
 
