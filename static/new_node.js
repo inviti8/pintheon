@@ -165,7 +165,7 @@ document.addEventListener('init', function(event) {
         // };
         
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
-        window.rndr.nodeCardHeader(window.constants.LOGO, 'PINTHEON', 'XRO Network');
+        window.rndr.nodeCardHeader(window.constants.LOGO, 'PINTHEON', 'HVYM Network');
     }
 });
 

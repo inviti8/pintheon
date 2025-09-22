@@ -212,7 +212,7 @@ class PintheonMachine(object):
         self._seed = None
 
         # Use platformdirs for additional data storage if needed
-        self._dirs = PlatformDirs('PINTHEON', 'XRO Network', ensure_exists=True)
+        self._dirs = PlatformDirs('PINTHEON', 'HVYM Network', ensure_exists=True)
 
         # Initialize the state machine
         self.machine = Machine(model=self, states=PintheonMachine.states, initial='spawned')

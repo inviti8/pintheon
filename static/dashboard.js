@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'XRO Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': [],};
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'HVYM Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': [],};
 window.dash.SESSION_KEYS = 'PINTHEON_SESSION';
 window.dash.NODE = 'PINTHEON_NODE';
 window.dash.CURRENT_PAGE = 'PINTHEON_CURRENT_PAGE';
@@ -1767,7 +1767,7 @@ document.addEventListener('init', function(event) {
         let description= document.querySelector('#transaction-confirmed-dialog-description');;
         transactionUrl.href = transaction.transaction_url;
         logo.src = fileUrl;
-        description.textContent = "File tokenized on Stellar Blockchain.";
+        description.textContent = "File tokenized on Stellar Ledger.";
     };
 
     window.rndr.send_token_transaction_dlg = function  (transaction) {
@@ -1777,7 +1777,7 @@ document.addEventListener('init', function(event) {
         let description= document.querySelector('#transaction-confirmed-dialog-description');;
         transactionUrl.href = transaction.transaction_url;
         logo.src = fileUrl;
-        description.textContent = "Transaction confirmed on the Stellar Blockchain.";
+        description.textContent = "Transaction confirmed on the Stellar Ledger.";
     };
 
     window.rndr.copy_access_token_dlg = function  (token) {
