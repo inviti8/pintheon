@@ -11,16 +11,14 @@ echo "Configuring Nginx"
 
 cat > /etc/nginx/sites-available/default<<  EOF
 
-server{
+server {
     listen 80;
+    listen [::]:80;
     server_name local.pintheon.com;
-    client_max_body_size 200M;
-
-    location / {
-        return 301 https://\$host\$request_uri;
-     }
+    return 301 https://$host$request_uri;
 }
 
+# Public server block - IPFS/IPNS and custom homepage
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
@@ -30,36 +28,55 @@ server {
     ssl_certificate /etc/ssl/pintheon.crt;
     ssl_certificate_key /etc/ssl/pintheon.key;
 
-    location ~ ^/(ipfs|ipns) {
-        proxy_pass http://127.0.0.1:8082;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-	}
+    # Serve custom homepage from root
+    location = / {
+        try_files /home/pintheon/data/custom_homepage/index.html =404;
+    }
 
-    # Custom homepage static files
+    # Serve custom homepage static files
     location /custom_homepage/ {
         alias /home/pintheon/data/custom_homepage/;
-        try_files \$uri \$uri/ =404;
+        try_files $uri $uri/ =404;
     }
 
-    location ~ ^/(admin|reset_init|new_node|establish|authorize|authorized|deauthorize|upload|api_upload|api_upload_homepage|remove_file|update_logo|tokenize_file|publish_file|send_file_token|send_token|update_gateway|add_access_token|remove_access_token|dashboard_data|update_theme|update_bg_img|remove_bg_img|upload_homepage|remove_homepage|homepage_status|end_session|api/heartbeat|\.well-known/stellar\.toml) {
-        add_header Access-Control-Allow-Origin *;
-        add_header Access-Control-Allow-Methods *;
-
-        include proxy_params;
-        proxy_pass http://unix:/home/pintheon/pintheon.sock;
+    # IPFS/IPNS routes
+    location ~ ^/(ipfs|ipns) {
+        proxy_pass http://127.0.0.1:8082;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Root location - serve custom homepage or redirect to admin
+    # Deny all other routes
+    location / {
+        return 403;
+    }
+}
+
+# Localhost-only server block - all other routes
+server {
+    listen 127.0.0.1:9999 ssl;
+    server_name local.pintheon.com;
+    client_max_body_size 200M;
+
+    ssl_certificate /etc/ssl/pintheon.crt;
+    ssl_certificate_key /etc/ssl/pintheon.key;
+
     location / {
         include proxy_params;
         proxy_pass http://unix:/home/pintheon/pintheon.sock;
     }
 
-    location /static  {
-        include  /etc/nginx/mime.types;
+    location ~ ^/(admin|reset_init|new_node|establish|authorize|authorized|deauthorize|upload|api_upload|api_upload_homepage|remove_file|update_logo|tokenize_file|publish_file|send_file_token|send_token|update_gateway|add_access_token|remove_access_token|dashboard_data|update_theme|update_bg_img|remove_bg_img|upload_homepage|remove_homepage|homepage_status|end_session|api/heartbeat|\.well-known/stellar\.toml) {
+        add_header Access-Control-Allow-Origin *;
+        add_header Access-Control-Allow-Methods *;
+        include proxy_params;
+        proxy_pass http://unix:/home/pintheon/pintheon.sock;
+    }
+
+    location /static {
+        include /etc/nginx/mime.types;
         root /home/pintheon/;
     }
 }
