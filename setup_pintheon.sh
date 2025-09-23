@@ -11,6 +11,7 @@ echo "Configuring Nginx"
 
 cat > /etc/nginx/sites-available/default<<  EOF
 
+# Public server block - IPFS/IPNS and custom homepage
 server {
     listen 80;
     listen [::]:80;
@@ -64,13 +65,15 @@ server {
     ssl_certificate_key /etc/ssl/pintheon.key;
 
     location / {
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' '*' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
         include proxy_params;
         proxy_pass http://unix:/home/pintheon/pintheon.sock;
     }
 
     location ~ ^/(admin|reset_init|new_node|establish|authorize|authorized|deauthorize|upload|api_upload|api_upload_homepage|remove_file|update_logo|tokenize_file|publish_file|send_file_token|send_token|update_gateway|add_access_token|remove_access_token|dashboard_data|update_theme|update_bg_img|remove_bg_img|upload_homepage|remove_homepage|homepage_status|end_session|api/heartbeat|\.well-known/stellar\.toml) {
-        add_header Access-Control-Allow-Origin *;
-        add_header Access-Control-Allow-Methods *;
         include proxy_params;
         proxy_pass http://unix:/home/pintheon/pintheon.sock;
     }
