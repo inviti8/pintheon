@@ -456,10 +456,17 @@ def root():
     print("No valid homepage configuration found, returning 403")
     abort(403)
 
+@app.route('/custom_homepage/', defaults={'filename': 'index.html'})
 @app.route('/custom_homepage/<path:filename>')
 def custom_homepage_static(filename):
-    """Serve static files from custom homepage directory"""
-    return send_from_directory(CUSTOM_HOMEPAGE_PATH, filename)
+    """Serve static files from custom homepage directory and handle client-side routing"""
+    # If the file exists, serve it
+    file_path = os.path.join(CUSTOM_HOMEPAGE_PATH, filename)
+    if os.path.exists(file_path) and not os.path.isdir(file_path):
+        return send_from_directory(CUSTOM_HOMEPAGE_PATH, filename)
+    
+    # Otherwise, serve index.html and let the client-side router handle it
+    return send_from_directory(CUSTOM_HOMEPAGE_PATH, 'index.html')
 
 @app.route('/admin')
 def admin():
