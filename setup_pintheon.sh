@@ -4,14 +4,13 @@ apt install nginx -y
 echo "Configuring Nginx"
 
 # echo "Generate SSL Certs."
-# mkcert -install
-# mkcert local.pintheon.com localhost 127.0.0.1 ::1
-# mv -f local.pintheon.com+3.pem /etc/ssl/pintheon.crt
-# mv -f local.pintheon.com+3-key.pem /etc/ssl/pintheon.key
+mkcert -install
+mkcert local.pintheon.com localhost 127.0.0.1 ::1
+mv -f local.pintheon.com+3.pem /etc/ssl/pintheon.crt
+mv -f local.pintheon.com+3-key.pem /etc/ssl/pintheon.key
 
-cat > /etc/nginx/sites-available/default<<  EOF
-
-# Public server block - IPFS/IPNS and custom homepage
+cat > /etc/nginx/sites-available/default << 'EOL'
+# HTTP to HTTPS redirect
 server {
     listen 80;
     listen [::]:80;
@@ -49,13 +48,18 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Deny all other routes
+    # Proxy all other requests to the application server
     location / {
-        return 403;
+        proxy_pass https://127.0.0.1:9999;
+        proxy_ssl_verify off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 
-# Localhost-only server block - all other routes
+# Localhost-only server block - application server
 server {
     listen 127.0.0.1:9999 ssl;
     server_name local.pintheon.com;
@@ -83,12 +87,25 @@ server {
         root /home/pintheon/;
     }
 }
-EOF
+EOL
 
 echo "Owning the directory"
 chown -R root /home/
 echo "Owning the directory"
 chown -R root:www-data /home/pintheon/
-echo "set ownership to nginx for staic files"
+echo "set ownership to nginx for static files"
 chmod -R 755 /home/pintheon/static
 
+# Test NGINX configuration
+echo "Testing NGINX configuration..."
+nginx -t
+
+# Restart NGINX if configuration test passes
+if [ $? -eq 0 ]; then
+    echo "NGINX configuration test successful, restarting NGINX..."
+    systemctl restart nginx
+    echo "NGINX has been restarted with the new configuration"
+else
+    echo "NGINX configuration test failed. Please check the configuration."
+    exit 1
+fi
