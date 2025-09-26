@@ -37,6 +37,12 @@ def get_data_directory():
     if env_data_dir:
         return env_data_dir
     
+    # For local debug, use ~/.local/share/PINTHEON/
+    # if LOCAL_DEBUG:
+    #     local_path = os.path.expanduser('~/.local/share/PINTHEON')
+    #     os.makedirs(local_path, exist_ok=True)
+    #     return local_path
+    
     # Use platformdirs for default location (no app author)
     dirs = PlatformDirs('PINTHEON', ensure_exists=True)
     
@@ -388,27 +394,79 @@ def unauthorized_access(e):
 @app.route('/')
 def root():
     """Root route - serve custom homepage if exists, otherwise return 403"""
-    if PINTHEON.homepage_type == 'upload' and _custom_homepage_exists():
-        index_file = _get_custom_homepage_file()
-        # If the index file is in a subdirectory, we need to handle it properly
-        if '/' in index_file:
-            # Index file is in a subdirectory, serve it from the subdirectory
-            subdir = os.path.dirname(index_file)
-            filename = os.path.basename(index_file)
-            return send_from_directory(os.path.join(CUSTOM_HOMEPAGE_PATH, subdir), filename)
+    print(f"\n=== Debug: Root Route ===")
+    print(f"PINTHEON.homepage_type: {PINTHEON.homepage_type}")
+    print(f"CUSTOM_HOMEPAGE_PATH: {CUSTOM_HOMEPAGE_PATH}")
+    print(f"Directory exists: {os.path.exists(CUSTOM_HOMEPAGE_PATH)}")
+    
+    if os.path.exists(CUSTOM_HOMEPAGE_PATH):
+        print(f"Contents of {CUSTOM_HOMEPAGE_PATH}: {os.listdir(CUSTOM_HOMEPAGE_PATH)}")
+    
+    # Handle numeric homepage_type (2 means 'upload')
+    if str(PINTHEON.homepage_type) in ['upload', '2']:
+        print("Homepage type is 'upload'")
+        if _custom_homepage_exists():
+            print("Custom homepage exists")
+            index_file = _get_custom_homepage_file()
+            print(f"Found index file: {index_file}")
+            
+            # If the index file is in a subdirectory, we need to handle it properly
+            if '/' in index_file:
+                # Index file is in a subdirectory, serve it from the subdirectory
+                subdir = os.path.dirname(index_file)
+                filename = os.path.basename(index_file)
+                full_path = os.path.join(CUSTOM_HOMEPAGE_PATH, subdir, filename)
+                print(f"Serving from subdirectory. Full path: {full_path}")
+                print(f"File exists: {os.path.exists(full_path)}")
+                return send_from_directory(os.path.join(CUSTOM_HOMEPAGE_PATH, subdir), filename)
+            else:
+                # Index file is in the root directory
+                full_path = os.path.join(CUSTOM_HOMEPAGE_PATH, index_file)
+                print(f"Serving from root. Full path: {full_path}")
+                print(f"File exists: {os.path.exists(full_path)}")
+                return send_from_directory(CUSTOM_HOMEPAGE_PATH, index_file)
         else:
-            # Index file is in the root directory
-            return send_from_directory(CUSTOM_HOMEPAGE_PATH, index_file)
-    elif PINTHEON.homepage_hash != 'none' and PINTHEON.homepage_type == 'ipfs-hash' and PINTHEON.file_hash_exists(PINTHEON.homepage_hash, 'text/html'):
+            print("Custom homepage does not exist")
+    
+    # Handle numeric homepage_type (1 means 'ipfs-hash')
+    homepage_type = str(PINTHEON.homepage_type).lower()
+    if (homepage_type == '1' or homepage_type == 'ipfs-hash') and PINTHEON.homepage_hash != 'none' and PINTHEON.file_hash_exists(PINTHEON.homepage_hash, 'text/html'):
+        print(f"Using IPFS hash: {PINTHEON.homepage_hash}")
         home = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+PINTHEON.homepage_hash
         return redirect(home)
-    else:
-        abort(403)
+    
+    # Try to serve from custom_homepage directory if it exists
+    if os.path.exists(CUSTOM_HOMEPAGE_PATH):
+        print("Attempting to serve from custom_homepage directory")
+        # Look for index files in the root of custom_homepage
+        index_files = ['index.html', 'index.htm', 'index.php']
+        for index_file in index_files:
+            if os.path.exists(os.path.join(CUSTOM_HOMEPAGE_PATH, index_file)):
+                print(f"Serving index file: {index_file}")
+                return send_from_directory(CUSTOM_HOMEPAGE_PATH, index_file)
+        
+        # If no index file in root, try subdirectories
+        for root, dirs, files in os.walk(CUSTOM_HOMEPAGE_PATH):
+            for filename in files:
+                if filename in index_files:
+                    rel_path = os.path.relpath(root, CUSTOM_HOMEPAGE_PATH)
+                    print(f"Serving index file from subdirectory: {os.path.join(rel_path, filename)}")
+                    return send_from_directory(root, filename)
+    
+    print("No valid homepage configuration found, returning 403")
+    abort(403)
 
+@app.route('/custom_homepage/', defaults={'filename': 'index.html'})
 @app.route('/custom_homepage/<path:filename>')
 def custom_homepage_static(filename):
-    """Serve static files from custom homepage directory"""
-    return send_from_directory(CUSTOM_HOMEPAGE_PATH, filename)
+    """Serve static files from custom homepage directory and handle client-side routing"""
+    # If the file exists, serve it
+    file_path = os.path.join(CUSTOM_HOMEPAGE_PATH, filename)
+    if os.path.exists(file_path) and not os.path.isdir(file_path):
+        return send_from_directory(CUSTOM_HOMEPAGE_PATH, filename)
+    
+    # Otherwise, serve index.html and let the client-side router handle it
+    return send_from_directory(CUSTOM_HOMEPAGE_PATH, 'index.html')
 
 @app.route('/admin')
 def admin():
