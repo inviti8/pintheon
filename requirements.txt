@@ -84,7 +84,7 @@ rlp==4.0.1
 scipy==1.13.1
 simple-websocket==1.1.0
 six==1.17.0
-stellar-sdk==12.3.0
+stellar-sdk==13.1.0
 texttable==1.7.0
 tinydb==4.8.2
 tinydb-encrypted-jsonstorage==0.1.2
