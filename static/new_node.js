@@ -117,9 +117,38 @@ const open_token_gen = () => {
 };
 
 
+// Show terms and conditions alert dialog
+function showTermsDialog() {
+    const alertDialog = document.createElement('ons-alert-dialog');
+    alertDialog.setAttribute('modifier', 'rowfooter');
+    alertDialog.setAttribute('id', 'terms-dialog');
+    
+    alertDialog.innerHTML = `
+        <div class="alert-dialog-title">Terms and Conditions</div>
+        <div class="alert-dialog-content">
+            <p>By using this software, you agree to the following terms:</p>
+            <div style="max-height: 200px; overflow-y: auto; margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+            </div>
+        </div>
+        <div class="alert-dialog-footer">
+            <button class="alert-dialog-button" onclick="document.getElementById('terms-dialog').hide()">I Agree</button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDialog);
+    alertDialog.show();
+}
+
 document.addEventListener('init', function(event) {
     let page = event.target;
     // let inputs = ['logo-file', 'key-store-file'];
+    
+    // Show terms dialog when new_node page loads
+    if (page.id === 'new_node') {
+        // Small delay to ensure page is fully rendered
+        setTimeout(showTermsDialog, 500);
+    }
 
     if (page.id === 'new_node') {
 
