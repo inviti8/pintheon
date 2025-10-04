@@ -31,12 +31,13 @@ eth_abi==5.1.0
 Flask==3.0.3
 flask-cors==6.0.0
 Flask-SocketIO==5.4.1
+Flask-Limiter==3.11.0
 fonttools==4.56.0
 frozenlist==1.5.0
 gunicorn==23.0.0
 h11==0.16.0
 hexbytes==1.2.1
-hvym_stellar==0.11
+hvym_stellar==0.12
 idna==3.10
 importlib_metadata==8.6.1
 importlib_resources==6.5.2

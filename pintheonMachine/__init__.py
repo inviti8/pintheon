@@ -320,7 +320,7 @@ class PintheonMachine(object):
     
     def check_time(self, caveat):
         result = True
-        if not caveat.startswith('time < '):
+        if caveat.startswith('time < '):
             try:
                 now = datetime.datetime.now()
                 when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%d %H:%M:%S.%f')
@@ -1223,7 +1223,7 @@ class PintheonMachine(object):
         self._open_db()
         data = { 'id': 'NODE_DATA', 'node_name':self.node_name, 'logo_url':self.logo_url, 'node_descriptor':self.node_descriptor, 'url_host':self.url_host, 'node_contract':self.node_contract, 'master_key':self.master_key, 'root_token': self.root_token }
         self._update_table_doc(self.node_data, data)
-        print(self.node_data.all())
+        #print(self.node_data.all())
         self.db.close()
         return data
 
@@ -1623,7 +1623,7 @@ class PintheonMachine(object):
         record = self.access_tokens.get(file.pub == sender_pub)
 
         if record.timestamped:
-            result = tokenVerifier.is_expired()
+            result = not tokenVerifier.is_expired()
 
         self.db.close()
 

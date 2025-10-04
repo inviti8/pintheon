@@ -8,26 +8,34 @@ from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound, H
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
 from platformdirs import *
-from pintheonMachine import PintheonMachine
 from StellarTomlGenerator import StellarTomlGenerator
+from pintheonMachine import PintheonMachine
 from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
 from functools import wraps
 import mimetypes
 import shutil
 import toml
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# Initialize rate limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
 MEGABYTE = (2 ** 10) ** 2
 app.config['MAX_CONTENT_LENGTH'] = None
 app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 
-
-
 CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
-# LOCAL_DEBUG = True
+LOCAL_DEBUG = True
 
 # Use platformdirs for cross-platform data directory management
 def get_data_directory():
@@ -183,17 +191,17 @@ def require_token_verification(pub_field, token_field, source='json'):
         @wraps(f)
         def wrapper(*args, **kwargs):
             print(f"DEBUG: require_token_verification decorator called for {f.__name__}")
-            print(f"DEBUG: pub_field: {pub_field}, token_field: {token_field}, source: {source}")
+            #print(f"DEBUG: pub_field: {pub_field}, token_field: {token_field}, source: {source}")
             if source == 'json':
                 data = request.get_json()
-                print(f"DEBUG: JSON data for verification: {data}")
+                #print(f"DEBUG: JSON data for verification: {data}")
                 if not PINTHEON.verify_request(data[pub_field], data[token_field]):
-                    print(f"DEBUG: Token verification failed for JSON")
+                    #print(f"DEBUG: Token verification failed for JSON")
                     raise Unauthorized()
             elif source == 'form':
-                print(f"DEBUG: Form data for verification: pub={request.form.get(pub_field)}, token={request.form.get(token_field)}")
+                #print(f"DEBUG: Form data for verification: pub={request.form.get(pub_field)}, token={request.form.get(token_field)}")
                 if not PINTHEON.verify_request(request.form[pub_field], request.form[token_field]):
-                    print(f"DEBUG: Token verification failed for form")
+                    #print(f"DEBUG: Token verification failed for form")
                     raise Unauthorized()
             else:
                 print(f"DEBUG: Invalid source for token verification: {source}")
@@ -589,7 +597,6 @@ def top_up_stellar():
 @require_token_verification('client_pub', 'token', source='json')
 def end_session():
     data = request.get_json()
-    print(data)
     PINTHEON.end_session()
     return jsonify({'authorized': False}), 200
    
@@ -636,12 +643,12 @@ def new_node():
 @require_token_verification('client_pub', 'token', source='json')
 def establish():
     data = request.get_json()
-    print(data)
     PINTHEON.set_node_data(data['name'], data['descriptor'], data['meta_data'], data['host'])
     PINTHEON.established()
     return PINTHEON.establish_data(), 200
 
 @app.route('/authorize', methods=['POST'])
+@limiter.limit("10 per minute")
 @cross_origin()
 @require_local_access
 @require_fields(['token', 'client_pub', 'auth_token', 'generator_pub'], source='json')
@@ -667,7 +674,7 @@ def authorize():
 def authorized():
     data = request.get_json()
     print(data)
-    if not PINTHEON.token_not_expired(data['client_pub'], data['token']) and (not PINTHEON.session_active or not PINTHEON.state == 'idle'):
+    if not PINTHEON.token_not_expired(data['client_pub'], data['token']) or (not PINTHEON.session_active or not PINTHEON.state == 'idle'):
         abort(403)
     elif not PINTHEON.verify_authorization(data['client_pub'], data['auth_token']):
         raise Unauthorized()
