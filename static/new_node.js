@@ -142,20 +142,10 @@ function showTermsDialog() {
 
 document.addEventListener('init', function(event) {
     let page = event.target;
-    // let inputs = ['logo-file', 'key-store-file'];
-    
-    // Show terms dialog when new_node page loads
+
     if (page.id === 'new_node') {
-        // Small delay to ensure page is fully rendered
+
         setTimeout(showTermsDialog, 500);
-    }
-
-    if (page.id === 'new_node') {
-
-        // document.querySelector('#generate-seed').onclick = async function () {
-        //     let seed = await generate_wallet();
-        //     document.querySelector('#launch-token').value = seed;
-        // };
         document.querySelector('#open-token-gen').onclick = function () {
             open_token_gen();
         };
@@ -171,11 +161,6 @@ document.addEventListener('init', function(event) {
         document.querySelector('#new-node-logo').src = window.constants.LOGO;
 
     } else if (page.id === 'establish') {
-        // inputs.forEach(function(inp) {
-        //     document.querySelector('#btn-'+inp).onclick = function () {
-        //         document.querySelector('#'+inp).click();
-        //     };
-        // });
 
         document.querySelector('#btn-establish-back').onclick = function () {
             reset_init();
@@ -188,10 +173,6 @@ document.addEventListener('init', function(event) {
         document.querySelector('#btn-establish').onclick = function () {
             establish();
         };
-
-        // document.querySelector('#btn-load-key-store-file').onclick = function () {
-        //     load_keystore()
-        // };
         
         page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
         window.rndr.nodeCardHeader(window.constants.LOGO, 'PINTHEON', 'HVYM Network');
