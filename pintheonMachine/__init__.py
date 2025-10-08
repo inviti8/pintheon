@@ -1618,11 +1618,12 @@ class PintheonMachine(object):
         tokenVerifier = StellarSharedKeyTokenVerifier(self.stellar_25519_keypair, access_token)
         sender_pub = tokenVerifier.sender_pub()
         result = tokenVerifier.valid()
+        self._open_db()
         file = Query()
 
         record = self.access_tokens.get(file.pub == sender_pub)
 
-        if record.timestamped:
+        if record['timestamped']:
             result = not tokenVerifier.is_expired()
 
         self.db.close()
