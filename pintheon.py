@@ -25,7 +25,7 @@ app.secret_key = os.urandom(24)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["5000 per day", "500 per hour"],
     storage_uri="memory://",
 )
 MEGABYTE = (2 ** 10) ** 2
@@ -35,7 +35,7 @@ app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
-LOCAL_DEBUG = True
+# LOCAL_DEBUG = True
 
 # Use platformdirs for cross-platform data directory management
 def get_data_directory():
