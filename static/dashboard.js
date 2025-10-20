@@ -872,26 +872,8 @@ document.addEventListener('init', function(event) {
     window.rndr.fileListItems = function(host, fileList, logo){
         const fileListContainer = document.getElementById('file-list-items');
         
-        // Clear the file list container
-        if (fileListContainer) {
-            fileListContainer.innerHTML = '';
-        }
-        
-        // If no files, show a message and return
-        if (fileList.length === 0) {
-            if (fileListContainer) {
-                const emptyMessage = document.createElement('div');
-                emptyMessage.className = 'empty-message';
-                emptyMessage.textContent = 'No files found';
-                emptyMessage.style.textAlign = 'center';
-                emptyMessage.style.padding = '20px';
-                emptyMessage.style.color = '#666';
-                fileListContainer.appendChild(emptyMessage);
-            }
-            return;
-        }
-        
         let _updateElem = function(clone, i, host, fileList, logo){
+            
             // Ensure file URLs have the correct protocol (HTTP/HTTPS)
             let protocol = window.location.protocol;
             let fileUrl = protocol + '//' + host + '/ipfs/' + fileList[i]['CID'];
@@ -944,6 +926,7 @@ document.addEventListener('init', function(event) {
             clone.querySelector('.file_url').href = fileUrl;
             clone.querySelector('.file_url').textContent = cid;
             clone.querySelector('.file-remove').setAttribute('onclick', 'remove_file("' + cid + '")');
+            clone.querySelector('#copy-hash-url').setAttribute('onclick', 'copy_file_url("' + cid + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'copy_file_url("' + fileUrl + '")');
             if (fileList[i]['IsLogo'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-star"></ons-icon>');};
             if (fileList[i]['IsBgImg'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-photo"></ons-icon>');};
@@ -961,6 +944,13 @@ document.addEventListener('init', function(event) {
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+', '+false+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
             };
         }
+
+        //If list is empty render nothing
+        if (fileList.length === 0) {
+            _updateElem = function(clone, i, host, fileList, logo){
+                
+            };
+        };
 
         window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, host, fileList, logo);
     };
