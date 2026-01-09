@@ -1466,7 +1466,35 @@ class PintheonMachine(object):
                 return response
         else:
                 return jsonify({'error': 'stats not available.'}), 400
-        
+
+    def create_mfs_directory(self, path):
+        """Create an MFS directory at the given path."""
+        if not path.startswith('/'):
+            path = '/' + path
+        url = f'{self.ipfs_endpoint}/files/mkdir'
+        params = {'arg': path, 'parents': 'true'}
+        response = requests.post(url, params=params)
+        return response.status_code == 200
+
+    def list_mfs_directories(self, path='/'):
+        """List directories in MFS at the given path."""
+        url = f'{self.ipfs_endpoint}/files/ls'
+        params = {'arg': path, 'long': 'true'}
+        response = requests.post(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            entries = data.get('Entries', []) or []
+            dirs = [{'Name': e.get('Name'), 'Path': path.rstrip('/') + '/' + e.get('Name')} for e in entries if e.get('Type') == 1]
+            return dirs
+        return []
+
+    def copy_to_mfs(self, cid, mfs_path):
+        """Copy an IPFS CID to an MFS path."""
+        url = f'{self.ipfs_endpoint}/files/cp'
+        params = [('arg', f'/ipfs/{cid}'), ('arg', mfs_path)]
+        response = requests.post(url, params=params)
+        return response.status_code == 200
+
     def get_peer_list(self):
         url = f'{self.ipfs_endpoint}/bootstrap/list'
         response = requests.post(url);
@@ -1646,7 +1674,7 @@ class PintheonMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None, return_file_info=False):
+    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None, return_file_info=False, mfs_directory=None):
         if self.FAKE_IPFS:
             return self.create_fake_ipfs_data()
         else:
@@ -1686,8 +1714,13 @@ class PintheonMachine(object):
                 # print('ipfs res : ',ipfs_data)
                 cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
                 if cid != None:
-                    
-                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'RecieverPub':reciever_pub}
+                    # Copy to MFS directory if specified
+                    directory = mfs_directory if mfs_directory else '/'
+                    if mfs_directory:
+                        mfs_file_path = mfs_directory.rstrip('/') + '/' + file_name
+                        self.copy_to_mfs(cid, mfs_file_path)
+
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'RecieverPub':reciever_pub, 'Directory': directory}
                     self._open_db()
 
                     if is_logo:

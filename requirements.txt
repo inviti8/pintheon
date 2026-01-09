@@ -34,7 +34,7 @@ Flask-SocketIO==5.4.1
 Flask-Limiter==3.11.0
 fonttools==4.56.0
 frozenlist==1.5.0
-gunicorn==23.0.0
+gunicorn==23.0.0; sys_platform != 'win32'
 h11==0.16.0
 hexbytes==1.2.1
 hvym_stellar==0.12
@@ -60,7 +60,7 @@ pillow==11.1.0
 platformdirs==4.3.6
 propcache==0.3.1
 psutil==7.0.0
-ptyprocess==0.7.0
+ptyprocess==0.7.0; sys_platform != 'win32'
 py7zr==1.0.0
 pybcj==1.0.6
 pycparser==2.22
@@ -97,7 +97,7 @@ typing-inspection==0.4.1
 typing_extensions==4.14.0
 tzdata==2025.1
 urllib3==2.5.0
-uWSGI==2.0.28
+uWSGI==2.0.28; sys_platform != 'win32'
 websockets==15.0.1
 Werkzeug==3.1.2
 wsproto==1.2.0

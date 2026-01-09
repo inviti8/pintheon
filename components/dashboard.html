@@ -85,7 +85,7 @@
              <ons-col width="100%">
                 <ons-card modifier="default outlined">
                   <H3>FILES</H3>
-                  <div class="content"><ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button></div>
+                  <div class="content"><ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button> <ons-button modifier="large" id="create-directory-button" ripple><ons-icon icon="fa-folder-plus"></ons-icon>_new folder</ons-button></div>
                   <div class="content">
                     <div class="content_top">
                       <p>
@@ -207,12 +207,40 @@
               </div>
             </div>
           </ons-list-item>
+          <ons-list-item class="upload-file-dialog-list-item">
+            <div class="fab-container left">
+              <ons-icon size="30px" class="list-item__thumbnail" icon="fa-folder"></ons-icon>
+            </div>
+            <div class="center">
+              <span class="list-item__title">
+                <select id="upload-file-dialog-directory" class="select-input" style="width: 100%;">
+                  <option value="">/ (root)</option>
+                </select>
+              </span>
+            </div>
+          </ons-list-item>
         </ons-list>
         <p>
           <ons-button id="upload-file-dialog-button" class="can-callback" modifier="large" ripple>UPLOAD
             <input type="file" id="upload-file-dialog-input" style="display: none;">
           </ons-button>
         </p>
+      </div>
+    </ons-dialog>
+  </template>
+
+  <template id="create-directory-dialog.html">
+    <ons-dialog id="create-directory-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list style="width:100%;">
+          <ons-list-header><ons-icon class="right" icon="fa-folder-plus"></ons-icon>__CREATE DIRECTORY</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <ons-input class="dash-input" id="create-directory-dialog-name" modifier="large" placeholder="Directory Name" float></ons-input>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <ons-button id="create-directory-dialog-button" class="can-callback" modifier="large" ripple>CREATE</ons-button>
+          </ons-list-item>
+        </ons-list>
       </div>
     </ons-dialog>
   </template>
@@ -470,7 +498,7 @@
         <ons-list modifier="default">
           <ons-list-header><img style="width: 24px; height: 24px;" id="file-list-item-stellar-logo" src=""></ons-list-header>
           <ons-list-item>
-            <div class="center"><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
+            <div class="center"><span class="thick">Directory:</span><pre> </pre><span id="file-list-item-directory"></span><pre>  </pre><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
           </ons-list-item>
           <ons-list-item>
             <div id="file-list-items-token-buttons" class="center"></div>

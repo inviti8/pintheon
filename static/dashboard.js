@@ -252,6 +252,86 @@ const logged_out = () => {
 
 const upload_file_dlg = async (callback) => {
     window.dlg.showLoadFileDlg('upload-file-dialog', callback, false, [], 'FILE');
+    // Fetch and populate directories after dialog is shown
+    setTimeout(() => fetch_directories('upload-file-dialog-directory'), 100);
+};
+
+const fetch_directories = async (selectId) => {
+    const session = _getSessionData();
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+
+    try {
+        const response = await fetch('/list_directories', {
+            method: 'POST',
+            body: formData
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const select = document.getElementById(selectId);
+            if (select) {
+                // Clear existing options except root
+                select.innerHTML = '<option value="">/ (root)</option>';
+                // Add directory options
+                if (data.directories && data.directories.length > 0) {
+                    data.directories.forEach(dir => {
+                        const option = document.createElement('option');
+                        option.value = dir.Path;
+                        option.textContent = dir.Path;
+                        select.appendChild(option);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching directories:', error);
+    }
+};
+
+const create_directory_dlg = async () => {
+    window.dlg.show('create-directory-dialog', create_directory);
+};
+
+const create_directory = async () => {
+    const session = _getSessionData();
+    const nameInput = document.getElementById('create-directory-dialog-name');
+    const name = nameInput ? nameInput.value.trim() : '';
+
+    if (!name) {
+        ons.notification.alert('Please enter a directory name');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('name', name);
+
+    window.dlg.show('loading-dialog');
+
+    try {
+        const response = await fetch('/create_directory', {
+            method: 'POST',
+            body: formData
+        });
+        window.dlg.hide('loading-dialog');
+
+        if (response.ok) {
+            const data = await response.json();
+            window.dlg.hide('create-directory-dialog');
+            ons.notification.alert('Directory "/' + name + '" created successfully');
+            // Clear input
+            if (nameInput) nameInput.value = '';
+        } else {
+            const error = await response.json();
+            ons.notification.alert('Error: ' + (error.error || 'Failed to create directory'));
+        }
+    } catch (error) {
+        window.dlg.hide('loading-dialog');
+        console.error('Error creating directory:', error);
+        ons.notification.alert('Error creating directory');
+    }
 };
 
 const upload_logo_dlg = async (callback) => {
@@ -284,6 +364,7 @@ const upload_file = async (file, id=undefined) => {
     const session = _getSessionData();
     let upload = true;
     const tgl = document.querySelector('#'+id+'-encrypt-toggle');
+    const directorySelect = document.querySelector('#'+id+'-directory');
 
     if(file){
         const formData = new FormData()
@@ -303,8 +384,13 @@ const upload_file = async (file, id=undefined) => {
             formData.append('reciever_pub', "");
         }
 
+        // Add directory selection
+        if(directorySelect && directorySelect.value){
+            formData.append('directory', directorySelect.value);
+        }
+
         formData.append('file', file);
-        
+
         if(upload){
             await window.fn.uploadFile(file, formData, '/upload', file_updated);
         }else{
@@ -884,6 +970,7 @@ document.addEventListener('init', function(event) {
             let balance = fileList[i]['Balance']
             let encrypted = fileList[i]['Encrypted']
             let reciever_pub = fileList[i]['RecieverPub']
+            let directory = fileList[i]['Directory'] || '/';
             let icon = window.icons.UNKNOWN;
 
             if(fileType.includes('image')){
@@ -915,6 +1002,7 @@ document.addEventListener('init', function(event) {
 
             clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('#file-list-item-stellar-logo').src = logo;
+            clone.querySelector('#file-list-item-directory').textContent = directory;
             clone.querySelector('#file-list-item-balance').textContent = balance;
             clone.querySelector('#file-list-item-encrypted').textContent = encrypted;
             if(reciever_pub != null){
@@ -1827,6 +1915,10 @@ document.addEventListener('init', function(event) {
 
         document.querySelector('#upload-button').onclick = function () {
             upload_file_dlg(upload_file);
+        };
+
+        document.querySelector('#create-directory-button').onclick = function () {
+            create_directory_dlg();
         };
 
         document.querySelector('#settings-button').onclick = function () {

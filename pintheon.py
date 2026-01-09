@@ -35,7 +35,7 @@ app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
-# LOCAL_DEBUG = True
+LOCAL_DEBUG = True
 
 # Use platformdirs for cross-platform data directory management
 def get_data_directory():
@@ -46,10 +46,10 @@ def get_data_directory():
         return env_data_dir
     
     # For local debug, use ~/.local/share/PINTHEON/
-    # if LOCAL_DEBUG:
-    #     local_path = os.path.expanduser('~/.local/share/PINTHEON')
-    #     os.makedirs(local_path, exist_ok=True)
-    #     return local_path
+    if LOCAL_DEBUG:
+        local_path = os.path.expanduser('~/.local/share/PINTHEON')
+        os.makedirs(local_path, exist_ok=True)
+        return local_path
     
     # Use platformdirs for default location (no app author)
     dirs = PlatformDirs('PINTHEON', ensure_exists=True)
@@ -118,7 +118,7 @@ ensure_directories()
 # Now define CUSTOM_HOMEPAGE_PATH globally after ensure_directories() has run
 CUSTOM_HOMEPAGE_PATH = os.path.join(PINTHEON_DATA_DIR, "custom_homepage")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=False)
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=True, fake_ipfs=True)
 if PINTHEON.state == None or PINTHEON.state == 'spawned':
      PINTHEON.initialize()
 
@@ -220,8 +220,8 @@ def require_local_access(f):
         # Get the current custom hostname from Pintheon
         custom_host = PINTHEON.url_host if PINTHEON.url_host else None
         port = str(PINTHEON.port)
-        # if LOCAL_DEBUG:
-        #     port = '5000'
+        if LOCAL_DEBUG:
+            port = '5000'
         
         # If no custom hostname is set (still localhost), allow access
         if not custom_host or custom_host in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
@@ -247,16 +247,16 @@ def require_local_access(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False, return_file_info=False):
+def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False, return_file_info=False, mfs_directory=None):
     if 'file' not in request.files:
         return "No file uploaded", 400
-     
+
     file = request.files['file']
     print(file)
     print(file.filename)
     print(file.mimetype)
 
-     
+
     for field in required:
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
@@ -272,7 +272,7 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
         file_name = f"{file.filename}.7z"
         file_type = 'application/x-7z-compressed'
 
-    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub, return_file_info=return_file_info)
+    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub, return_file_info=return_file_info, mfs_directory=mfs_directory)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -483,8 +483,8 @@ def admin():
     forwarded_host = request.headers.get('X-Forwarded-Host', '')
     custom_host = PINTHEON.url_host if PINTHEON.url_host else None
     port = str(PINTHEON.port)
-    # if LOCAL_DEBUG:
-    #         port = '5000'
+    if LOCAL_DEBUG:
+            port = '5000'
     if custom_host and custom_host not in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
         # Extract hostname from custom_host (remove protocol if present)
         if custom_host.startswith(('http://', 'https://')):
@@ -708,10 +708,11 @@ def deauthorize():
 def upload():
     required = ['token', 'client_pub']
     encrypted = request.form['encrypted']
+    mfs_directory = request.form.get('directory', None)
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
     print(encrypted)
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-    return _handle_upload(required, request, False, False, encrypted)
+    return _handle_upload(required, request, False, False, encrypted, mfs_directory=mfs_directory)
 
 @app.route('/api_upload', methods=['POST'])
 @cross_origin()
@@ -720,11 +721,72 @@ def upload():
 def api_upload():
     token = request.form['access_token']
     encrypted = request.form['encrypted']
+    mfs_directory = request.form.get('directory', None)
     if not PINTHEON.authorize_access_token(token):
         abort(403)
     else:
         required = ['access_token']
-        return _handle_upload(required=required, request=request, is_logo=False, is_bg_img=False, encrypted=encrypted, return_file_info=True)
+        return _handle_upload(required=required, request=request, is_logo=False, is_bg_img=False, encrypted=encrypted, return_file_info=True, mfs_directory=mfs_directory)
+
+@app.route('/api_create_directory', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token', 'name'], source='form')
+def api_create_directory():
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    name = request.form['name']
+    if not name or name.strip() == '':
+        return jsonify({'error': 'Directory name is required'}), 400
+
+    success = PINTHEON.create_mfs_directory(name)
+    if success:
+        directories = PINTHEON.list_mfs_directories('/')
+        return jsonify({'success': True, 'directories': directories}), 200
+    else:
+        return jsonify({'error': 'Failed to create directory'}), 400
+
+@app.route('/api_list_directories', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token'], source='form')
+def api_list_directories():
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    directories = PINTHEON.list_mfs_directories('/')
+    return jsonify({'directories': directories}), 200
+
+@app.route('/create_directory', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'name'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def create_directory():
+    name = request.form['name']
+    if not name or name.strip() == '':
+        return jsonify({'error': 'Directory name is required'}), 400
+
+    success = PINTHEON.create_mfs_directory(name)
+    if success:
+        directories = PINTHEON.list_mfs_directories('/')
+        return jsonify({'success': True, 'directories': directories}), 200
+    else:
+        return jsonify({'error': 'Failed to create directory'}), 400
+
+@app.route('/list_directories', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def list_directories():
+    directories = PINTHEON.list_mfs_directories('/')
+    return jsonify({'directories': directories}), 200
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()
