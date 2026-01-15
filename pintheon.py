@@ -760,6 +760,58 @@ def api_list_directories():
     directories = PINTHEON.list_mfs_directories('/')
     return jsonify({'directories': directories}), 200
 
+@app.route('/api_get_directory_ipns', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token', 'directory'], source='form')
+def api_get_directory_ipns():
+    """Get the IPNS hash for a specific MFS directory."""
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    directory = request.form['directory']
+    ipns_hash = PINTHEON.get_directory_ipns_hash(directory)
+    if ipns_hash:
+        return jsonify({'success': True, 'directory': directory, 'ipns_hash': ipns_hash}), 200
+    else:
+        return jsonify({'error': 'No IPNS key found for directory', 'directory': directory}), 404
+
+@app.route('/api_list_ipns_keys', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token'], source='form')
+def api_list_ipns_keys():
+    """List all IPNS keys on this node."""
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    keys = PINTHEON.list_ipns_keys()
+    return jsonify({'keys': keys}), 200
+
+@app.route('/api_publish_directory', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token', 'directory'], source='form')
+def api_publish_directory():
+    """Manually publish an MFS directory to IPNS."""
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    directory = request.form['directory']
+    result = PINTHEON._auto_publish_directory_to_ipns(directory)
+    if result:
+        return jsonify({
+            'success': True,
+            'directory': directory,
+            'ipns_name': result.get('Name'),
+            'ipfs_path': result.get('Value')
+        }), 200
+    else:
+        return jsonify({'error': 'Failed to publish directory to IPNS'}), 400
+
 @app.route('/create_directory', methods=['POST'])
 @cross_origin()
 @require_local_access

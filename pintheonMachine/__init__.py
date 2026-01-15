@@ -519,15 +519,24 @@ class PintheonMachine(object):
             self._update_token_book_balance(self.OPUS_ID, balance)
     
     def opus_send(self, recieving_address, amount):
-         tx = self._token_send(self, self.opus, recieving_address, amount, self.opus_logo)
+         tx = self._token_send(self.opus, recieving_address, amount, self.opus_logo)
          self.update_opus_balance()
 
          return tx
     
     def collective_symbol(self):
-        tx = self.hvym_collective.symbol(self.stellar_keypair.public_key)
+        tx = self.hvym_collective.symbol(
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
         return tx.result()
-    
+
+    def _to_bytes(self, value):
+        """Convert a string to bytes, or return as-is if already bytes."""
+        if value is None:
+            return None
+        return value.encode('utf-8') if isinstance(value, str) else value
+
     def _safe_contract_call(self, func, *args, **kwargs):
         try:
             result = func(*args, **kwargs)
@@ -580,8 +589,8 @@ class PintheonMachine(object):
         call_result = self._safe_contract_call(
             self.hvym_collective.deploy_node_token,
             caller=self.stellar_keypair.public_key,
-            name=name,
-            descriptor=descriptor,
+            name=self._to_bytes(name),
+            descriptor=self._to_bytes(descriptor),
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
         )
@@ -614,15 +623,17 @@ class PintheonMachine(object):
             print(f'Error in deploy_node_token tx: {e}')
             return {'success': False, 'error': str(e)}
 
-    def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash="NONE"):
+    def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, ipns_hash=None):
+        # Handle ipns_hash - convert to bytes or None (treat "NONE" as None)
+        ipns_hash_val = self._to_bytes(ipns_hash) if ipns_hash and ipns_hash != "NONE" else None
         call_result = self._safe_contract_call(
             self.hvym_collective.deploy_ipfs_token,
             caller=self.stellar_keypair.public_key,
-            name=name,
-            ipfs_hash=ipfs_hash,
-            file_type=file_type,
-            gateways=gateways,
-            _ipns_hash=_ipns_hash,
+            name=self._to_bytes(name),
+            ipfs_hash=self._to_bytes(ipfs_hash),
+            file_type=self._to_bytes(file_type),
+            gateways=self._to_bytes(gateways),
+            ipns_hash=ipns_hash_val,
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
         )
@@ -678,8 +689,8 @@ class PintheonMachine(object):
         call_result = self._safe_contract_call(
             self.hvym_collective.publish_file,
             caller=self.stellar_keypair.public_key,
-            publisher=self.stellar_25519_keypair.public_key(),
-            ipfs_hash=ipfs_hash,
+            publisher=self._to_bytes(self.stellar_25519_keypair.public_key()),
+            ipfs_hash=self._to_bytes(ipfs_hash),
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
         )
@@ -712,13 +723,12 @@ class PintheonMachine(object):
     
     def publish_encrypted_file(self, recipient, ipfs_hash):
         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
-        
         call_result = self._safe_contract_call(
             self.hvym_collective.publish_encrypted_share,
             caller=self.stellar_keypair.public_key,
-            publisher=self.stellar_25519_keypair.public_key(),
-            recipient=recipient,
-            ipfs_hash=ipfs_hash,
+            publisher=self._to_bytes(self.stellar_25519_keypair.public_key()),
+            recipient=self._to_bytes(recipient),
+            ipfs_hash=self._to_bytes(ipfs_hash),
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
         )
@@ -830,7 +840,7 @@ class PintheonMachine(object):
         call_result = self._safe_contract_call(
             token.transfer,
             from_=self.stellar_keypair.public_key,
-            to=recieving_address,
+            to_muxed=recieving_address,
             amount=amount,
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
@@ -902,7 +912,8 @@ class PintheonMachine(object):
     def _token_symbol(self, token):
         call_result = self._safe_contract_call(
             token.symbol,
-            self.stellar_keypair.public_key
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
         )
         if not call_result['success']:
             print(f"Error in _token_symbol: {call_result['error']}")
@@ -1495,6 +1506,142 @@ class PintheonMachine(object):
         response = requests.post(url, params=params)
         return response.status_code == 200
 
+    def get_mfs_cid(self, path='/'):
+        """Get the CID (hash) of an MFS path."""
+        if not path.startswith('/'):
+            path = '/' + path
+        url = f'{self.ipfs_endpoint}/files/stat'
+        params = {'arg': path}
+        response = requests.post(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('Hash')
+        return None
+
+    def create_ipns_key(self, name, key_type='ed25519'):
+        """
+        Create a new IPNS key with the given name.
+
+        Args:
+            name: Name for the key (will be sanitized)
+            key_type: Key type - 'ed25519' (default) or 'rsa'
+
+        Returns:
+            dict with 'Name' and 'Id' (the IPNS hash), or None on failure
+        """
+        safe_name = self._safe_ipns_key(name.lower())
+        url = f'{self.ipfs_endpoint}/key/gen'
+        params = {'arg': safe_name, 'type': key_type}
+        response = requests.post(url, params=params)
+        if response.status_code == 200:
+            return response.json()
+        return None
+
+    def list_ipns_keys(self):
+        """List all IPNS keys on this node."""
+        url = f'{self.ipfs_endpoint}/key/list'
+        response = requests.post(url)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('Keys', [])
+        return []
+
+    def get_ipns_key(self, name):
+        """Get an IPNS key by name, returns dict with 'Name' and 'Id' or None."""
+        safe_name = self._safe_ipns_key(name.lower())
+        keys = self.list_ipns_keys()
+        for key in keys:
+            if key.get('Name') == safe_name:
+                return key
+        return None
+
+    def publish_mfs_to_ipns(self, mfs_path='/', key_name=None):
+        """
+        Publish an MFS directory to IPNS.
+
+        Args:
+            mfs_path: The MFS path to publish (default: root)
+            key_name: IPNS key name to publish under (default: 'self')
+
+        Returns:
+            dict with 'Name' (IPNS hash) and 'Value' (IPFS path), or None on failure
+        """
+        cid = self.get_mfs_cid(mfs_path)
+        if not cid:
+            print(f"Failed to get CID for MFS path: {mfs_path}")
+            return None
+
+        url = f'{self.ipfs_endpoint}/name/publish'
+        params = {'arg': f'/ipfs/{cid}'}
+        if key_name:
+            params['key'] = self._safe_ipns_key(key_name.lower())
+        else:
+            params['key'] = 'self'
+
+        response = requests.post(url, params=params)
+        if response.status_code == 200:
+            result = response.json()
+            # Store in namespaces table
+            self._open_db()
+            self.namespaces.insert({
+                'ipns_name': result.get('Name'),
+                'ipfs_path': result.get('Value'),
+                'mfs_path': mfs_path,
+                'key_name': key_name or 'self',
+                'timestamp': datetime.datetime.now().isoformat()
+            })
+            self.db.close()
+            return result
+        return None
+
+    def _auto_publish_directory_to_ipns(self, mfs_directory):
+        """
+        Auto-publish an MFS directory to IPNS.
+        Creates an IPNS key named after the directory if it doesn't exist.
+
+        Args:
+            mfs_directory: The MFS directory path to publish
+        """
+        # Normalize directory name for use as IPNS key
+        key_name = mfs_directory.strip('/').replace('/', '_')
+        if not key_name:
+            key_name = 'root'
+
+        # Check if key exists, create if not
+        existing_key = self.get_ipns_key(key_name)
+        if not existing_key:
+            print(f"Creating IPNS key for directory: {key_name}")
+            created_key = self.create_ipns_key(key_name)
+            if not created_key:
+                print(f"Failed to create IPNS key: {key_name}")
+                return None
+
+        # Publish the directory to IPNS
+        result = self.publish_mfs_to_ipns(mfs_directory, key_name)
+        if result:
+            print(f"Published {mfs_directory} to IPNS: {result.get('Name')}")
+        else:
+            print(f"Failed to publish {mfs_directory} to IPNS")
+        return result
+
+    def get_directory_ipns_hash(self, mfs_directory):
+        """
+        Get the IPNS hash for an MFS directory.
+
+        Args:
+            mfs_directory: The MFS directory path
+
+        Returns:
+            The IPNS hash (key ID) or None if no key exists for this directory
+        """
+        key_name = mfs_directory.strip('/').replace('/', '_')
+        if not key_name:
+            key_name = 'root'
+        key = self.get_ipns_key(key_name)
+        if key:
+            return key.get('Id')
+        return None
+
     def get_peer_list(self):
         url = f'{self.ipfs_endpoint}/bootstrap/list'
         response = requests.post(url);
@@ -1674,7 +1821,7 @@ class PintheonMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None, return_file_info=False, mfs_directory=None):
+    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None, return_file_info=False, mfs_directory=None, auto_publish_ipns=True):
         if self.FAKE_IPFS:
             return self.create_fake_ipfs_data()
         else:
@@ -1719,6 +1866,10 @@ class PintheonMachine(object):
                     if mfs_directory:
                         mfs_file_path = mfs_directory.rstrip('/') + '/' + file_name
                         self.copy_to_mfs(cid, mfs_file_path)
+
+                        # Auto-publish directory to IPNS if enabled
+                        if auto_publish_ipns:
+                            self._auto_publish_directory_to_ipns(mfs_directory)
 
                     file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'RecieverPub':reciever_pub, 'Directory': directory}
                     self._open_db()
