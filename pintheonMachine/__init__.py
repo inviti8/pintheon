@@ -1642,6 +1642,25 @@ class PintheonMachine(object):
             return key.get('Id')
         return None
 
+    def get_ipns_url(self, ipns_hash, file_name=None, gateway='https://ipfs.io'):
+        """
+        Construct an IPNS URL for accessing content.
+
+        Args:
+            ipns_hash: The IPNS hash (key ID)
+            file_name: Optional file name to append to the path
+            gateway: The IPFS gateway to use (default: https://ipfs.io)
+
+        Returns:
+            The full IPNS URL
+        """
+        if not ipns_hash:
+            return None
+        base_url = f'{gateway}/ipns/{ipns_hash}'
+        if file_name:
+            return f'{base_url}/{file_name}'
+        return base_url
+
     def get_peer_list(self):
         url = f'{self.ipfs_endpoint}/bootstrap/list'
         response = requests.post(url);
@@ -1751,6 +1770,29 @@ class PintheonMachine(object):
         self.db.close()
 
         return all_file_info
+
+    def update_file_ipns_hashes(self):
+        """
+        Update IPNSHash for all files based on their directory.
+        Useful for backfilling existing files that were uploaded before IPNS tracking was added.
+        """
+        self._open_db()
+        all_files = self.file_book.all()
+        self.db.close()
+
+        updated = 0
+        for file_record in all_files:
+            directory = file_record.get('Directory', '/')
+            if directory and directory != '/':
+                ipns_hash = self.get_directory_ipns_hash(directory)
+                if ipns_hash:
+                    self._open_db()
+                    file = Query()
+                    self.file_book.update({'IPNSHash': ipns_hash}, file.CID == file_record['CID'])
+                    self.db.close()
+                    updated += 1
+
+        return updated
 
     def all_file_info(self):
         self._open_db()
@@ -1863,15 +1905,17 @@ class PintheonMachine(object):
                 if cid != None:
                     # Copy to MFS directory if specified
                     directory = mfs_directory if mfs_directory else '/'
+                    ipns_hash = None
                     if mfs_directory:
                         mfs_file_path = mfs_directory.rstrip('/') + '/' + file_name
                         self.copy_to_mfs(cid, mfs_file_path)
 
                         # Auto-publish directory to IPNS if enabled
                         if auto_publish_ipns:
-                            self._auto_publish_directory_to_ipns(mfs_directory)
-
-                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'RecieverPub':reciever_pub, 'Directory': directory}
+                            ipns_result = self._auto_publish_directory_to_ipns(mfs_directory)
+                            if ipns_result:
+                                ipns_hash = ipns_result.get('Name')
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'RecieverPub':reciever_pub, 'Directory': directory, 'IPNSHash': ipns_hash}
                     self._open_db()
 
                     if is_logo:
@@ -1910,7 +1954,7 @@ class PintheonMachine(object):
         File = Query()
         for hash in FAKE_IPFS_FILES:
             self.file_book.remove(File.CID == hash)
-            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'RecieverPub':None}
+            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'RecieverPub':None, 'Directory': '/', 'IPNSHash': None}
             self.file_book.insert(file_info)
             idx+=1
         all_file_info = self.file_book.all()

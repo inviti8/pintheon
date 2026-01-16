@@ -85,7 +85,12 @@
              <ons-col width="100%">
                 <ons-card modifier="default outlined">
                   <H3>FILES</H3>
-                  <div class="content"><ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button> <ons-button modifier="large" id="create-directory-button" ripple><ons-icon icon="fa-folder-plus"></ons-icon>_new folder</ons-button></div>
+                  <div class="content">
+                    <div class="center-both" style="gap: 12px;">
+                      <ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button>
+                      <ons-button modifier="large" id="create-directory-button" ripple><ons-icon icon="fa-folder-plus"></ons-icon>_new folder</ons-button>
+                    </div>
+                  </div>
                   <div class="content">
                     <div class="content_top">
                       <p>
@@ -120,7 +125,7 @@
           <br />
             <div class="expanded_article">
               <br />
-              <ons-col width="80%">
+              <ons-col width="95%">
                 <ons-card class="" modifier="outlined" style="height:200px;">
                   <header>
                     <H3>SETTINGS</H3>
@@ -498,20 +503,23 @@
         <ons-list modifier="default">
           <ons-list-header><img style="width: 24px; height: 24px;" id="file-list-item-stellar-logo" src=""></ons-list-header>
           <ons-list-item>
-            <div class="center"><span class="thick">Directory:</span><pre> </pre><span id="file-list-item-directory"></span><pre>  </pre><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
+            <div class="center"><span class="thick">Directory:</span><pre> </pre><span id="file-list-item-directory"></span><pre>  </pre><span class="thick">Namespace:</span><pre> </pre><span id="file-list-item-namespace" class="truncate" style="max-width: 150px; display: inline-block; vertical-align: bottom;"></span><pre>  </pre><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
           </ons-list-item>
           <ons-list-item>
             <div id="file-list-items-token-buttons" class="center"></div>
           </ons-list-item>
           <ons-list-item>
             <div class="right">
-              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-file-url">
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-file-url" title="Copy IPFS URL">
                 <ons-icon icon="fa-link"></ons-icon>
               </ons-button>
-              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-hash-url">
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-ipns-url" title="Copy IPNS URL" style="display: none;">
+                <ons-icon icon="fa-globe"></ons-icon>
+              </ons-button>
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-hash-url" title="Copy CID">
                 <ons-icon icon="fa-hashtag"></ons-icon>
               </ons-button>
-              <ons-button class="scale-on-hover-icon file-remove" modifier="quiet" onclick="" id="">
+              <ons-button class="scale-on-hover-icon file-remove" modifier="quiet" onclick="" id="" title="Remove file">
                 <ons-icon icon="fa-remove"></ons-icon>
               </ons-button>
             </div>
@@ -679,7 +687,7 @@
   </template>
 
   <template id="settings-stellar-template">
-    <ons-list class="stat-ul" style="width:13%; height:200px;">
+    <ons-list class="stat-ul" style="width:20%; height:200px;">
       <ons-list-header>STELLAR TOML</ons-list-header>
       <ons-list-item style="width:100%;">
             <ons-button modifier="quiet" class="center" id="upload-stellar-toml" modifier="large" ripple style="text-align: center;">

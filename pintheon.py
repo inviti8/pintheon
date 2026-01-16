@@ -118,7 +118,7 @@ ensure_directories()
 # Now define CUSTOM_HOMEPAGE_PATH globally after ensure_directories() has run
 CUSTOM_HOMEPAGE_PATH = os.path.join(PINTHEON_DATA_DIR, "custom_homepage")
 
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=True, fake_ipfs=True)
+PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=False)
 if PINTHEON.state == None or PINTHEON.state == 'spawned':
      PINTHEON.initialize()
 
@@ -1082,6 +1082,22 @@ def dashboard_data():
     if data is None:
         return jsonify({'error': 'Cannot get dash data'}), 400
     else:
+        return data, 200
+
+@app.route('/update_file_ipns_hashes', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def update_file_ipns_hashes():
+    """Update IPNSHash for all existing files based on their directory."""
+    updated = PINTHEON.update_file_ipns_hashes()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        data['updated_count'] = updated
         return data, 200
 
 @app.route('/update_theme', methods=['POST'])

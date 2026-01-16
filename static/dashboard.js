@@ -957,9 +957,9 @@ document.addEventListener('init', function(event) {
 
     window.rndr.fileListItems = function(host, fileList, logo){
         const fileListContainer = document.getElementById('file-list-items');
-        
+
         let _updateElem = function(clone, i, host, fileList, logo){
-            
+
             // Ensure file URLs have the correct protocol (HTTP/HTTPS)
             let protocol = window.location.protocol;
             let fileUrl = protocol + '//' + host + '/ipfs/' + fileList[i]['CID'];
@@ -971,7 +971,18 @@ document.addEventListener('init', function(event) {
             let encrypted = fileList[i]['Encrypted']
             let reciever_pub = fileList[i]['RecieverPub']
             let directory = fileList[i]['Directory'] || '/';
+            let ipnsHash = fileList[i]['IPNSHash'] || null;
             let icon = window.icons.UNKNOWN;
+
+            // Construct IPNS URL if available
+            let ipnsUrl = null;
+            let displayUrl = fileUrl;
+            let displayHash = cid;
+            if (ipnsHash) {
+                ipnsUrl = 'https://ipfs.io/ipns/' + ipnsHash + '/' + fileName;
+                displayUrl = ipnsUrl;
+                displayHash = ipnsHash;
+            }
 
             if(fileType.includes('image')){
                 icon = fileUrl;
@@ -998,11 +1009,14 @@ document.addEventListener('init', function(event) {
             }
             console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
             console.log(fileUrl)
+            console.log('IPNS URL:', ipnsUrl)
             console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
 
             clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('#file-list-item-stellar-logo').src = logo;
             clone.querySelector('#file-list-item-directory').textContent = directory;
+            clone.querySelector('#file-list-item-namespace').textContent = ipnsHash || 'N/A';
+            clone.querySelector('#file-list-item-namespace').title = ipnsHash || '';
             clone.querySelector('#file-list-item-balance').textContent = balance;
             clone.querySelector('#file-list-item-encrypted').textContent = encrypted;
             if(reciever_pub != null){
@@ -1011,11 +1025,17 @@ document.addEventListener('init', function(event) {
                 clone.querySelector('#file-list-item-reciever-pub').textContent = 'N/A';
             }
             clone.querySelector('.file-name').textContent = fileName;
-            clone.querySelector('.file_url').href = fileUrl;
-            clone.querySelector('.file_url').textContent = cid;
+            // Use IPNS URL for the main link if available, otherwise IPFS URL
+            clone.querySelector('.file_url').href = displayUrl;
+            clone.querySelector('.file_url').textContent = displayHash;
             clone.querySelector('.file-remove').setAttribute('onclick', 'remove_file("' + cid + '")');
             clone.querySelector('#copy-hash-url').setAttribute('onclick', 'copy_file_url("' + cid + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'copy_file_url("' + fileUrl + '")');
+            // Show and configure IPNS copy button if IPNS hash is available
+            if (ipnsUrl) {
+                clone.querySelector('#copy-ipns-url').style.display = '';
+                clone.querySelector('#copy-ipns-url').setAttribute('onclick', 'copy_file_url("' + ipnsUrl + '")');
+            }
             if (fileList[i]['IsLogo'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-star"></ons-icon>');};
             if (fileList[i]['IsBgImg'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-photo"></ons-icon>');};
             if(fileList[i]['ContractID'].length > 0){
