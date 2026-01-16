@@ -76,6 +76,10 @@ TESTNET_HORIZON_SERVER = 'https://horizon-testnet.stellar.org'
 MAINNET_SOROBAN_SERVER = 'https://mainnet.sorobanrpc.com'
 MAINNET_HORIZON_SERVER = 'https://horizon.stellar.org'
 
+# Default timeout for IPFS API requests (in seconds)
+IPFS_API_TIMEOUT = 60
+IPFS_UPLOAD_TIMEOUT = 300  # Longer timeout for file uploads
+
 
 class PintheonMachine(object):
 
@@ -1386,7 +1390,7 @@ class PintheonMachine(object):
 
     def get_stats(self, stat_type):
         url = f'{self.ipfs_endpoint}/stats/{stat_type}?'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         #return requests.post(url)
         # print('stat res : ',response.json())
@@ -1398,7 +1402,7 @@ class PintheonMachine(object):
         
     def get_peer_id(self):
         url = f'{self.ipfs_endpoint}/config?arg=Identity.PeerID'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         #return requests.post(url)
         # print(response)
@@ -1413,7 +1417,7 @@ class PintheonMachine(object):
         pin_url = f'{self.ipfs_endpoint}/pin/add?arg={cid}'
         # print(pin_url)
 
-        response = requests.post(pin_url)
+        response = requests.post(pin_url, timeout=IPFS_API_TIMEOUT)
 
         if response.status_code == 200:
                 pin_data = response.json()
@@ -1429,7 +1433,7 @@ class PintheonMachine(object):
         print('remove_file_from_ipfs')
         url = f'{self.ipfs_endpoint}/pin/rm?arg={cid}&recursive=true'
         print(url)
-        response = requests.post(url)
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         print(response.text)
 
@@ -1440,8 +1444,8 @@ class PintheonMachine(object):
                 if cid == self.homepage_hash:
                     self.homepage_hash = 'none'
                     self.update_customization()
-                    
-                response = requests.post(url)
+
+                response = requests.post(url, timeout=IPFS_API_TIMEOUT)
                 if response.status_code == 200:
                     print(response)
                     print(response.text)
@@ -1468,7 +1472,7 @@ class PintheonMachine(object):
         
     def get_file_list(self):
         url = f'{self.ipfs_endpoint}/files/ls'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         #return requests.post(url)
         print(response)
@@ -1484,14 +1488,14 @@ class PintheonMachine(object):
             path = '/' + path
         url = f'{self.ipfs_endpoint}/files/mkdir'
         params = {'arg': path, 'parents': 'true'}
-        response = requests.post(url, params=params)
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
         return response.status_code == 200
 
     def list_mfs_directories(self, path='/'):
         """List directories in MFS at the given path."""
         url = f'{self.ipfs_endpoint}/files/ls'
         params = {'arg': path, 'long': 'true'}
-        response = requests.post(url, params=params)
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
         if response.status_code == 200:
             data = response.json()
             entries = data.get('Entries', []) or []
@@ -1503,7 +1507,7 @@ class PintheonMachine(object):
         """Copy an IPFS CID to an MFS path."""
         url = f'{self.ipfs_endpoint}/files/cp'
         params = [('arg', f'/ipfs/{cid}'), ('arg', mfs_path)]
-        response = requests.post(url, params=params)
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
         return response.status_code == 200
 
     def get_mfs_cid(self, path='/'):
@@ -1512,7 +1516,7 @@ class PintheonMachine(object):
             path = '/' + path
         url = f'{self.ipfs_endpoint}/files/stat'
         params = {'arg': path}
-        response = requests.post(url, params=params)
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
         if response.status_code == 200:
             data = response.json()
             return data.get('Hash')
@@ -1532,7 +1536,7 @@ class PintheonMachine(object):
         safe_name = self._safe_ipns_key(name.lower())
         url = f'{self.ipfs_endpoint}/key/gen'
         params = {'arg': safe_name, 'type': key_type}
-        response = requests.post(url, params=params)
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
         if response.status_code == 200:
             return response.json()
         return None
@@ -1540,7 +1544,7 @@ class PintheonMachine(object):
     def list_ipns_keys(self):
         """List all IPNS keys on this node."""
         url = f'{self.ipfs_endpoint}/key/list'
-        response = requests.post(url)
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
         if response.status_code == 200:
             data = response.json()
             return data.get('Keys', [])
@@ -1578,7 +1582,7 @@ class PintheonMachine(object):
         else:
             params['key'] = 'self'
 
-        response = requests.post(url, params=params)
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
         if response.status_code == 200:
             result = response.json()
             # Store in namespaces table
@@ -1663,7 +1667,7 @@ class PintheonMachine(object):
 
     def get_peer_list(self):
         url = f'{self.ipfs_endpoint}/bootstrap/list'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         if response.status_code == 200:
                 return response
@@ -1856,7 +1860,7 @@ class PintheonMachine(object):
 
     def ipfs_repo_stats(self):
         url = f'{self.ipfs_endpoint}/repo/stat?size-only=false&human=true'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         if response.status_code == 200:
                 return response
@@ -1896,7 +1900,7 @@ class PintheonMachine(object):
                 'pin': 'true'
             }
 
-            response = requests.post(url, files=files, params=params)
+            response = requests.post(url, files=files, params=params, timeout=IPFS_UPLOAD_TIMEOUT)
 
             if response.status_code == 200:
                 ipfs_data = response.json()
@@ -1967,7 +1971,7 @@ class PintheonMachine(object):
         url = f'{self.ipfs_endpoint}/name/publish?arg={cid}&key=self'
         if name != None:
             url = f'{self.ipfs_endpoint}/name/publish?arg={cid}&key={self._safe_ipns_key(name)}'
-        response = requests.post(url)
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         if response.status_code == 200:
             ipns_data = response.json()
@@ -1983,7 +1987,7 @@ class PintheonMachine(object):
         
     def resolve_ipns(self, name):
         url = f'{self.ipfs_endpoint}/name/resolve?arg={name}'
-        response = requests.post(url)
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
         if response.status_code == 200:
             return response.json()
         else:

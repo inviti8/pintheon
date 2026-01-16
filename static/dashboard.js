@@ -74,10 +74,10 @@ async function init() {
             window.dlg.hide('loading-dialog');
             window.dash.updateDashData(data);
             window.dash.AUTHORIZED = true;
-            
+
             // Render the dashboard first
             window.rndr.dashboard();
-            
+
             // Check if there's a saved page to load
             const savedPage = localStorage.getItem(window.dash.CURRENT_PAGE);
             if (savedPage && savedPage !== 'dashboard') {
@@ -90,8 +90,13 @@ async function init() {
                     }
                 });
             }
+          })
+          .catch(error => {
+            console.error('Authorization request failed:', error);
+            window.dlg.hide('loading-dialog');
+            window.dlg.show('fail-dialog');
           });
-    
+
     };
     
 };
@@ -832,20 +837,23 @@ const add_access_token = async () => {
     console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
     if(name != undefined && pub != undefined){
-        if (approve.value(name.value, window.fn.input_rules).approved && approve.value(pub.value, window.fn.input_rules).approved){
+        const nameValue = name.value ? name.value.trim() : '';
+        const pubValue = pub.value ? pub.value.trim() : '';
+
+        if (nameValue.length > 0 && pubValue.length > 0){
             formData.append('token', session.token.serialize());
             formData.append('client_pub', session.pub);
-            formData.append('name', name.value);
-            formData.append('stellar_25519_pub', pub.value)
-            formData.append('timestamped', use_timestamp.checked)
-            formData.append('timestamp', timestamp.value)
+            formData.append('name', nameValue);
+            formData.append('stellar_25519_pub', pubValue);
+            formData.append('timestamped', use_timestamp.checked);
+            formData.append('timestamp', timestamp.value);
             await window.fn.addAccessToken(formData, '/add_access_token', access_token_added);
         }else{
             ons.notification.alert('All fields must be filled out');
-        };
+        }
     }else{
         ons.notification.alert('Something went wrong');
-    };
+    }
 };
 
 const access_token_added = async (response) => {

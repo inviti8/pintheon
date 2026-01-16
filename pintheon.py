@@ -577,7 +577,6 @@ def update_stellar_toml():
             return jsonify({'error': f'Invalid TOML file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Invalid file type. Please upload a .toml file'}), 400
-    return response
 
 @app.route('/top_up_stellar')
 def top_up_stellar():
@@ -1024,7 +1023,7 @@ def publish_file():
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def add_to_namespace():
-    if 'name' not in request.form:
+    if 'name' in request.form:
         ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'], request.form['name'])
     else:
         ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'])
