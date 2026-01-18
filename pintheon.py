@@ -267,6 +267,8 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
     reciever_pub = None
 
     if encrypted == 'true':
+        if 'reciever_pub' not in request.form:
+            return "Missing required field 'reciever_pub' for encrypted upload", 400
         reciever_pub = request.form['reciever_pub']
         file_data = PINTHEON.stellar_shared_archive(file, reciever_pub)
         file_name = f"{file.filename}.7z"
@@ -344,6 +346,15 @@ def _get_custom_homepage_file():
     
     return None
 
+def _is_safe_zip_member(member_name, target_dir):
+    """Check if a ZIP member path is safe (no path traversal)"""
+    # Normalize the target directory
+    target_dir = os.path.abspath(target_dir)
+    # Get the absolute path of where this member would be extracted
+    member_path = os.path.abspath(os.path.join(target_dir, member_name))
+    # Check if the member path starts with the target directory
+    return member_path.startswith(target_dir + os.sep) or member_path == target_dir
+
 def _extract_zip_to_homepage(zip_file):
     """Extract uploaded ZIP file to custom homepage directory"""
     try:
@@ -351,18 +362,24 @@ def _extract_zip_to_homepage(zip_file):
         if os.path.exists(CUSTOM_HOMEPAGE_PATH):
             shutil.rmtree(CUSTOM_HOMEPAGE_PATH)
         os.makedirs(CUSTOM_HOMEPAGE_PATH, exist_ok=True)
-        
-        # Extract ZIP file
+
+        # Extract ZIP file with path traversal protection
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            zip_ref.extractall(CUSTOM_HOMEPAGE_PATH)
-        
+            for member in zip_ref.namelist():
+                # Check for path traversal attempts
+                if not _is_safe_zip_member(member, CUSTOM_HOMEPAGE_PATH):
+                    print(f"WARNING: Skipping potentially unsafe ZIP member: {member}")
+                    continue
+                # Extract only safe members
+                zip_ref.extract(member, CUSTOM_HOMEPAGE_PATH)
+
         # Debug: List extracted files
         print(f"DEBUG: Extracted files in {CUSTOM_HOMEPAGE_PATH}:")
         for root, dirs, files in os.walk(CUSTOM_HOMEPAGE_PATH):
             for file in files:
                 rel_path = os.path.relpath(os.path.join(root, file), CUSTOM_HOMEPAGE_PATH)
                 print(f"DEBUG:   {rel_path}")
-        
+
         return True
     except Exception as e:
         print(f"Error extracting ZIP file: {e}")
@@ -852,6 +869,9 @@ def update_logo():
         PINTHEON.update_file_as_logo(file.filename)
     else:
         files = _handle_upload(required=['token', 'client_pub'], request=request, is_logo=True)
+        # Check if _handle_upload returned an error tuple
+        if isinstance(files, tuple):
+            return files
         cid = _get_file_cid(file, files)
     if cid is not None:
         PINTHEON.logo_url = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
@@ -968,7 +988,7 @@ def send_file_token():
 @app.route('/send_token', methods=['POST'])
 @cross_origin()
 @require_local_access
-@require_fields(['name', 'token_id', 'client_pub', 'token_id', 'amount', 'to_address'], source='form')
+@require_fields(['name', 'token_id', 'client_pub', 'token', 'amount', 'to_address'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def send_token():
@@ -1182,6 +1202,9 @@ def update_bg_img():
         cid = _get_file_cid(file, files)
     else:
         files = _handle_upload(required=['token', 'client_pub'], request=request, is_bg_img=True)
+        # Check if _handle_upload returned an error tuple
+        if isinstance(files, tuple):
+            return files
         cid = _get_file_cid(file, files)
     if cid is not None:
         PINTHEON.bg_img = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
