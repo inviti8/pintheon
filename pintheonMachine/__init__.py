@@ -1110,13 +1110,13 @@ class PintheonMachine(object):
     def stroops_to_xlm(self, stroops):
         return stroops / 10_000_000.0
     
-    def stellar_shared_archive(self, file, reciever_pub):
+    def stellar_shared_archive(self, file, receiver_pub):
         encrypted_data = None
         file_data = file.read()
         with tempfile.TemporaryDirectory() as temp_dir:
             original_path = os.path.join(temp_dir, file.filename)
             encrypted_path = os.path.join(temp_dir, f"{file.filename}.7z")
-            sharedKey = StellarSharedKey(self.stellar_25519_keypair, reciever_pub)
+            sharedKey = StellarSharedKey(self.stellar_25519_keypair, receiver_pub)
             
             with open(original_path, 'wb') as f:
                 f.write(file_data)
@@ -1867,7 +1867,7 @@ class PintheonMachine(object):
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None, return_file_info=False, mfs_directory=None, auto_publish_ipns=True):
+    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, receiver_pub=None, return_file_info=False, mfs_directory=None, auto_publish_ipns=True):
         if self.FAKE_IPFS:
             return self.create_fake_ipfs_data()
         else:
@@ -1919,7 +1919,7 @@ class PintheonMachine(object):
                             ipns_result = self._auto_publish_directory_to_ipns(mfs_directory)
                             if ipns_result:
                                 ipns_hash = ipns_result.get('Name')
-                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'RecieverPub':reciever_pub, 'Directory': directory, 'IPNSHash': ipns_hash}
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'ReceiverPub':receiver_pub, 'Directory': directory, 'IPNSHash': ipns_hash}
                     self._open_db()
 
                     if is_logo:
@@ -1958,7 +1958,7 @@ class PintheonMachine(object):
         File = Query()
         for hash in FAKE_IPFS_FILES:
             self.file_book.remove(File.CID == hash)
-            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'RecieverPub':None, 'Directory': '/', 'IPNSHash': None}
+            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'ReceiverPub':None, 'Directory': '/', 'IPNSHash': None}
             self.file_book.insert(file_info)
             idx+=1
         all_file_info = self.file_book.all()

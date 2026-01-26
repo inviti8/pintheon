@@ -264,17 +264,17 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
     file_data = file.read()
     file_name = file.filename
     file_type = file.mimetype
-    reciever_pub = None
+    receiver_pub = None
 
     if encrypted == 'true':
-        if 'reciever_pub' not in request.form:
-            return "Missing required field 'reciever_pub' for encrypted upload", 400
-        reciever_pub = request.form['reciever_pub']
-        file_data = PINTHEON.stellar_shared_archive(file, reciever_pub)
+        if 'receiver_pub' not in request.form:
+            return "Missing required field 'receiver_pub' for encrypted upload", 400
+        receiver_pub = request.form['receiver_pub']
+        file_data = PINTHEON.stellar_shared_archive(file, receiver_pub)
         file_name = f"{file.filename}.7z"
         file_type = 'application/x-7z-compressed'
 
-    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub, return_file_info=return_file_info, mfs_directory=mfs_directory)
+    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, receiver_pub=receiver_pub, return_file_info=return_file_info, mfs_directory=mfs_directory)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -1011,7 +1011,7 @@ def send_token():
 @app.route('/publish_file', methods=['POST'])
 @cross_origin()
 @require_local_access
-@require_fields(['name', 'cid', 'client_pub', 'token', 'encrypted', 'reciever_pub'], source='form')
+@require_fields(['name', 'cid', 'client_pub', 'token', 'encrypted', 'receiver_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def publish_file():
@@ -1019,8 +1019,8 @@ def publish_file():
     cid = request.form['cid']
     data = None
     if encrypted == 'true':
-        reciever_pub = request.form['reciever_pub']
-        transaction_result = PINTHEON.publish_encrypted_file(reciever_pub, cid)
+        receiver_pub = request.form['receiver_pub']
+        transaction_result = PINTHEON.publish_encrypted_file(receiver_pub, cid)
     else:
         transaction_result = PINTHEON.publish_file(cid)
     data = PINTHEON.get_dashboard_data() or {}

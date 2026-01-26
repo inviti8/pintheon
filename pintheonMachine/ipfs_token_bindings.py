@@ -1219,4 +1219,3 @@ class ClientAsync(ContractClientAsync):
             simulate=simulate,
             restore=restore,
         )
-        
