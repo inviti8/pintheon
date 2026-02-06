@@ -533,6 +533,33 @@ const publish_file = async (name, cid, encrypted, reciever_pub) => {
     await window.fn.publishFile(formData, '/publish_file', transaction_sent, 'POST', 'publish-file-dialog');
 };
 
+const pin_file_prompt = async (name, cid, icon) => {
+    window.dlg.showAndRender('pin-file-dialog', window.rndr.pin_file_dlg, name, cid, icon);
+};
+
+const pin_file = async (cid) => {
+    let qty = document.querySelector('#pin-file-dialog-qty').value;
+    let price = document.querySelector('#pin-file-dialog-price').value;
+    let priceStroops = Math.round(parseFloat(price) * 10000000);
+    const session = _getSessionData();
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('cid', cid);
+    formData.append('offer_price', priceStroops);
+    formData.append('pin_qty', qty);
+    await window.fn.pinFile(formData, '/create_pin', transaction_sent, 'POST', 'pin-file-dialog');
+};
+
+const cancel_pin = async (cid) => {
+    const session = _getSessionData();
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('cid', cid);
+    await window.fn.cancelPin(formData, '/cancel_pin', transaction_sent, 'POST');
+};
+
 const dash_data = async (callback) => {
     const session = _getSessionData();
     const formData = new FormData()
@@ -980,6 +1007,10 @@ document.addEventListener('init', function(event) {
             let reciever_pub = fileList[i]['RecieverPub']
             let directory = fileList[i]['Directory'] || '/';
             let ipnsHash = fileList[i]['IPNSHash'] || null;
+            let pinned = fileList[i]['Pinned'] || false;
+            let pinSlotId = fileList[i]['PinSlotId'] || null;
+            let pinQty = fileList[i]['PinQty'] || 0;
+            let pinsRemaining = fileList[i]['PinsRemaining'] || 0;
             let icon = window.icons.UNKNOWN;
 
             // Construct IPNS URL if available
@@ -1027,6 +1058,7 @@ document.addEventListener('init', function(event) {
             clone.querySelector('#file-list-item-namespace').title = ipnsHash || '';
             clone.querySelector('#file-list-item-balance').textContent = balance;
             clone.querySelector('#file-list-item-encrypted').textContent = encrypted;
+            clone.querySelector('#file-list-item-pin-status').textContent = pinned ? (pinQty - pinsRemaining) + '/' + pinQty : 'No';
             if(reciever_pub != null){
                 clone.querySelector('#file-list-item-reciever-pub').textContent = reciever_pub;
             }else{
@@ -1046,6 +1078,11 @@ document.addEventListener('init', function(event) {
             }
             if (fileList[i]['IsLogo'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-star"></ons-icon>');};
             if (fileList[i]['IsBgImg'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-photo"></ons-icon>');};
+            if (pinned && pinsRemaining === 0){
+                clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-thumb-tack" style="color: #4CAF50;"></ons-icon>');
+            } else if (pinned){
+                clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-thumb-tack"></ons-icon>');
+            }
             if(fileList[i]['ContractID'].length > 0){
                 clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-diamond"></ons-icon>');
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+' )"><ons-icon icon="fa-paper-plane"></ons-icon>_send</ons-button>');
@@ -1059,6 +1096,15 @@ document.addEventListener('init', function(event) {
             }else{
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+', '+false+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
             };
+
+            // Pin button
+            if (!pinned) {
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="pin-button" class="scale-on-hover center-both" modifier="outline" onclick="pin_file_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+')" ><ons-icon icon="fa-thumb-tack"></ons-icon>_pin</ons-button>');
+            } else if (pinsRemaining > 0) {
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="cancel-pin-button" class="scale-on-hover center-both" modifier="outline" onclick="cancel_pin( '+"'"+cid+"'"+')" ><ons-icon icon="fa-times"></ons-icon>_cancel pin</ons-button>');
+            } else {
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="pinned-label" class="scale-on-hover center-both" modifier="outline" disabled><ons-icon icon="fa-thumb-tack" style="color: #4CAF50;"></ons-icon>_pinned</ons-button>');
+            }
         }
 
         //If list is empty render nothing
@@ -1895,6 +1941,34 @@ document.addEventListener('init', function(event) {
         transactionUrl.href = transaction.transaction_url;
         logo.src = fileUrl;
         description.textContent = "File tokenized on Stellar Ledger.";
+    };
+
+    window.rndr.pin_file_dlg = function (name, cid, icon) {
+        let img = document.querySelector('#pin-file-dialog-img');
+        let nameElem = document.querySelector('#pin-file-dialog-name');
+        let btn = document.querySelector('#pin-file-dialog-button');
+        img.setAttribute('src', icon);
+        nameElem.textContent = name;
+
+        const updateTotal = () => {
+            let qty = parseFloat(document.querySelector('#pin-file-dialog-qty').value) || 0;
+            let price = parseFloat(document.querySelector('#pin-file-dialog-price').value) || 0;
+            document.querySelector('#pin-file-dialog-total').textContent = (qty * price).toFixed(2);
+        };
+        document.querySelector('#pin-file-dialog-qty').addEventListener('input', updateTotal);
+        document.querySelector('#pin-file-dialog-price').addEventListener('input', updateTotal);
+        updateTotal();
+
+        btn.onclick = function () {
+            pin_file(cid);
+        };
+    };
+
+    window.rndr.pin_transaction_dlg = function (transaction) {
+        let transactionUrl = document.querySelector('#transaction-confirmed-dialog-url');
+        let description = document.querySelector('#transaction-confirmed-dialog-description');
+        transactionUrl.href = transaction.transaction_url;
+        description.textContent = "Pin request created on Stellar Ledger.";
     };
 
     window.rndr.send_token_transaction_dlg = function  (transaction) {

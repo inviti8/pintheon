@@ -38,6 +38,7 @@ from stellar_sdk import xdr as stellar_xdr
 from .hvym_collective_bindings import Client as Collective
 from .opus_bindings import Client as Opus
 from .ipfs_token_bindings import Client as IPFS_Token
+from .pinning_service_bindings import Client as PinService
 import json
 import requests
 import time
@@ -56,9 +57,11 @@ STELLAR_FG_RGB = (0, 0, 0)
 
 XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
 COLLECTIVE_TESTNET = 'CDHSOV4IKQB3YZTA6HW26RN7VS6UVZRZZCNWDQVCSQPKYKBMATRJSQ5R'
+PINNING_TESNET = 'CDRBV6AEZ6UBMHHHVHRLAZW4IKFRGU7RWZ5DVFLWJAPHAQJZCXILEVKS'
 OPUS_TESTNET = 'CA3SLEQ65R3DAYT5GPFB6SXAHTR5NS5VAEZSEMMIYNXWMTLBT7NX2RHX'
 XLM_MAINNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
 COLLECTIVE_MAINNET = 'CDHSOV4IKQB3YZTA6HW26RN7VS6UVZRZZCNWDQVCSQPKYKBMATRJSQ5R'
+PINNING_MAINNET = 'CDRBV6AEZ6UBMHHHVHRLAZW4IKFRGU7RWZ5DVFLWJAPHAQJZCXILEVKS'
 OPUS_MAINNET = 'CA3SLEQ65R3DAYT5GPFB6SXAHTR5NS5VAEZSEMMIYNXWMTLBT7NX2RHX'
 
 DEBUG_SEED = "puppy address situate future gown trade limb rival crane increase when faculty category vague alpha program remember pill waste light broom decade buddy knock"
@@ -177,6 +180,7 @@ class PintheonMachine(object):
             self.XLM_ID = XLM_TESTNET
             self.COLLECTIVE_ID = COLLECTIVE_TESTNET
             self.OPUS_ID = OPUS_TESTNET
+            self.PINNING_ID = PINNING_TESNET
             self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
         else:
             self.soroban_rpc_url = self.config['Init']['mainnet_soroban_server']
@@ -184,6 +188,7 @@ class PintheonMachine(object):
             self.XLM_ID = XLM_MAINNET
             self.COLLECTIVE_ID = COLLECTIVE_MAINNET
             self.OPUS_ID = OPUS_MAINNET
+            self.PINNING_ID = PINNING_MAINNET
             self.NETWORK_PASSPHRASE = Network.PUBLIC_NETWORK_PASSPHRASE
         self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.BASE_FEE = self.stellar_server.fetch_base_fee()
@@ -192,6 +197,7 @@ class PintheonMachine(object):
         self.stellar_25519_keypair = None
         self.hvym_collective = Collective(self.COLLECTIVE_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.opus = Opus(self.OPUS_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
+        self.pin_service = PinService(self.PINNING_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.stellar_logo_img = None
         self.stellar_wallet_qr = None
         self.stellar_logo_light = None
@@ -761,7 +767,204 @@ class PintheonMachine(object):
             print(f'Error in publish_encrypted_file tx: {e}')
             transaction['error'] = str(e)
         return transaction
-    
+
+    # -------- PIN SERVICE METHODS --------
+
+    def get_pin_service_info(self):
+        try:
+            pin_fee = self.pin_service.pin_fee().result()
+            min_offer = self.pin_service.min_offer_price().result()
+            min_qty = self.pin_service.min_pin_qty().result()
+            max_cyc = self.pin_service.max_cycles().result()
+            available = self.pin_service.has_available_slots().result()
+            epoch = self.pin_service.current_epoch().result()
+            return {
+                'success': True,
+                'pin_fee': pin_fee, 'min_offer_price': min_offer,
+                'min_pin_qty': min_qty, 'max_cycles': max_cyc,
+                'has_available_slots': available, 'current_epoch': epoch
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def create_pin_request(self, cid, offer_price, pin_qty):
+        transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
+
+        # Pre-check XLM balance
+        try:
+            info = self.get_pin_service_info()
+            if not info['success']:
+                transaction['error'] = info['error']
+                return transaction
+            pin_fee = info['pin_fee']
+            total_cost = (offer_price * pin_qty) + pin_fee
+            balance_stroops = self.xlm_to_stroops(self.stellar_xlm_balance())
+            if balance_stroops < total_cost:
+                transaction['error'] = f'Insufficient XLM balance. Need {self.stroops_to_xlm(total_cost):.2f} XLM.'
+                return transaction
+        except Exception as e:
+            transaction['error'] = f'Balance check failed: {str(e)}'
+            return transaction
+
+        # Build and submit transaction
+        call_result = self._safe_contract_call(
+            self.pin_service.create_pin,
+            caller=self.stellar_keypair.public_key,
+            cid=self._to_bytes(cid),
+            gateway=self._to_bytes(self.url_host),
+            offer_price=offer_price,
+            pin_qty=pin_qty,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            transaction['error'] = call_result['error']
+            return transaction
+        try:
+            tx = call_result['result']
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+                time.sleep(3)
+                attempts += 1
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                transaction['hash'] = send_transaction.hash
+                transaction['successful'] = True
+                transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+                # Extract slot_id from result
+                try:
+                    slot_id = tx.result()
+                except:
+                    slot_id = None
+                # Update file record
+                self._open_db()
+                file = Query()
+                self.file_book.update({
+                    'Pinned': True, 'PinSlotId': slot_id,
+                    'PinQty': pin_qty, 'PinsRemaining': pin_qty,
+                    'PinOfferPrice': offer_price
+                }, file.CID == cid)
+                self.db.close()
+                transaction['slot_id'] = slot_id
+            else:
+                transaction['error'] = f"Transaction status: {get_transaction_data.status}"
+        except Exception as e:
+            print(f'Error in create_pin_request tx: {e}')
+            transaction['error'] = str(e)
+        return transaction
+
+    def cancel_pin_request(self, cid):
+        transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
+
+        # Look up PinSlotId from file_book
+        self._open_db()
+        file = Query()
+        file_data = self.file_book.get(file.CID == cid)
+        self.db.close()
+
+        if not file_data or not file_data.get('PinSlotId'):
+            transaction['error'] = 'No active pin request found for this file.'
+            return transaction
+
+        slot_id = file_data['PinSlotId']
+
+        call_result = self._safe_contract_call(
+            self.pin_service.cancel_pin,
+            caller=self.stellar_keypair.public_key,
+            slot_id=slot_id,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            transaction['error'] = call_result['error']
+            return transaction
+        try:
+            tx = call_result['result']
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+                time.sleep(3)
+                attempts += 1
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                transaction['hash'] = send_transaction.hash
+                transaction['successful'] = True
+                transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+                # Reset pin fields
+                self._open_db()
+                file = Query()
+                self.file_book.update({
+                    'Pinned': False, 'PinSlotId': None,
+                    'PinQty': 0, 'PinsRemaining': 0,
+                    'PinOfferPrice': 0
+                }, file.CID == cid)
+                self.db.close()
+            else:
+                transaction['error'] = f"Transaction status: {get_transaction_data.status}"
+        except Exception as e:
+            print(f'Error in cancel_pin_request tx: {e}')
+            transaction['error'] = str(e)
+        return transaction
+
+    def refresh_pin_status(self, cid):
+        self._open_db()
+        file = Query()
+        file_data = self.file_book.get(file.CID == cid)
+        self.db.close()
+
+        if not file_data or not file_data.get('PinSlotId'):
+            return file_data
+
+        slot_id = file_data['PinSlotId']
+
+        try:
+            slot_data = self.pin_service.get_slot(slot_id).result()
+            pins_remaining = slot_data.pins_remaining if hasattr(slot_data, 'pins_remaining') else slot_data.get('pins_remaining', 0)
+            self._open_db()
+            file = Query()
+            self.file_book.update({
+                'PinsRemaining': pins_remaining
+            }, file.CID == cid)
+            file_data = self.file_book.get(file.CID == cid)
+            self.db.close()
+        except Exception as e:
+            print(f'Pin status refresh for {cid}: {e}')
+            # Slot no longer exists on-chain
+            if file_data.get('PinsRemaining', 0) > 0:
+                # Expired or force-cleared - reset pin fields
+                self._open_db()
+                file = Query()
+                self.file_book.update({
+                    'Pinned': False, 'PinSlotId': None,
+                    'PinQty': 0, 'PinsRemaining': 0,
+                    'PinOfferPrice': 0
+                }, file.CID == cid)
+                file_data = self.file_book.get(file.CID == cid)
+                self.db.close()
+            # else: PinsRemaining == 0 means fully claimed, keep Pinned=True
+
+        return file_data
+
+    def refresh_all_pin_statuses(self):
+        self._open_db()
+        file = Query()
+        pinned_files = self.file_book.search((file.Pinned == True) & (file.PinSlotId != None))
+        self.db.close()
+
+        for f in pinned_files:
+            self.refresh_pin_status(f['CID'])
+
+    # -------- END PIN SERVICE METHODS --------
+
     def add_file_token_to_toml(self, name, cid):
         token_img = os.path.join(self.url_host, 'static', 'file_token.png')
         self.stellar_toml.new_currency(code=f'HVYMFILE_{name}', name=name, issuer=self.stellar_keypair.public_key, display_decimals=0, desc=cid, image=token_img, conditions='This file is owned by the issuer.')
@@ -1919,7 +2122,7 @@ class PintheonMachine(object):
                             ipns_result = self._auto_publish_directory_to_ipns(mfs_directory)
                             if ipns_result:
                                 ipns_hash = ipns_result.get('Name')
-                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'ReceiverPub':receiver_pub, 'Directory': directory, 'IPNSHash': ipns_hash}
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'ReceiverPub':receiver_pub, 'Directory': directory, 'IPNSHash': ipns_hash, 'Pinned': False, 'PinSlotId': None, 'PinQty': 0, 'PinsRemaining': 0, 'PinOfferPrice': 0}
                     self._open_db()
 
                     if is_logo:
@@ -1958,7 +2161,7 @@ class PintheonMachine(object):
         File = Query()
         for hash in FAKE_IPFS_FILES:
             self.file_book.remove(File.CID == hash)
-            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'ReceiverPub':None, 'Directory': '/', 'IPNSHash': None}
+            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'ReceiverPub':None, 'Directory': '/', 'IPNSHash': None, 'Pinned': False, 'PinSlotId': None, 'PinQty': 0, 'PinsRemaining': 0, 'PinOfferPrice': 0}
             self.file_book.insert(file_info)
             idx+=1
         all_file_info = self.file_book.all()
@@ -2009,6 +2212,11 @@ class PintheonMachine(object):
             key_25519 = self.stellar_25519_keypair.public_key()
         
         result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': address, '25519_pub': key_25519, 'logo': self.logo_url, 'host': host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None, 'access_tokens': []}
+        # Refresh pin statuses from on-chain state before reading files
+        try:
+            self.refresh_all_pin_statuses()
+        except Exception as e:
+            print(f'Pin status refresh failed: {e}')
         if self.FAKE_IPFS:
             #If FAKE IPFS we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}

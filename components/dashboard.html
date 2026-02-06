@@ -357,6 +357,48 @@
     </ons-dialog>
   </template>
 
+  <template id="pin-file-dialog.html">
+    <ons-dialog id="pin-file-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list style="width:100%;">
+          <ons-list-header><ons-icon class="right" icon="fa-thumb-tack"></ons-icon>__PIN FILE</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <div class="fab-container left">
+              <span class="left">
+                <img id="pin-file-dialog-img" class="list-item__thumbnail" modifier="file-thumb" src="">
+              </span>
+            </div>
+            <div class="center">
+              <span id="pin-file-dialog-name" class="list-item__title"></span><span id="pin-file-dialog-descriptor" class="list-item__subtitle"></span>
+            </div>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <span>
+              <div class="center-both">
+                <pre>pin copies:              </pre><ons-input id="pin-file-dialog-qty" modifier="" value="3" type="number" min="1" max="10" float></ons-input>
+              </div>
+            </span>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <span>
+              <div class="center-both">
+                <pre>offer price (XLM/pin):   </pre><ons-input id="pin-file-dialog-price" modifier="" value="1" type="number" min="0.1" step="0.1" float></ons-input>
+              </div>
+            </span>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <div class="center-both">
+              <span class="thick">Total cost: </span><span id="pin-file-dialog-total">--</span><span class="list-item__subtitle"> XLM (+ pin fee)</span>
+            </div>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <ons-button id="pin-file-dialog-button" class="can-callback" modifier="large" ripple>PIN</ons-button>
+          </ons-list-item>
+        </ons-list>
+      </div>
+    </ons-dialog>
+  </template>
+
   <template id="node-info-template">
     <ons-list class="stat-ul" style="width:30%; height:200px;">
       <ons-list-header>NODE INFO</ons-list-header>
@@ -523,7 +565,7 @@
         <ons-list modifier="default">
           <ons-list-header><img style="width: 24px; height: 24px;" id="file-list-item-stellar-logo" src=""></ons-list-header>
           <ons-list-item>
-            <div class="center"><span class="thick">Directory:</span><pre> </pre><span id="file-list-item-directory"></span><pre>  </pre><span class="thick">Namespace:</span><pre> </pre><span id="file-list-item-namespace" class="truncate" style="max-width: 150px; display: inline-block; vertical-align: bottom;"></span><pre>  </pre><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
+            <div class="center"><span class="thick">Directory:</span><pre> </pre><span id="file-list-item-directory"></span><pre>  </pre><span class="thick">Namespace:</span><pre> </pre><span id="file-list-item-namespace" class="truncate" style="max-width: 150px; display: inline-block; vertical-align: bottom;"></span><pre>  </pre><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Pinned:</span><pre> </pre><span id="file-list-item-pin-status"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
           </ons-list-item>
           <ons-list-item>
             <div id="file-list-items-token-buttons" class="center"></div>

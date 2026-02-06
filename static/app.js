@@ -338,6 +338,14 @@ document.addEventListener('init', function(event) {
         window.fn.confirmedCall('Publish file?', 'publish failed', formData, endpoint, callback, method, true, hideDlg);
     };
 
+    window.fn.pinFile = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {
+        window.fn.confirmedCall('Pin this file to the network?', 'pin request failed', formData, endpoint, callback, method, true, hideDlg);
+    };
+
+    window.fn.cancelPin = async (formData, endpoint, callback, method='POST') => {
+        window.fn.confirmedCall('Cancel this pin request?', 'pin cancellation failed', formData, endpoint, callback, method);
+    };
+
     window.fn.updateGateway = async (formData, endpoint, callback, method='POST') => {
         window.fn.confirmedCall('Update Gateway url?', 'Error updating gateway', formData, endpoint, callback, method);
     };

@@ -1384,6 +1384,64 @@ def api_upload_homepage():
             os.remove(zip_path)
         return jsonify({'error': f'Error processing file: {str(e)}'}), 400
 
+@app.route('/create_pin', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'cid', 'offer_price', 'pin_qty'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def create_pin():
+    cid = request.form['cid']
+    offer_price = int(request.form['offer_price'])
+    pin_qty = int(request.form['pin_qty'])
+    transaction_result = PINTHEON.create_pin_request(cid, offer_price, pin_qty)
+    data = PINTHEON.get_dashboard_data() or {}
+    data['transaction_data'] = transaction_result
+    if not transaction_result.get('successful', False):
+        data['error'] = transaction_result.get('error', 'Pin creation failed')
+        data['success'] = False
+        return jsonify(data), 400
+    data['success'] = True
+    return jsonify(data)
+
+@app.route('/cancel_pin', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'cid'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def cancel_pin():
+    cid = request.form['cid']
+    transaction_result = PINTHEON.cancel_pin_request(cid)
+    data = PINTHEON.get_dashboard_data() or {}
+    data['transaction_data'] = transaction_result
+    if not transaction_result.get('successful', False):
+        data['error'] = transaction_result.get('error', 'Pin cancellation failed')
+        data['success'] = False
+        return jsonify(data), 400
+    data['success'] = True
+    return jsonify(data)
+
+@app.route('/refresh_pin_status', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'cid'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def refresh_pin_status():
+    cid = request.form['cid']
+    file_data = PINTHEON.refresh_pin_status(cid)
+    if file_data is None:
+        return jsonify({'error': 'File not found'}), 400
+    return jsonify({'success': True, 'file_data': file_data})
+
+@app.route('/pin_service_info', methods=['GET'])
+@cross_origin()
+@require_local_access
+def pin_service_info():
+    info = PINTHEON.get_pin_service_info()
+    return jsonify(info)
+
 @app.route('/api/heartbeat', methods=['GET'])
 @cross_origin()
 @require_local_access
