@@ -787,7 +787,7 @@ class PintheonMachine(object):
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
-    def create_pin_request(self, cid, offer_price, pin_qty):
+    def create_pin_request(self, cid, filename, offer_price, pin_qty):
         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
 
         # Pre-check XLM balance
@@ -811,6 +811,7 @@ class PintheonMachine(object):
             self.pin_service.create_pin,
             caller=self.stellar_keypair.public_key,
             cid=self._to_bytes(cid),
+            filename=self._to_bytes(filename),
             gateway=self._to_bytes(self.url_host),
             offer_price=offer_price,
             pin_qty=pin_qty,
@@ -1672,7 +1673,60 @@ class PintheonMachine(object):
         self.db.close()
 
         return all_file_info
-        
+
+    def get_pinned_files_data(self):
+        """Return pinned file inventory with node metadata.
+
+        Used by CID Hunter (via /api/pinned_files) to discover
+        which CIDs to verify on the network.
+        """
+        address = None
+        if self.stellar_keypair is not None:
+            address = self.stellar_keypair.public_key
+
+        peer_id = None
+        try:
+            peer_id_response = self.get_peer_id()
+            if peer_id_response.status_code == 200:
+                peer_id = peer_id_response.json()['Value']
+        except Exception:
+            pass
+
+        network = 'testnet' if self.use_testnet else 'mainnet'
+
+        self._open_db()
+        all_files = self.file_book.all()
+        self.db.close()
+
+        pinned = [f for f in all_files if f.get('Pinned', False)]
+
+        files = [
+            {
+                'cid': f.get('CID', ''),
+                'name': f.get('Name', ''),
+                'content_type': f.get('Type', ''),
+                'size': f.get('Size', 0),
+                'pinned': True,
+                'slot_id': f.get('PinSlotId'),
+                'pin_qty': f.get('PinQty', 0),
+                'pins_remaining': f.get('PinsRemaining', 0),
+                'offer_price': f.get('PinOfferPrice', 0),
+                'encrypted': f.get('Encrypted', False),
+                'directory': f.get('Directory', '/'),
+                'contract_id': f.get('ContractID', ''),
+            }
+            for f in pinned
+        ]
+
+        return {
+            'node_address': address,
+            'peer_id': peer_id,
+            'gateway': self.url_host,
+            'network': network,
+            'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'files': files,
+        }
+
     def get_file_list(self):
         url = f'{self.ipfs_endpoint}/files/ls'
         response = requests.post(url, timeout=IPFS_API_TIMEOUT)

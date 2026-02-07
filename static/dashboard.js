@@ -537,7 +537,7 @@ const pin_file_prompt = async (name, cid, icon) => {
     window.dlg.showAndRender('pin-file-dialog', window.rndr.pin_file_dlg, name, cid, icon);
 };
 
-const pin_file = async (cid) => {
+const pin_file = async (cid, filename) => {
     let qty = document.querySelector('#pin-file-dialog-qty').value;
     let price = document.querySelector('#pin-file-dialog-price').value;
     let priceStroops = Math.round(parseFloat(price) * 10000000);
@@ -546,6 +546,7 @@ const pin_file = async (cid) => {
     formData.append('token', session.token.serialize());
     formData.append('client_pub', session.pub);
     formData.append('cid', cid);
+    formData.append('filename', filename);
     formData.append('offer_price', priceStroops);
     formData.append('pin_qty', qty);
     await window.fn.pinFile(formData, '/create_pin', transaction_sent, 'POST', 'pin-file-dialog');
@@ -1960,7 +1961,7 @@ document.addEventListener('init', function(event) {
         updateTotal();
 
         btn.onclick = function () {
-            pin_file(cid);
+            pin_file(cid, name);
         };
     };
 

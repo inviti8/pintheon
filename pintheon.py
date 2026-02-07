@@ -1387,14 +1387,15 @@ def api_upload_homepage():
 @app.route('/create_pin', methods=['POST'])
 @cross_origin()
 @require_local_access
-@require_fields(['token', 'client_pub', 'cid', 'offer_price', 'pin_qty'], source='form')
+@require_fields(['token', 'client_pub', 'cid', 'filename', 'offer_price', 'pin_qty'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def create_pin():
     cid = request.form['cid']
+    filename = request.form['filename']
     offer_price = int(request.form['offer_price'])
     pin_qty = int(request.form['pin_qty'])
-    transaction_result = PINTHEON.create_pin_request(cid, offer_price, pin_qty)
+    transaction_result = PINTHEON.create_pin_request(cid, filename, offer_price, pin_qty)
     data = PINTHEON.get_dashboard_data() or {}
     data['transaction_data'] = transaction_result
     if not transaction_result.get('successful', False):
@@ -1441,6 +1442,21 @@ def refresh_pin_status():
 def pin_service_info():
     info = PINTHEON.get_pin_service_info()
     return jsonify(info)
+
+@app.route('/api/pinned_files', methods=['GET'])
+@cross_origin()
+def api_pinned_files():
+    """Return all files with active pin requests.
+
+    Used by CID Hunter to discover which CIDs to verify.
+    Requires a valid access token via query param or Bearer header.
+    """
+    token = request.args.get('token') or request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token or not PINTHEON.authorize_access_token(token):
+        return jsonify({'error': 'unauthorized'}), 401
+
+    return jsonify(PINTHEON.get_pinned_files_data())
+
 
 @app.route('/api/heartbeat', methods=['GET'])
 @cross_origin()
