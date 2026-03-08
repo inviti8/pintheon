@@ -74,10 +74,10 @@ async function init() {
             window.dlg.hide('loading-dialog');
             window.dash.updateDashData(data);
             window.dash.AUTHORIZED = true;
-            
+
             // Render the dashboard first
             window.rndr.dashboard();
-            
+
             // Check if there's a saved page to load
             const savedPage = localStorage.getItem(window.dash.CURRENT_PAGE);
             if (savedPage && savedPage !== 'dashboard') {
@@ -90,8 +90,13 @@ async function init() {
                     }
                 });
             }
+          })
+          .catch(error => {
+            console.error('Authorization request failed:', error);
+            window.dlg.hide('loading-dialog');
+            window.dlg.show('fail-dialog');
           });
-    
+
     };
     
 };
@@ -252,6 +257,86 @@ const logged_out = () => {
 
 const upload_file_dlg = async (callback) => {
     window.dlg.showLoadFileDlg('upload-file-dialog', callback, false, [], 'FILE');
+    // Fetch and populate directories after dialog is shown
+    setTimeout(() => fetch_directories('upload-file-dialog-directory'), 100);
+};
+
+const fetch_directories = async (selectId) => {
+    const session = _getSessionData();
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+
+    try {
+        const response = await fetch('/list_directories', {
+            method: 'POST',
+            body: formData
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const select = document.getElementById(selectId);
+            if (select) {
+                // Clear existing options except root
+                select.innerHTML = '<option value="">/ (root)</option>';
+                // Add directory options
+                if (data.directories && data.directories.length > 0) {
+                    data.directories.forEach(dir => {
+                        const option = document.createElement('option');
+                        option.value = dir.Path;
+                        option.textContent = dir.Path;
+                        select.appendChild(option);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching directories:', error);
+    }
+};
+
+const create_directory_dlg = async () => {
+    window.dlg.show('create-directory-dialog', create_directory);
+};
+
+const create_directory = async () => {
+    const session = _getSessionData();
+    const nameInput = document.getElementById('create-directory-dialog-name');
+    const name = nameInput ? nameInput.value.trim() : '';
+
+    if (!name) {
+        ons.notification.alert('Please enter a directory name');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('name', name);
+
+    window.dlg.show('loading-dialog');
+
+    try {
+        const response = await fetch('/create_directory', {
+            method: 'POST',
+            body: formData
+        });
+        window.dlg.hide('loading-dialog');
+
+        if (response.ok) {
+            const data = await response.json();
+            window.dlg.hide('create-directory-dialog');
+            ons.notification.alert('Directory "/' + name + '" created successfully');
+            // Clear input
+            if (nameInput) nameInput.value = '';
+        } else {
+            const error = await response.json();
+            ons.notification.alert('Error: ' + (error.error || 'Failed to create directory'));
+        }
+    } catch (error) {
+        window.dlg.hide('loading-dialog');
+        console.error('Error creating directory:', error);
+        ons.notification.alert('Error creating directory');
+    }
 };
 
 const upload_logo_dlg = async (callback) => {
@@ -284,6 +369,7 @@ const upload_file = async (file, id=undefined) => {
     const session = _getSessionData();
     let upload = true;
     const tgl = document.querySelector('#'+id+'-encrypt-toggle');
+    const directorySelect = document.querySelector('#'+id+'-directory');
 
     if(file){
         const formData = new FormData()
@@ -303,8 +389,13 @@ const upload_file = async (file, id=undefined) => {
             formData.append('reciever_pub', "");
         }
 
+        // Add directory selection
+        if(directorySelect && directorySelect.value){
+            formData.append('directory', directorySelect.value);
+        }
+
         formData.append('file', file);
-        
+
         if(upload){
             await window.fn.uploadFile(file, formData, '/upload', file_updated);
         }else{
@@ -440,6 +531,34 @@ const publish_file = async (name, cid, encrypted, reciever_pub) => {
     formData.append('reciever_pub', reciever_pub);
 
     await window.fn.publishFile(formData, '/publish_file', transaction_sent, 'POST', 'publish-file-dialog');
+};
+
+const pin_file_prompt = async (name, cid, icon) => {
+    window.dlg.showAndRender('pin-file-dialog', window.rndr.pin_file_dlg, name, cid, icon);
+};
+
+const pin_file = async (cid, filename) => {
+    let qty = document.querySelector('#pin-file-dialog-qty').value;
+    let price = document.querySelector('#pin-file-dialog-price').value;
+    let priceStroops = Math.round(parseFloat(price) * 10000000);
+    const session = _getSessionData();
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('cid', cid);
+    formData.append('filename', filename);
+    formData.append('offer_price', priceStroops);
+    formData.append('pin_qty', qty);
+    await window.fn.pinFile(formData, '/create_pin', transaction_sent, 'POST', 'pin-file-dialog');
+};
+
+const cancel_pin = async (cid) => {
+    const session = _getSessionData();
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('cid', cid);
+    await window.fn.cancelPin(formData, '/cancel_pin', transaction_sent, 'POST');
 };
 
 const dash_data = async (callback) => {
@@ -746,20 +865,23 @@ const add_access_token = async () => {
     console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
     if(name != undefined && pub != undefined){
-        if (approve.value(name.value, window.fn.input_rules).approved && approve.value(pub.value, window.fn.input_rules).approved){
+        const nameValue = name.value ? name.value.trim() : '';
+        const pubValue = pub.value ? pub.value.trim() : '';
+
+        if (nameValue.length > 0 && pubValue.length > 0){
             formData.append('token', session.token.serialize());
             formData.append('client_pub', session.pub);
-            formData.append('name', name.value);
-            formData.append('stellar_25519_pub', pub.value)
-            formData.append('timestamped', use_timestamp.checked)
-            formData.append('timestamp', timestamp.value)
+            formData.append('name', nameValue);
+            formData.append('stellar_25519_pub', pubValue);
+            formData.append('timestamped', use_timestamp.checked);
+            formData.append('timestamp', timestamp.value);
             await window.fn.addAccessToken(formData, '/add_access_token', access_token_added);
         }else{
             ons.notification.alert('All fields must be filled out');
-        };
+        }
     }else{
         ons.notification.alert('Something went wrong');
-    };
+    }
 };
 
 const access_token_added = async (response) => {
@@ -871,9 +993,9 @@ document.addEventListener('init', function(event) {
 
     window.rndr.fileListItems = function(host, fileList, logo){
         const fileListContainer = document.getElementById('file-list-items');
-        
+
         let _updateElem = function(clone, i, host, fileList, logo){
-            
+
             // Ensure file URLs have the correct protocol (HTTP/HTTPS)
             let protocol = window.location.protocol;
             let fileUrl = protocol + '//' + host + '/ipfs/' + fileList[i]['CID'];
@@ -884,7 +1006,23 @@ document.addEventListener('init', function(event) {
             let balance = fileList[i]['Balance']
             let encrypted = fileList[i]['Encrypted']
             let reciever_pub = fileList[i]['RecieverPub']
+            let directory = fileList[i]['Directory'] || '/';
+            let ipnsHash = fileList[i]['IPNSHash'] || null;
+            let pinned = fileList[i]['Pinned'] || false;
+            let pinSlotId = fileList[i]['PinSlotId'] || null;
+            let pinQty = fileList[i]['PinQty'] || 0;
+            let pinsRemaining = fileList[i]['PinsRemaining'] || 0;
             let icon = window.icons.UNKNOWN;
+
+            // Construct IPNS URL if available
+            let ipnsUrl = null;
+            let displayUrl = fileUrl;
+            let displayHash = cid;
+            if (ipnsHash) {
+                ipnsUrl = 'https://ipfs.io/ipns/' + ipnsHash + '/' + fileName;
+                displayUrl = ipnsUrl;
+                displayHash = ipnsHash;
+            }
 
             if(fileType.includes('image')){
                 icon = fileUrl;
@@ -911,25 +1049,41 @@ document.addEventListener('init', function(event) {
             }
             console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
             console.log(fileUrl)
+            console.log('IPNS URL:', ipnsUrl)
             console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
 
             clone.querySelector('#file-list-item-icon').src = icon;
             clone.querySelector('#file-list-item-stellar-logo').src = logo;
+            clone.querySelector('#file-list-item-directory').textContent = directory;
+            clone.querySelector('#file-list-item-namespace').textContent = ipnsHash || 'N/A';
+            clone.querySelector('#file-list-item-namespace').title = ipnsHash || '';
             clone.querySelector('#file-list-item-balance').textContent = balance;
             clone.querySelector('#file-list-item-encrypted').textContent = encrypted;
+            clone.querySelector('#file-list-item-pin-status').textContent = pinned ? (pinQty - pinsRemaining) + '/' + pinQty : 'No';
             if(reciever_pub != null){
                 clone.querySelector('#file-list-item-reciever-pub').textContent = reciever_pub;
             }else{
                 clone.querySelector('#file-list-item-reciever-pub').textContent = 'N/A';
             }
             clone.querySelector('.file-name').textContent = fileName;
-            clone.querySelector('.file_url').href = fileUrl;
-            clone.querySelector('.file_url').textContent = cid;
+            // Use IPNS URL for the main link if available, otherwise IPFS URL
+            clone.querySelector('.file_url').href = displayUrl;
+            clone.querySelector('.file_url').textContent = displayHash;
             clone.querySelector('.file-remove').setAttribute('onclick', 'remove_file("' + cid + '")');
             clone.querySelector('#copy-hash-url').setAttribute('onclick', 'copy_file_url("' + cid + '")');
             clone.querySelector('#copy-file-url').setAttribute('onclick', 'copy_file_url("' + fileUrl + '")');
+            // Show and configure IPNS copy button if IPNS hash is available
+            if (ipnsUrl) {
+                clone.querySelector('#copy-ipns-url').style.display = '';
+                clone.querySelector('#copy-ipns-url').setAttribute('onclick', 'copy_file_url("' + ipnsUrl + '")');
+            }
             if (fileList[i]['IsLogo'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-star"></ons-icon>');};
             if (fileList[i]['IsBgImg'] == true){clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-photo"></ons-icon>');};
+            if (pinned && pinsRemaining === 0){
+                clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-thumb-tack" style="color: #4CAF50;"></ons-icon>');
+            } else if (pinned){
+                clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-thumb-tack"></ons-icon>');
+            }
             if(fileList[i]['ContractID'].length > 0){
                 clone.querySelector('.special_icon').insertAdjacentHTML('beforeend','<ons-icon class="right" icon="fa-diamond"></ons-icon>');
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="send-button" class="scale-on-hover center-both" modifier="outline" onclick="send_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+' )"><ons-icon icon="fa-paper-plane"></ons-icon>_send</ons-button>');
@@ -943,6 +1097,15 @@ document.addEventListener('init', function(event) {
             }else{
                 clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="publish-button" class="scale-on-hover center-both" modifier="outline" onclick="publish_file_token_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+', '+false+' )" ><ons-icon icon="fa-bolt"></ons-icon>_publish</ons-button>');
             };
+
+            // Pin button
+            if (!pinned) {
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="pin-button" class="scale-on-hover center-both" modifier="outline" onclick="pin_file_prompt( '+"'"+fileName+"'"+','+"'"+cid+"'"+', '+"'"+icon+"'"+')" ><ons-icon icon="fa-thumb-tack"></ons-icon>_pin</ons-button>');
+            } else if (pinsRemaining > 0) {
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="cancel-pin-button" class="scale-on-hover center-both" modifier="outline" onclick="cancel_pin( '+"'"+cid+"'"+')" ><ons-icon icon="fa-times"></ons-icon>_cancel pin</ons-button>');
+            } else {
+                clone.querySelector('#file-list-items-token-buttons').insertAdjacentHTML('beforeend','<ons-button id="pinned-label" class="scale-on-hover center-both" modifier="outline" disabled><ons-icon icon="fa-thumb-tack" style="color: #4CAF50;"></ons-icon>_pinned</ons-button>');
+            }
         }
 
         //If list is empty render nothing
@@ -1781,6 +1944,34 @@ document.addEventListener('init', function(event) {
         description.textContent = "File tokenized on Stellar Ledger.";
     };
 
+    window.rndr.pin_file_dlg = function (name, cid, icon) {
+        let img = document.querySelector('#pin-file-dialog-img');
+        let nameElem = document.querySelector('#pin-file-dialog-name');
+        let btn = document.querySelector('#pin-file-dialog-button');
+        img.setAttribute('src', icon);
+        nameElem.textContent = name;
+
+        const updateTotal = () => {
+            let qty = parseFloat(document.querySelector('#pin-file-dialog-qty').value) || 0;
+            let price = parseFloat(document.querySelector('#pin-file-dialog-price').value) || 0;
+            document.querySelector('#pin-file-dialog-total').textContent = (qty * price).toFixed(2);
+        };
+        document.querySelector('#pin-file-dialog-qty').addEventListener('input', updateTotal);
+        document.querySelector('#pin-file-dialog-price').addEventListener('input', updateTotal);
+        updateTotal();
+
+        btn.onclick = function () {
+            pin_file(cid, name);
+        };
+    };
+
+    window.rndr.pin_transaction_dlg = function (transaction) {
+        let transactionUrl = document.querySelector('#transaction-confirmed-dialog-url');
+        let description = document.querySelector('#transaction-confirmed-dialog-description');
+        transactionUrl.href = transaction.transaction_url;
+        description.textContent = "Pin request created on Stellar Ledger.";
+    };
+
     window.rndr.send_token_transaction_dlg = function  (transaction) {
         let fileUrl = window.dash.data.customization.logo;
         let transactionUrl = document.querySelector('#transaction-confirmed-dialog-url');
@@ -1827,6 +2018,10 @@ document.addEventListener('init', function(event) {
 
         document.querySelector('#upload-button').onclick = function () {
             upload_file_dlg(upload_file);
+        };
+
+        document.querySelector('#create-directory-button').onclick = function () {
+            create_directory_dlg();
         };
 
         document.querySelector('#settings-button').onclick = function () {

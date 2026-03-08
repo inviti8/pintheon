@@ -191,7 +191,7 @@ document.addEventListener('init', function(event) {
           })
           .then(response => {
             console.log(response)
-            if (response.status) {
+            if (response.ok) {
                 return response.json();
             } else {
                 throw new Error('Request failed with status: ' + response.status );
@@ -199,6 +199,9 @@ document.addEventListener('init', function(event) {
           })
           .then(data => {
             callback(data);
+          })
+          .catch(error => {
+            console.error('quiet_call error:', error);
           });
     };
 
@@ -216,10 +219,9 @@ document.addEventListener('init', function(event) {
           })
           .then(response => {
             console.log(response)
-            if (response.status === 200) {
+            if (response.ok) {
                 return response.json();
             } else {
-                console.log(response.json())
                 console.log(response)
                 window.dlg.hide('loading-dialog');
                 window.dlg.show('fail-dialog');
@@ -229,6 +231,10 @@ document.addEventListener('init', function(event) {
           .then(data => {
             window.dlg.hide('loading-dialog');
             callback(data);
+          })
+          .catch(error => {
+            window.dlg.hide('loading-dialog');
+            console.error('call error:', error);
           });
     };
 
@@ -330,6 +336,14 @@ document.addEventListener('init', function(event) {
 
     window.fn.publishFile = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {
         window.fn.confirmedCall('Publish file?', 'publish failed', formData, endpoint, callback, method, true, hideDlg);
+    };
+
+    window.fn.pinFile = async (formData, endpoint, callback, method='POST', hideDlg=undefined) => {
+        window.fn.confirmedCall('Pin this file to the network?', 'pin request failed', formData, endpoint, callback, method, true, hideDlg);
+    };
+
+    window.fn.cancelPin = async (formData, endpoint, callback, method='POST') => {
+        window.fn.confirmedCall('Cancel this pin request?', 'pin cancellation failed', formData, endpoint, callback, method);
     };
 
     window.fn.updateGateway = async (formData, endpoint, callback, method='POST') => {

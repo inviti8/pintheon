@@ -85,7 +85,12 @@
              <ons-col width="100%">
                 <ons-card modifier="default outlined">
                   <H3>FILES</H3>
-                  <div class="content"><ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button></div>
+                  <div class="content">
+                    <div class="center-both" style="gap: 12px;">
+                      <ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button>
+                      <ons-button modifier="large" id="create-directory-button" ripple><ons-icon icon="fa-folder-plus"></ons-icon>_new folder</ons-button>
+                    </div>
+                  </div>
                   <div class="content">
                     <div class="content_top">
                       <p>
@@ -120,7 +125,7 @@
           <br />
             <div class="expanded_article">
               <br />
-              <ons-col width="80%">
+              <ons-col width="95%">
                 <ons-card class="" modifier="outlined" style="height:200px;">
                   <header>
                     <H3>SETTINGS</H3>
@@ -207,12 +212,40 @@
               </div>
             </div>
           </ons-list-item>
+          <ons-list-item class="upload-file-dialog-list-item">
+            <div class="fab-container left">
+              <ons-icon size="30px" class="list-item__thumbnail" icon="fa-folder"></ons-icon>
+            </div>
+            <div class="center">
+              <span class="list-item__title">
+                <select id="upload-file-dialog-directory" class="select-input" style="width: 100%;">
+                  <option value="">/ (root)</option>
+                </select>
+              </span>
+            </div>
+          </ons-list-item>
         </ons-list>
         <p>
           <ons-button id="upload-file-dialog-button" class="can-callback" modifier="large" ripple>UPLOAD
             <input type="file" id="upload-file-dialog-input" style="display: none;">
           </ons-button>
         </p>
+      </div>
+    </ons-dialog>
+  </template>
+
+  <template id="create-directory-dialog.html">
+    <ons-dialog id="create-directory-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list style="width:100%;">
+          <ons-list-header><ons-icon class="right" icon="fa-folder-plus"></ons-icon>__CREATE DIRECTORY</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <ons-input class="dash-input" id="create-directory-dialog-name" modifier="large" placeholder="Directory Name" float></ons-input>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <ons-button id="create-directory-dialog-button" class="can-callback" modifier="large" ripple>CREATE</ons-button>
+          </ons-list-item>
+        </ons-list>
       </div>
     </ons-dialog>
   </template>
@@ -318,6 +351,48 @@
           </ons-list-item>
           <ons-list-item modifier="nodivider" style="width:100%;" >
               <ons-button id="publish-file-dialog-button" class="can-callback" modifier="large" ripple>PUBLISH</ons-button>
+          </ons-list-item>
+        </ons-list>
+      </div>
+    </ons-dialog>
+  </template>
+
+  <template id="pin-file-dialog.html">
+    <ons-dialog id="pin-file-dialog" cancelable>
+      <div style="text-align: center; padding: 10px;">
+        <ons-list style="width:100%;">
+          <ons-list-header><ons-icon class="right" icon="fa-thumb-tack"></ons-icon>__PIN FILE</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <div class="fab-container left">
+              <span class="left">
+                <img id="pin-file-dialog-img" class="list-item__thumbnail" modifier="file-thumb" src="">
+              </span>
+            </div>
+            <div class="center">
+              <span id="pin-file-dialog-name" class="list-item__title"></span><span id="pin-file-dialog-descriptor" class="list-item__subtitle"></span>
+            </div>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <span>
+              <div class="center-both">
+                <pre>pin copies:              </pre><ons-input id="pin-file-dialog-qty" modifier="" value="3" type="number" min="1" max="10" float></ons-input>
+              </div>
+            </span>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <span>
+              <div class="center-both">
+                <pre>offer price (XLM/pin):   </pre><ons-input id="pin-file-dialog-price" modifier="" value="1" type="number" min="0.1" step="0.1" float></ons-input>
+              </div>
+            </span>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <div class="center-both">
+              <span class="thick">Total cost: </span><span id="pin-file-dialog-total">--</span><span class="list-item__subtitle"> XLM (+ pin fee)</span>
+            </div>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <ons-button id="pin-file-dialog-button" class="can-callback" modifier="large" ripple>PIN</ons-button>
           </ons-list-item>
         </ons-list>
       </div>
@@ -433,13 +508,33 @@
   <template id="recieve-token-dialog.html">
     <ons-dialog id="recieve-token-dialog" cancelable>
       <div style="text-align: center; padding: 10px;">
-        <span class="center"><img id="recieve-token-dialog-qrcode" src="" style="max-width: 50%; height: auto;"></span>
-        <span>
-              <ons-input id="recieve-token-dialog-address" modifier="large" value=""  style="width:80%;"></ons-input>
+        <ons-list  style="width:100%;">
+          <ons-list-header><ons-icon class="right" icon="fa-qrcode"></ons-icon>__RECEIVE TOKEN</ons-list-header>
+          <ons-list-item class="node-data-card-header-list-item">
+            <div class="fab-container left">
+              <span class="left">
+                <img id="recieve-token-dialog-img" class="list-item__thumbnail" modifier="file-thumb" src="">
+              </span>
+            </div>
+            <div class="center">
+              <span id="recieve-token-dialog-name" class="list-item__title"></span>
+              <span id="recieve-token-dialog-descriptor" class="list-item__subtitle"></span>
+            </div>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <div style="text-align: center; padding: 15px 0;">
+              <img id="recieve-token-dialog-qrcode" src="" style="max-width: 60%; height: auto; display: block; margin: 0 auto; border-radius: 10px;">
+            </div>
+          </ons-list-item>
+          <ons-list-item modifier="nodivider" style="width:100%;">
+            <div style="display: flex; width: 100%; padding: 0 16px;">
+              <ons-input id="recieve-token-dialog-address" modifier="large" value="" float style="width: 100%;"></ons-input>
               <ons-button modifier="quiet" onclick="" id="recieve-token-dialog-copy-address" class="scale-on-hover-icon">
                 <ons-icon icon="fa-clipboard"></ons-icon>
               </ons-button>
-            </span>
+            </div>
+          </ons-list-item>
+        </ons-list>
       </div>
     </ons-dialog>
   </template>
@@ -470,20 +565,23 @@
         <ons-list modifier="default">
           <ons-list-header><img style="width: 24px; height: 24px;" id="file-list-item-stellar-logo" src=""></ons-list-header>
           <ons-list-item>
-            <div class="center"><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
+            <div class="center"><span class="thick">Directory:</span><pre> </pre><span id="file-list-item-directory"></span><pre>  </pre><span class="thick">Namespace:</span><pre> </pre><span id="file-list-item-namespace" class="truncate" style="max-width: 150px; display: inline-block; vertical-align: bottom;"></span><pre>  </pre><span class="thick">Balance:</span><pre> </pre><span id="file-list-item-balance"></span><pre>  </pre><span class="thick">Encrypted:</span><pre> </pre><span id="file-list-item-encrypted"></span><pre>  </pre><span class="thick">Pinned:</span><pre> </pre><span id="file-list-item-pin-status"></span><pre>  </pre><span class="thick">Reciever Key:</span><pre> </pre><span id="file-list-item-reciever-pub"></span></div>
           </ons-list-item>
           <ons-list-item>
             <div id="file-list-items-token-buttons" class="center"></div>
           </ons-list-item>
           <ons-list-item>
             <div class="right">
-              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-file-url">
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-file-url" title="Copy IPFS URL">
                 <ons-icon icon="fa-link"></ons-icon>
               </ons-button>
-              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-hash-url">
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-ipns-url" title="Copy IPNS URL" style="display: none;">
+                <ons-icon icon="fa-globe"></ons-icon>
+              </ons-button>
+              <ons-button class="scale-on-hover-icon" modifier="quiet" onclick="" id="copy-hash-url" title="Copy CID">
                 <ons-icon icon="fa-hashtag"></ons-icon>
               </ons-button>
-              <ons-button class="scale-on-hover-icon file-remove" modifier="quiet" onclick="" id="">
+              <ons-button class="scale-on-hover-icon file-remove" modifier="quiet" onclick="" id="" title="Remove file">
                 <ons-icon icon="fa-remove"></ons-icon>
               </ons-button>
             </div>
@@ -651,7 +749,7 @@
   </template>
 
   <template id="settings-stellar-template">
-    <ons-list class="stat-ul" style="width:13%; height:200px;">
+    <ons-list class="stat-ul" style="width:20%; height:200px;">
       <ons-list-header>STELLAR TOML</ons-list-header>
       <ons-list-item style="width:100%;">
             <ons-button modifier="quiet" class="center" id="upload-stellar-toml" modifier="large" ripple style="text-align: center;">
