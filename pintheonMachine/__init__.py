@@ -42,6 +42,7 @@ from stellar_sdk import xdr as stellar_xdr
 from .hvym_collective_bindings import Client as Collective
 from .opus_bindings import Client as Opus
 from .ipfs_token_bindings import Client as IPFS_Token
+from .pinning_service_bindings import Client as PinService
 import json
 import requests
 import time
@@ -60,11 +61,13 @@ STELLAR_BG_RGB = (255, 255, 255)
 STELLAR_FG_RGB = (0, 0, 0)
 
 XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_TESTNET = 'CANUWIHCFJLWEJ22CV5IBQDZ64GF4ECRYMNN6FGLWT2GXSFCCRYAOPYA'
-OPUS_TESTNET = 'CCI3S3PCQXZ65CB5JDCBH2B2CKXPISSNWRV6RXID5LPESJQPB6TDMYKL'
+COLLECTIVE_TESTNET = 'CDHSOV4IKQB3YZTA6HW26RN7VS6UVZRZZCNWDQVCSQPKYKBMATRJSQ5R'
+PINNING_TESNET = 'CDRBV6AEZ6UBMHHHVHRLAZW4IKFRGU7RWZ5DVFLWJAPHAQJZCXILEVKS'
+OPUS_TESTNET = 'CA3SLEQ65R3DAYT5GPFB6SXAHTR5NS5VAEZSEMMIYNXWMTLBT7NX2RHX'
 XLM_MAINNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_MAINNET = 'CANUWIHCFJLWEJ22CV5IBQDZ64GF4ECRYMNN6FGLWT2GXSFCCRYAOPYA'
-OPUS_MAINNET = 'CCI3S3PCQXZ65CB5JDCBH2B2CKXPISSNWRV6RXID5LPESJQPB6TDMYKL'
+COLLECTIVE_MAINNET = 'CDHSOV4IKQB3YZTA6HW26RN7VS6UVZRZZCNWDQVCSQPKYKBMATRJSQ5R'
+PINNING_MAINNET = 'CDRBV6AEZ6UBMHHHVHRLAZW4IKFRGU7RWZ5DVFLWJAPHAQJZCXILEVKS'
+OPUS_MAINNET = 'CA3SLEQ65R3DAYT5GPFB6SXAHTR5NS5VAEZSEMMIYNXWMTLBT7NX2RHX'
 
 DEBUG_SEED = "puppy address situate future gown trade limb rival crane increase when faculty category vague alpha program remember pill waste light broom decade buddy knock"
 DEBUG_NODE_CONTRACT = "CBYP223JS7VYBIIFYUJ6ZQLAOOYXCIFZGMOHKIASMWKCZGFULVPNPV3H"
@@ -80,6 +83,10 @@ TESTNET_HORIZON_SERVER = 'https://horizon-testnet.stellar.org'
 
 MAINNET_SOROBAN_SERVER = 'https://mainnet.sorobanrpc.com'
 MAINNET_HORIZON_SERVER = 'https://horizon.stellar.org'
+
+# Default timeout for IPFS API requests (in seconds)
+IPFS_API_TIMEOUT = 60
+IPFS_UPLOAD_TIMEOUT = 300  # Longer timeout for file uploads
 
 
 class PintheonMachine(object):
@@ -178,6 +185,7 @@ class PintheonMachine(object):
             self.XLM_ID = XLM_TESTNET
             self.COLLECTIVE_ID = COLLECTIVE_TESTNET
             self.OPUS_ID = OPUS_TESTNET
+            self.PINNING_ID = PINNING_TESNET
             self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
         else:
             self.soroban_rpc_url = self.config['Init']['mainnet_soroban_server']
@@ -185,6 +193,7 @@ class PintheonMachine(object):
             self.XLM_ID = XLM_MAINNET
             self.COLLECTIVE_ID = COLLECTIVE_MAINNET
             self.OPUS_ID = OPUS_MAINNET
+            self.PINNING_ID = PINNING_MAINNET
             self.NETWORK_PASSPHRASE = Network.PUBLIC_NETWORK_PASSPHRASE
         self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.BASE_FEE = self.stellar_server.fetch_base_fee()
@@ -193,6 +202,7 @@ class PintheonMachine(object):
         self.stellar_25519_keypair = None
         self.hvym_collective = Collective(self.COLLECTIVE_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.opus = Opus(self.OPUS_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
+        self.pin_service = PinService(self.PINNING_ID, self.soroban_rpc_url, self.NETWORK_PASSPHRASE)
         self.stellar_logo_img = None
         self.stellar_wallet_qr = None
         self.stellar_logo_light = None
@@ -524,15 +534,24 @@ class PintheonMachine(object):
             self._update_token_book_balance(self.OPUS_ID, balance)
     
     def opus_send(self, recieving_address, amount):
-         tx = self._token_send(self, self.opus, recieving_address, amount, self.opus_logo)
+         tx = self._token_send(self.opus, recieving_address, amount, self.opus_logo)
          self.update_opus_balance()
 
          return tx
     
     def collective_symbol(self):
-        tx = self.hvym_collective.symbol(self.stellar_keypair.public_key)
+        tx = self.hvym_collective.symbol(
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
         return tx.result()
-    
+
+    def _to_bytes(self, value):
+        """Convert a string to bytes, or return as-is if already bytes."""
+        if value is None:
+            return None
+        return value.encode('utf-8') if isinstance(value, str) else value
+
     def _safe_contract_call(self, func, *args, **kwargs):
         try:
             result = func(*args, **kwargs)
@@ -585,8 +604,8 @@ class PintheonMachine(object):
         call_result = self._safe_contract_call(
             self.hvym_collective.deploy_node_token,
             caller=self.stellar_keypair.public_key,
-            name=name,
-            descriptor=descriptor,
+            name=self._to_bytes(name),
+            descriptor=self._to_bytes(descriptor),
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
         )
@@ -619,15 +638,17 @@ class PintheonMachine(object):
             print(f'Error in deploy_node_token tx: {e}')
             return {'success': False, 'error': str(e)}
 
-    def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, _ipns_hash="NONE"):
+    def deploy_ipfs_token(self, name, ipfs_hash, file_type, gateways, ipns_hash=None):
+        # Handle ipns_hash - convert to bytes or None (treat "NONE" as None)
+        ipns_hash_val = self._to_bytes(ipns_hash) if ipns_hash and ipns_hash != "NONE" else None
         call_result = self._safe_contract_call(
             self.hvym_collective.deploy_ipfs_token,
             caller=self.stellar_keypair.public_key,
-            name=name,
-            ipfs_hash=ipfs_hash,
-            file_type=file_type,
-            gateways=gateways,
-            _ipns_hash=_ipns_hash,
+            name=self._to_bytes(name),
+            ipfs_hash=self._to_bytes(ipfs_hash),
+            file_type=self._to_bytes(file_type),
+            gateways=self._to_bytes(gateways),
+            ipns_hash=ipns_hash_val,
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
         )
@@ -683,8 +704,8 @@ class PintheonMachine(object):
         call_result = self._safe_contract_call(
             self.hvym_collective.publish_file,
             caller=self.stellar_keypair.public_key,
-            publisher=self.stellar_25519_keypair.public_key(),
-            ipfs_hash=ipfs_hash,
+            publisher=self._to_bytes(self.stellar_25519_keypair.public_key()),
+            ipfs_hash=self._to_bytes(ipfs_hash),
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
         )
@@ -717,13 +738,12 @@ class PintheonMachine(object):
     
     def publish_encrypted_file(self, recipient, ipfs_hash):
         transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
-        
         call_result = self._safe_contract_call(
             self.hvym_collective.publish_encrypted_share,
             caller=self.stellar_keypair.public_key,
-            publisher=self.stellar_25519_keypair.public_key(),
-            recipient=recipient,
-            ipfs_hash=ipfs_hash,
+            publisher=self._to_bytes(self.stellar_25519_keypair.public_key()),
+            recipient=self._to_bytes(recipient),
+            ipfs_hash=self._to_bytes(ipfs_hash),
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
         )
@@ -752,7 +772,205 @@ class PintheonMachine(object):
             print(f'Error in publish_encrypted_file tx: {e}')
             transaction['error'] = str(e)
         return transaction
-    
+
+    # -------- PIN SERVICE METHODS --------
+
+    def get_pin_service_info(self):
+        try:
+            pin_fee = self.pin_service.pin_fee().result()
+            min_offer = self.pin_service.min_offer_price().result()
+            min_qty = self.pin_service.min_pin_qty().result()
+            max_cyc = self.pin_service.max_cycles().result()
+            available = self.pin_service.has_available_slots().result()
+            epoch = self.pin_service.current_epoch().result()
+            return {
+                'success': True,
+                'pin_fee': pin_fee, 'min_offer_price': min_offer,
+                'min_pin_qty': min_qty, 'max_cycles': max_cyc,
+                'has_available_slots': available, 'current_epoch': epoch
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def create_pin_request(self, cid, filename, offer_price, pin_qty):
+        transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
+
+        # Pre-check XLM balance
+        try:
+            info = self.get_pin_service_info()
+            if not info['success']:
+                transaction['error'] = info['error']
+                return transaction
+            pin_fee = info['pin_fee']
+            total_cost = (offer_price * pin_qty) + pin_fee
+            balance_stroops = self.xlm_to_stroops(self.stellar_xlm_balance())
+            if balance_stroops < total_cost:
+                transaction['error'] = f'Insufficient XLM balance. Need {self.stroops_to_xlm(total_cost):.2f} XLM.'
+                return transaction
+        except Exception as e:
+            transaction['error'] = f'Balance check failed: {str(e)}'
+            return transaction
+
+        # Build and submit transaction
+        call_result = self._safe_contract_call(
+            self.pin_service.create_pin,
+            caller=self.stellar_keypair.public_key,
+            cid=self._to_bytes(cid),
+            filename=self._to_bytes(filename),
+            gateway=self._to_bytes(self.url_host),
+            offer_price=offer_price,
+            pin_qty=pin_qty,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            transaction['error'] = call_result['error']
+            return transaction
+        try:
+            tx = call_result['result']
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+                time.sleep(3)
+                attempts += 1
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                transaction['hash'] = send_transaction.hash
+                transaction['successful'] = True
+                transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+                # Extract slot_id from result
+                try:
+                    slot_id = tx.result()
+                except:
+                    slot_id = None
+                # Update file record
+                self._open_db()
+                file = Query()
+                self.file_book.update({
+                    'Pinned': True, 'PinSlotId': slot_id,
+                    'PinQty': pin_qty, 'PinsRemaining': pin_qty,
+                    'PinOfferPrice': offer_price
+                }, file.CID == cid)
+                self.db.close()
+                transaction['slot_id'] = slot_id
+            else:
+                transaction['error'] = f"Transaction status: {get_transaction_data.status}"
+        except Exception as e:
+            print(f'Error in create_pin_request tx: {e}')
+            transaction['error'] = str(e)
+        return transaction
+
+    def cancel_pin_request(self, cid):
+        transaction = {'hash': None, 'successful': False, 'transaction_url': None, 'logo': self.stellar_logo}
+
+        # Look up PinSlotId from file_book
+        self._open_db()
+        file = Query()
+        file_data = self.file_book.get(file.CID == cid)
+        self.db.close()
+
+        if not file_data or not file_data.get('PinSlotId'):
+            transaction['error'] = 'No active pin request found for this file.'
+            return transaction
+
+        slot_id = file_data['PinSlotId']
+
+        call_result = self._safe_contract_call(
+            self.pin_service.cancel_pin,
+            caller=self.stellar_keypair.public_key,
+            slot_id=slot_id,
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
+        )
+        if not call_result['success']:
+            transaction['error'] = call_result['error']
+            return transaction
+        try:
+            tx = call_result['result']
+            tx.sign()
+            send_transaction = self.soroban_server.send_transaction(tx)
+            max_attempts = 10
+            attempts = 0
+            while attempts < max_attempts:
+                get_transaction_data = self.soroban_server.get_transaction(send_transaction.hash)
+                if get_transaction_data.status != soroban_rpc.GetTransactionStatus.NOT_FOUND:
+                    break
+                time.sleep(3)
+                attempts += 1
+            if get_transaction_data.status == soroban_rpc.GetTransactionStatus.SUCCESS:
+                transaction['hash'] = send_transaction.hash
+                transaction['successful'] = True
+                transaction['transaction_url'] = self.block_explorer + self.testnet_transaction + transaction['hash']
+                # Reset pin fields
+                self._open_db()
+                file = Query()
+                self.file_book.update({
+                    'Pinned': False, 'PinSlotId': None,
+                    'PinQty': 0, 'PinsRemaining': 0,
+                    'PinOfferPrice': 0
+                }, file.CID == cid)
+                self.db.close()
+            else:
+                transaction['error'] = f"Transaction status: {get_transaction_data.status}"
+        except Exception as e:
+            print(f'Error in cancel_pin_request tx: {e}')
+            transaction['error'] = str(e)
+        return transaction
+
+    def refresh_pin_status(self, cid):
+        self._open_db()
+        file = Query()
+        file_data = self.file_book.get(file.CID == cid)
+        self.db.close()
+
+        if not file_data or not file_data.get('PinSlotId'):
+            return file_data
+
+        slot_id = file_data['PinSlotId']
+
+        try:
+            slot_data = self.pin_service.get_slot(slot_id).result()
+            pins_remaining = slot_data.pins_remaining if hasattr(slot_data, 'pins_remaining') else slot_data.get('pins_remaining', 0)
+            self._open_db()
+            file = Query()
+            self.file_book.update({
+                'PinsRemaining': pins_remaining
+            }, file.CID == cid)
+            file_data = self.file_book.get(file.CID == cid)
+            self.db.close()
+        except Exception as e:
+            print(f'Pin status refresh for {cid}: {e}')
+            # Slot no longer exists on-chain
+            if file_data.get('PinsRemaining', 0) > 0:
+                # Expired or force-cleared - reset pin fields
+                self._open_db()
+                file = Query()
+                self.file_book.update({
+                    'Pinned': False, 'PinSlotId': None,
+                    'PinQty': 0, 'PinsRemaining': 0,
+                    'PinOfferPrice': 0
+                }, file.CID == cid)
+                file_data = self.file_book.get(file.CID == cid)
+                self.db.close()
+            # else: PinsRemaining == 0 means fully claimed, keep Pinned=True
+
+        return file_data
+
+    def refresh_all_pin_statuses(self):
+        self._open_db()
+        file = Query()
+        pinned_files = self.file_book.search((file.Pinned == True) & (file.PinSlotId != None))
+        self.db.close()
+
+        for f in pinned_files:
+            self.refresh_pin_status(f['CID'])
+
+    # -------- END PIN SERVICE METHODS --------
+
     def add_file_token_to_toml(self, name, cid):
         token_img = os.path.join(self.url_host, 'static', 'file_token.png')
         self.stellar_toml.new_currency(code=f'HVYMFILE_{name}', name=name, issuer=self.stellar_keypair.public_key, display_decimals=0, desc=cid, image=token_img, conditions='This file is owned by the issuer.')
@@ -835,7 +1053,7 @@ class PintheonMachine(object):
         call_result = self._safe_contract_call(
             token.transfer,
             from_=self.stellar_keypair.public_key,
-            to=recieving_address,
+            to_muxed=recieving_address,
             amount=amount,
             source=self.stellar_keypair.public_key,
             signer=self.stellar_keypair
@@ -907,7 +1125,8 @@ class PintheonMachine(object):
     def _token_symbol(self, token):
         call_result = self._safe_contract_call(
             token.symbol,
-            self.stellar_keypair.public_key
+            source=self.stellar_keypair.public_key,
+            signer=self.stellar_keypair
         )
         if not call_result['success']:
             print(f"Error in _token_symbol: {call_result['error']}")
@@ -1100,13 +1319,13 @@ class PintheonMachine(object):
     def stroops_to_xlm(self, stroops):
         return stroops / 10_000_000.0
     
-    def stellar_shared_archive(self, file, reciever_pub):
+    def stellar_shared_archive(self, file, receiver_pub):
         encrypted_data = None
         file_data = file.read()
         with tempfile.TemporaryDirectory() as temp_dir:
             original_path = os.path.join(temp_dir, file.filename)
             encrypted_path = os.path.join(temp_dir, f"{file.filename}.7z")
-            sharedKey = StellarSharedKey(self.stellar_25519_keypair, reciever_pub)
+            sharedKey = StellarSharedKey(self.stellar_25519_keypair, receiver_pub)
             
             with open(original_path, 'wb') as f:
                 f.write(file_data)
@@ -1380,7 +1599,7 @@ class PintheonMachine(object):
 
     def get_stats(self, stat_type):
         url = f'{self.ipfs_endpoint}/stats/{stat_type}?'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         #return requests.post(url)
         # print('stat res : ',response.json())
@@ -1392,7 +1611,7 @@ class PintheonMachine(object):
         
     def get_peer_id(self):
         url = f'{self.ipfs_endpoint}/config?arg=Identity.PeerID'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         #return requests.post(url)
         # print(response)
@@ -1407,7 +1626,7 @@ class PintheonMachine(object):
         pin_url = f'{self.ipfs_endpoint}/pin/add?arg={cid}'
         # print(pin_url)
 
-        response = requests.post(pin_url)
+        response = requests.post(pin_url, timeout=IPFS_API_TIMEOUT)
 
         if response.status_code == 200:
                 pin_data = response.json()
@@ -1423,7 +1642,7 @@ class PintheonMachine(object):
         print('remove_file_from_ipfs')
         url = f'{self.ipfs_endpoint}/pin/rm?arg={cid}&recursive=true'
         print(url)
-        response = requests.post(url)
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         print(response.text)
 
@@ -1434,8 +1653,8 @@ class PintheonMachine(object):
                 if cid == self.homepage_hash:
                     self.homepage_hash = 'none'
                     self.update_customization()
-                    
-                response = requests.post(url)
+
+                response = requests.post(url, timeout=IPFS_API_TIMEOUT)
                 if response.status_code == 200:
                     print(response)
                     print(response.text)
@@ -1459,10 +1678,63 @@ class PintheonMachine(object):
         self.db.close()
 
         return all_file_info
-        
+
+    def get_pinned_files_data(self):
+        """Return pinned file inventory with node metadata.
+
+        Used by CID Hunter (via /api/pinned_files) to discover
+        which CIDs to verify on the network.
+        """
+        address = None
+        if self.stellar_keypair is not None:
+            address = self.stellar_keypair.public_key
+
+        peer_id = None
+        try:
+            peer_id_response = self.get_peer_id()
+            if peer_id_response.status_code == 200:
+                peer_id = peer_id_response.json()['Value']
+        except Exception:
+            pass
+
+        network = 'testnet' if self.use_testnet else 'mainnet'
+
+        self._open_db()
+        all_files = self.file_book.all()
+        self.db.close()
+
+        pinned = [f for f in all_files if f.get('Pinned', False)]
+
+        files = [
+            {
+                'cid': f.get('CID', ''),
+                'name': f.get('Name', ''),
+                'content_type': f.get('Type', ''),
+                'size': f.get('Size', 0),
+                'pinned': True,
+                'slot_id': f.get('PinSlotId'),
+                'pin_qty': f.get('PinQty', 0),
+                'pins_remaining': f.get('PinsRemaining', 0),
+                'offer_price': f.get('PinOfferPrice', 0),
+                'encrypted': f.get('Encrypted', False),
+                'directory': f.get('Directory', '/'),
+                'contract_id': f.get('ContractID', ''),
+            }
+            for f in pinned
+        ]
+
+        return {
+            'node_address': address,
+            'peer_id': peer_id,
+            'gateway': self.url_host,
+            'network': network,
+            'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'files': files,
+        }
+
     def get_file_list(self):
         url = f'{self.ipfs_endpoint}/files/ls'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         #return requests.post(url)
         print(response)
@@ -1471,10 +1743,193 @@ class PintheonMachine(object):
                 return response
         else:
                 return jsonify({'error': 'stats not available.'}), 400
-        
+
+    def create_mfs_directory(self, path):
+        """Create an MFS directory at the given path."""
+        if not path.startswith('/'):
+            path = '/' + path
+        url = f'{self.ipfs_endpoint}/files/mkdir'
+        params = {'arg': path, 'parents': 'true'}
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
+        return response.status_code == 200
+
+    def list_mfs_directories(self, path='/'):
+        """List directories in MFS at the given path."""
+        url = f'{self.ipfs_endpoint}/files/ls'
+        params = {'arg': path, 'long': 'true'}
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
+        if response.status_code == 200:
+            data = response.json()
+            entries = data.get('Entries', []) or []
+            dirs = [{'Name': e.get('Name'), 'Path': path.rstrip('/') + '/' + e.get('Name')} for e in entries if e.get('Type') == 1]
+            return dirs
+        return []
+
+    def copy_to_mfs(self, cid, mfs_path):
+        """Copy an IPFS CID to an MFS path."""
+        url = f'{self.ipfs_endpoint}/files/cp'
+        params = [('arg', f'/ipfs/{cid}'), ('arg', mfs_path)]
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
+        return response.status_code == 200
+
+    def get_mfs_cid(self, path='/'):
+        """Get the CID (hash) of an MFS path."""
+        if not path.startswith('/'):
+            path = '/' + path
+        url = f'{self.ipfs_endpoint}/files/stat'
+        params = {'arg': path}
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('Hash')
+        return None
+
+    def create_ipns_key(self, name, key_type='ed25519'):
+        """
+        Create a new IPNS key with the given name.
+
+        Args:
+            name: Name for the key (will be sanitized)
+            key_type: Key type - 'ed25519' (default) or 'rsa'
+
+        Returns:
+            dict with 'Name' and 'Id' (the IPNS hash), or None on failure
+        """
+        safe_name = self._safe_ipns_key(name.lower())
+        url = f'{self.ipfs_endpoint}/key/gen'
+        params = {'arg': safe_name, 'type': key_type}
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
+        if response.status_code == 200:
+            return response.json()
+        return None
+
+    def list_ipns_keys(self):
+        """List all IPNS keys on this node."""
+        url = f'{self.ipfs_endpoint}/key/list'
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('Keys', [])
+        return []
+
+    def get_ipns_key(self, name):
+        """Get an IPNS key by name, returns dict with 'Name' and 'Id' or None."""
+        safe_name = self._safe_ipns_key(name.lower())
+        keys = self.list_ipns_keys()
+        for key in keys:
+            if key.get('Name') == safe_name:
+                return key
+        return None
+
+    def publish_mfs_to_ipns(self, mfs_path='/', key_name=None):
+        """
+        Publish an MFS directory to IPNS.
+
+        Args:
+            mfs_path: The MFS path to publish (default: root)
+            key_name: IPNS key name to publish under (default: 'self')
+
+        Returns:
+            dict with 'Name' (IPNS hash) and 'Value' (IPFS path), or None on failure
+        """
+        cid = self.get_mfs_cid(mfs_path)
+        if not cid:
+            print(f"Failed to get CID for MFS path: {mfs_path}")
+            return None
+
+        url = f'{self.ipfs_endpoint}/name/publish'
+        params = {'arg': f'/ipfs/{cid}'}
+        if key_name:
+            params['key'] = self._safe_ipns_key(key_name.lower())
+        else:
+            params['key'] = 'self'
+
+        response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
+        if response.status_code == 200:
+            result = response.json()
+            # Store in namespaces table
+            self._open_db()
+            self.namespaces.insert({
+                'ipns_name': result.get('Name'),
+                'ipfs_path': result.get('Value'),
+                'mfs_path': mfs_path,
+                'key_name': key_name or 'self',
+                'timestamp': datetime.datetime.now().isoformat()
+            })
+            self.db.close()
+            return result
+        return None
+
+    def _auto_publish_directory_to_ipns(self, mfs_directory):
+        """
+        Auto-publish an MFS directory to IPNS.
+        Creates an IPNS key named after the directory if it doesn't exist.
+
+        Args:
+            mfs_directory: The MFS directory path to publish
+        """
+        # Normalize directory name for use as IPNS key
+        key_name = mfs_directory.strip('/').replace('/', '_')
+        if not key_name:
+            key_name = 'root'
+
+        # Check if key exists, create if not
+        existing_key = self.get_ipns_key(key_name)
+        if not existing_key:
+            print(f"Creating IPNS key for directory: {key_name}")
+            created_key = self.create_ipns_key(key_name)
+            if not created_key:
+                print(f"Failed to create IPNS key: {key_name}")
+                return None
+
+        # Publish the directory to IPNS
+        result = self.publish_mfs_to_ipns(mfs_directory, key_name)
+        if result:
+            print(f"Published {mfs_directory} to IPNS: {result.get('Name')}")
+        else:
+            print(f"Failed to publish {mfs_directory} to IPNS")
+        return result
+
+    def get_directory_ipns_hash(self, mfs_directory):
+        """
+        Get the IPNS hash for an MFS directory.
+
+        Args:
+            mfs_directory: The MFS directory path
+
+        Returns:
+            The IPNS hash (key ID) or None if no key exists for this directory
+        """
+        key_name = mfs_directory.strip('/').replace('/', '_')
+        if not key_name:
+            key_name = 'root'
+        key = self.get_ipns_key(key_name)
+        if key:
+            return key.get('Id')
+        return None
+
+    def get_ipns_url(self, ipns_hash, file_name=None, gateway='https://ipfs.io'):
+        """
+        Construct an IPNS URL for accessing content.
+
+        Args:
+            ipns_hash: The IPNS hash (key ID)
+            file_name: Optional file name to append to the path
+            gateway: The IPFS gateway to use (default: https://ipfs.io)
+
+        Returns:
+            The full IPNS URL
+        """
+        if not ipns_hash:
+            return None
+        base_url = f'{gateway}/ipns/{ipns_hash}'
+        if file_name:
+            return f'{base_url}/{file_name}'
+        return base_url
+
     def get_peer_list(self):
         url = f'{self.ipfs_endpoint}/bootstrap/list'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         if response.status_code == 200:
                 return response
@@ -1582,6 +2037,29 @@ class PintheonMachine(object):
 
         return all_file_info
 
+    def update_file_ipns_hashes(self):
+        """
+        Update IPNSHash for all files based on their directory.
+        Useful for backfilling existing files that were uploaded before IPNS tracking was added.
+        """
+        self._open_db()
+        all_files = self.file_book.all()
+        self.db.close()
+
+        updated = 0
+        for file_record in all_files:
+            directory = file_record.get('Directory', '/')
+            if directory and directory != '/':
+                ipns_hash = self.get_directory_ipns_hash(directory)
+                if ipns_hash:
+                    self._open_db()
+                    file = Query()
+                    self.file_book.update({'IPNSHash': ipns_hash}, file.CID == file_record['CID'])
+                    self.db.close()
+                    updated += 1
+
+        return updated
+
     def all_file_info(self):
         self._open_db()
         all_file_info = self.file_book.all()
@@ -1644,14 +2122,14 @@ class PintheonMachine(object):
 
     def ipfs_repo_stats(self):
         url = f'{self.ipfs_endpoint}/repo/stat?size-only=false&human=true'
-        response = requests.post(url);
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         if response.status_code == 200:
                 return response
         else:
                 return jsonify({'error': 'stats not available.'}), 400
 
-    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, reciever_pub=None, return_file_info=False):
+    def add_file_to_ipfs(self, file_name, file_type, file_data, is_logo=False, is_bg_img=False, encrypted=False, receiver_pub=None, return_file_info=False, mfs_directory=None, auto_publish_ipns=True):
         if self.FAKE_IPFS:
             return self.create_fake_ipfs_data()
         else:
@@ -1684,15 +2162,26 @@ class PintheonMachine(object):
                 'pin': 'true'
             }
 
-            response = requests.post(url, files=files, params=params)
+            response = requests.post(url, files=files, params=params, timeout=IPFS_UPLOAD_TIMEOUT)
 
             if response.status_code == 200:
                 ipfs_data = response.json()
                 # print('ipfs res : ',ipfs_data)
                 cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
                 if cid != None:
-                    
-                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'RecieverPub':reciever_pub}
+                    # Copy to MFS directory if specified
+                    directory = mfs_directory if mfs_directory else '/'
+                    ipns_hash = None
+                    if mfs_directory:
+                        mfs_file_path = mfs_directory.rstrip('/') + '/' + file_name
+                        self.copy_to_mfs(cid, mfs_file_path)
+
+                        # Auto-publish directory to IPNS if enabled
+                        if auto_publish_ipns:
+                            ipns_result = self._auto_publish_directory_to_ipns(mfs_directory)
+                            if ipns_result:
+                                ipns_hash = ipns_result.get('Name')
+                    file_info = {'Name':ipfs_data['Name'], 'Type': file_type, 'Encrypted': encrypted, 'Hash':ipfs_data['Hash'], 'CID':cid, 'ContractID': "", 'Size':ipfs_data['Size'], 'IsLogo':is_logo, 'IsBgImg': is_bg_img, 'Balance': 0, 'ReceiverPub':receiver_pub, 'Directory': directory, 'IPNSHash': ipns_hash, 'Pinned': False, 'PinSlotId': None, 'PinQty': 0, 'PinsRemaining': 0, 'PinOfferPrice': 0}
                     self._open_db()
 
                     if is_logo:
@@ -1731,7 +2220,7 @@ class PintheonMachine(object):
         File = Query()
         for hash in FAKE_IPFS_FILES:
             self.file_book.remove(File.CID == hash)
-            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'RecieverPub':None}
+            file_info = {'Name':names[idx], 'Type': types[idx], 'Encrypted': False, 'Hash':hash, 'CID':hash, 'ContractID': "", 'Size':1.0, 'IsLogo':logo[idx], 'IsBgImg': bg_img[idx], 'Balance': 0, 'ReceiverPub':None, 'Directory': '/', 'IPNSHash': None, 'Pinned': False, 'PinSlotId': None, 'PinQty': 0, 'PinsRemaining': 0, 'PinOfferPrice': 0}
             self.file_book.insert(file_info)
             idx+=1
         all_file_info = self.file_book.all()
@@ -1744,7 +2233,7 @@ class PintheonMachine(object):
         url = f'{self.ipfs_endpoint}/name/publish?arg={cid}&key=self'
         if name != None:
             url = f'{self.ipfs_endpoint}/name/publish?arg={cid}&key={self._safe_ipns_key(name)}'
-        response = requests.post(url)
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
 
         if response.status_code == 200:
             ipns_data = response.json()
@@ -1762,7 +2251,7 @@ class PintheonMachine(object):
         
     def resolve_ipns(self, name):
         url = f'{self.ipfs_endpoint}/name/resolve?arg={name}'
-        response = requests.post(url)
+        response = requests.post(url, timeout=IPFS_API_TIMEOUT)
         if response.status_code == 200:
             return response.json()
         else:
@@ -1831,6 +2320,11 @@ class PintheonMachine(object):
             key_25519 = self.stellar_25519_keypair.public_key()
         
         result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': address, '25519_pub': key_25519, 'logo': self.logo_url, 'host': host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None, 'access_tokens': []}
+        # Refresh pin statuses from on-chain state before reading files
+        try:
+            self.refresh_all_pin_statuses()
+        except Exception as e:
+            print(f'Pin status refresh failed: {e}')
         if self.FAKE_IPFS:
             #If FAKE IPFS we just create dummy ipfs data
             stats = {'RateIn': 1000, 'RateOut':1000, 'TotalIn': 1000, 'TotalOut': 1000}

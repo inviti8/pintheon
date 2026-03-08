@@ -193,3 +193,10 @@ span.thick {
   border-radius: 4px;
   font-size: 0.9em;
 }
+
+/* Button padding for consistent text spacing */
+button,
+ons-button {
+  padding: 8px 16px;
+  min-width: fit-content;
+}
