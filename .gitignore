@@ -12,3 +12,5 @@ static/opus_wallet_qr.png
 static/stellar_wallet_qr.png
 
 priv_docs/
+
+.claude/

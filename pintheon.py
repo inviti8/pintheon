@@ -35,7 +35,7 @@ app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
-# LOCAL_DEBUG = True
+LOCAL_DEBUG = True
 
 # Use platformdirs for cross-platform data directory management
 def get_data_directory():
@@ -46,10 +46,10 @@ def get_data_directory():
         return env_data_dir
     
     # For local debug, use ~/.local/share/PINTHEON/
-    # if LOCAL_DEBUG:
-    #     local_path = os.path.expanduser('~/.local/share/PINTHEON')
-    #     os.makedirs(local_path, exist_ok=True)
-    #     return local_path
+    if LOCAL_DEBUG:
+        local_path = os.path.expanduser('~/.local/share/PINTHEON')
+        os.makedirs(local_path, exist_ok=True)
+        return local_path
     
     # Use platformdirs for default location (no app author)
     dirs = PlatformDirs('PINTHEON', ensure_exists=True)
@@ -220,8 +220,8 @@ def require_local_access(f):
         # Get the current custom hostname from Pintheon
         custom_host = PINTHEON.url_host if PINTHEON.url_host else None
         port = str(PINTHEON.port)
-        # if LOCAL_DEBUG:
-        #     port = '5000'
+        if LOCAL_DEBUG:
+            port = '5000'
         
         # If no custom hostname is set (still localhost), allow access
         if not custom_host or custom_host in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
@@ -247,16 +247,16 @@ def require_local_access(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False, return_file_info=False):
+def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=False, return_file_info=False, mfs_directory=None):
     if 'file' not in request.files:
         return "No file uploaded", 400
-     
+
     file = request.files['file']
     print(file)
     print(file.filename)
     print(file.mimetype)
 
-     
+
     for field in required:
         if field not in request.form:
             return "Missing or empty value for field: {}".format(field), 400
@@ -264,15 +264,17 @@ def _handle_upload(required, request, is_logo=False, is_bg_img=False, encrypted=
     file_data = file.read()
     file_name = file.filename
     file_type = file.mimetype
-    reciever_pub = None
+    receiver_pub = None
 
     if encrypted == 'true':
-        reciever_pub = request.form['reciever_pub']
-        file_data = PINTHEON.stellar_shared_archive(file, reciever_pub)
+        if 'receiver_pub' not in request.form:
+            return "Missing required field 'receiver_pub' for encrypted upload", 400
+        receiver_pub = request.form['receiver_pub']
+        file_data = PINTHEON.stellar_shared_archive(file, receiver_pub)
         file_name = f"{file.filename}.7z"
         file_type = 'application/x-7z-compressed'
 
-    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, reciever_pub=reciever_pub, return_file_info=return_file_info)
+    ipfs_response = PINTHEON.add_file_to_ipfs(file_name=file_name, file_type=file_type, file_data=file_data, is_logo=is_logo, is_bg_img=is_bg_img, encrypted=encrypted, receiver_pub=receiver_pub, return_file_info=return_file_info, mfs_directory=mfs_directory)
 
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
@@ -344,6 +346,15 @@ def _get_custom_homepage_file():
     
     return None
 
+def _is_safe_zip_member(member_name, target_dir):
+    """Check if a ZIP member path is safe (no path traversal)"""
+    # Normalize the target directory
+    target_dir = os.path.abspath(target_dir)
+    # Get the absolute path of where this member would be extracted
+    member_path = os.path.abspath(os.path.join(target_dir, member_name))
+    # Check if the member path starts with the target directory
+    return member_path.startswith(target_dir + os.sep) or member_path == target_dir
+
 def _extract_zip_to_homepage(zip_file):
     """Extract uploaded ZIP file to custom homepage directory"""
     try:
@@ -351,18 +362,24 @@ def _extract_zip_to_homepage(zip_file):
         if os.path.exists(CUSTOM_HOMEPAGE_PATH):
             shutil.rmtree(CUSTOM_HOMEPAGE_PATH)
         os.makedirs(CUSTOM_HOMEPAGE_PATH, exist_ok=True)
-        
-        # Extract ZIP file
+
+        # Extract ZIP file with path traversal protection
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            zip_ref.extractall(CUSTOM_HOMEPAGE_PATH)
-        
+            for member in zip_ref.namelist():
+                # Check for path traversal attempts
+                if not _is_safe_zip_member(member, CUSTOM_HOMEPAGE_PATH):
+                    print(f"WARNING: Skipping potentially unsafe ZIP member: {member}")
+                    continue
+                # Extract only safe members
+                zip_ref.extract(member, CUSTOM_HOMEPAGE_PATH)
+
         # Debug: List extracted files
         print(f"DEBUG: Extracted files in {CUSTOM_HOMEPAGE_PATH}:")
         for root, dirs, files in os.walk(CUSTOM_HOMEPAGE_PATH):
             for file in files:
                 rel_path = os.path.relpath(os.path.join(root, file), CUSTOM_HOMEPAGE_PATH)
                 print(f"DEBUG:   {rel_path}")
-        
+
         return True
     except Exception as e:
         print(f"Error extracting ZIP file: {e}")
@@ -483,8 +500,8 @@ def admin():
     forwarded_host = request.headers.get('X-Forwarded-Host', '')
     custom_host = PINTHEON.url_host if PINTHEON.url_host else None
     port = str(PINTHEON.port)
-    # if LOCAL_DEBUG:
-    #         port = '5000'
+    if LOCAL_DEBUG:
+            port = '5000'
     if custom_host and custom_host not in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
         # Extract hostname from custom_host (remove protocol if present)
         if custom_host.startswith(('http://', 'https://')):
@@ -577,7 +594,6 @@ def update_stellar_toml():
             return jsonify({'error': f'Invalid TOML file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Invalid file type. Please upload a .toml file'}), 400
-    return response
 
 @app.route('/top_up_stellar')
 def top_up_stellar():
@@ -708,10 +724,11 @@ def deauthorize():
 def upload():
     required = ['token', 'client_pub']
     encrypted = request.form['encrypted']
+    mfs_directory = request.form.get('directory', None)
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
     print(encrypted)
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-    return _handle_upload(required, request, False, False, encrypted)
+    return _handle_upload(required, request, False, False, encrypted, mfs_directory=mfs_directory)
 
 @app.route('/api_upload', methods=['POST'])
 @cross_origin()
@@ -720,11 +737,124 @@ def upload():
 def api_upload():
     token = request.form['access_token']
     encrypted = request.form['encrypted']
+    mfs_directory = request.form.get('directory', None)
     if not PINTHEON.authorize_access_token(token):
         abort(403)
     else:
         required = ['access_token']
-        return _handle_upload(required=required, request=request, is_logo=False, is_bg_img=False, encrypted=encrypted, return_file_info=True)
+        return _handle_upload(required=required, request=request, is_logo=False, is_bg_img=False, encrypted=encrypted, return_file_info=True, mfs_directory=mfs_directory)
+
+@app.route('/api_create_directory', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token', 'name'], source='form')
+def api_create_directory():
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    name = request.form['name']
+    if not name or name.strip() == '':
+        return jsonify({'error': 'Directory name is required'}), 400
+
+    success = PINTHEON.create_mfs_directory(name)
+    if success:
+        directories = PINTHEON.list_mfs_directories('/')
+        return jsonify({'success': True, 'directories': directories}), 200
+    else:
+        return jsonify({'error': 'Failed to create directory'}), 400
+
+@app.route('/api_list_directories', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token'], source='form')
+def api_list_directories():
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    directories = PINTHEON.list_mfs_directories('/')
+    return jsonify({'directories': directories}), 200
+
+@app.route('/api_get_directory_ipns', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token', 'directory'], source='form')
+def api_get_directory_ipns():
+    """Get the IPNS hash for a specific MFS directory."""
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    directory = request.form['directory']
+    ipns_hash = PINTHEON.get_directory_ipns_hash(directory)
+    if ipns_hash:
+        return jsonify({'success': True, 'directory': directory, 'ipns_hash': ipns_hash}), 200
+    else:
+        return jsonify({'error': 'No IPNS key found for directory', 'directory': directory}), 404
+
+@app.route('/api_list_ipns_keys', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token'], source='form')
+def api_list_ipns_keys():
+    """List all IPNS keys on this node."""
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    keys = PINTHEON.list_ipns_keys()
+    return jsonify({'keys': keys}), 200
+
+@app.route('/api_publish_directory', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token', 'directory'], source='form')
+def api_publish_directory():
+    """Manually publish an MFS directory to IPNS."""
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+
+    directory = request.form['directory']
+    result = PINTHEON._auto_publish_directory_to_ipns(directory)
+    if result:
+        return jsonify({
+            'success': True,
+            'directory': directory,
+            'ipns_name': result.get('Name'),
+            'ipfs_path': result.get('Value')
+        }), 200
+    else:
+        return jsonify({'error': 'Failed to publish directory to IPNS'}), 400
+
+@app.route('/create_directory', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'name'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def create_directory():
+    name = request.form['name']
+    if not name or name.strip() == '':
+        return jsonify({'error': 'Directory name is required'}), 400
+
+    success = PINTHEON.create_mfs_directory(name)
+    if success:
+        directories = PINTHEON.list_mfs_directories('/')
+        return jsonify({'success': True, 'directories': directories}), 200
+    else:
+        return jsonify({'error': 'Failed to create directory'}), 400
+
+@app.route('/list_directories', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def list_directories():
+    directories = PINTHEON.list_mfs_directories('/')
+    return jsonify({'directories': directories}), 200
 
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()
@@ -739,6 +869,9 @@ def update_logo():
         PINTHEON.update_file_as_logo(file.filename)
     else:
         files = _handle_upload(required=['token', 'client_pub'], request=request, is_logo=True)
+        # Check if _handle_upload returned an error tuple
+        if isinstance(files, tuple):
+            return files
         cid = _get_file_cid(file, files)
     if cid is not None:
         PINTHEON.logo_url = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
@@ -855,7 +988,7 @@ def send_file_token():
 @app.route('/send_token', methods=['POST'])
 @cross_origin()
 @require_local_access
-@require_fields(['name', 'token_id', 'client_pub', 'token_id', 'amount', 'to_address'], source='form')
+@require_fields(['name', 'token_id', 'client_pub', 'token', 'amount', 'to_address'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def send_token():
@@ -878,7 +1011,7 @@ def send_token():
 @app.route('/publish_file', methods=['POST'])
 @cross_origin()
 @require_local_access
-@require_fields(['name', 'cid', 'client_pub', 'token', 'encrypted', 'reciever_pub'], source='form')
+@require_fields(['name', 'cid', 'client_pub', 'token', 'encrypted', 'receiver_pub'], source='form')
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def publish_file():
@@ -886,8 +1019,8 @@ def publish_file():
     cid = request.form['cid']
     data = None
     if encrypted == 'true':
-        reciever_pub = request.form['reciever_pub']
-        transaction_result = PINTHEON.publish_encrypted_file(reciever_pub, cid)
+        receiver_pub = request.form['receiver_pub']
+        transaction_result = PINTHEON.publish_encrypted_file(receiver_pub, cid)
     else:
         transaction_result = PINTHEON.publish_file(cid)
     data = PINTHEON.get_dashboard_data() or {}
@@ -910,7 +1043,7 @@ def publish_file():
 @require_session_state(state='idle', active=True)
 @require_token_verification('client_pub', 'token', source='form')
 def add_to_namespace():
-    if 'name' not in request.form:
+    if 'name' in request.form:
         ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'], request.form['name'])
     else:
         ipfs_response = PINTHEON.add_cid_to_ipns(request.form['cid'])
@@ -968,6 +1101,22 @@ def dashboard_data():
     if data is None:
         return jsonify({'error': 'Cannot get dash data'}), 400
     else:
+        return data, 200
+
+@app.route('/update_file_ipns_hashes', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def update_file_ipns_hashes():
+    """Update IPNSHash for all existing files based on their directory."""
+    updated = PINTHEON.update_file_ipns_hashes()
+    data = PINTHEON.get_dashboard_data()
+    if data is None:
+        return jsonify({'error': 'Cannot get dash data'}), 400
+    else:
+        data['updated_count'] = updated
         return data, 200
 
 @app.route('/update_theme', methods=['POST'])
@@ -1053,6 +1202,9 @@ def update_bg_img():
         cid = _get_file_cid(file, files)
     else:
         files = _handle_upload(required=['token', 'client_pub'], request=request, is_bg_img=True)
+        # Check if _handle_upload returned an error tuple
+        if isinstance(files, tuple):
+            return files
         cid = _get_file_cid(file, files)
     if cid is not None:
         PINTHEON.bg_img = _ensure_protocol(PINTHEON.url_host)+'/ipfs/'+cid
@@ -1231,6 +1383,80 @@ def api_upload_homepage():
         if 'zip_path' in locals() and os.path.exists(zip_path):
             os.remove(zip_path)
         return jsonify({'error': f'Error processing file: {str(e)}'}), 400
+
+@app.route('/create_pin', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'cid', 'filename', 'offer_price', 'pin_qty'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def create_pin():
+    cid = request.form['cid']
+    filename = request.form['filename']
+    offer_price = int(request.form['offer_price'])
+    pin_qty = int(request.form['pin_qty'])
+    transaction_result = PINTHEON.create_pin_request(cid, filename, offer_price, pin_qty)
+    data = PINTHEON.get_dashboard_data() or {}
+    data['transaction_data'] = transaction_result
+    if not transaction_result.get('successful', False):
+        data['error'] = transaction_result.get('error', 'Pin creation failed')
+        data['success'] = False
+        return jsonify(data), 400
+    data['success'] = True
+    return jsonify(data)
+
+@app.route('/cancel_pin', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'cid'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def cancel_pin():
+    cid = request.form['cid']
+    transaction_result = PINTHEON.cancel_pin_request(cid)
+    data = PINTHEON.get_dashboard_data() or {}
+    data['transaction_data'] = transaction_result
+    if not transaction_result.get('successful', False):
+        data['error'] = transaction_result.get('error', 'Pin cancellation failed')
+        data['success'] = False
+        return jsonify(data), 400
+    data['success'] = True
+    return jsonify(data)
+
+@app.route('/refresh_pin_status', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['token', 'client_pub', 'cid'], source='form')
+@require_session_state(state='idle', active=True)
+@require_token_verification('client_pub', 'token', source='form')
+def refresh_pin_status():
+    cid = request.form['cid']
+    file_data = PINTHEON.refresh_pin_status(cid)
+    if file_data is None:
+        return jsonify({'error': 'File not found'}), 400
+    return jsonify({'success': True, 'file_data': file_data})
+
+@app.route('/pin_service_info', methods=['GET'])
+@cross_origin()
+@require_local_access
+def pin_service_info():
+    info = PINTHEON.get_pin_service_info()
+    return jsonify(info)
+
+@app.route('/api/pinned_files', methods=['GET'])
+@cross_origin()
+def api_pinned_files():
+    """Return all files with active pin requests.
+
+    Used by CID Hunter to discover which CIDs to verify.
+    Requires a valid access token via query param or Bearer header.
+    """
+    token = request.args.get('token') or request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token or not PINTHEON.authorize_access_token(token):
+        return jsonify({'error': 'unauthorized'}), 401
+
+    return jsonify(PINTHEON.get_pinned_files_data())
+
 
 @app.route('/api/heartbeat', methods=['GET'])
 @cross_origin()
