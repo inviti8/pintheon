@@ -26,8 +26,7 @@ from Crypto.Hash import SHA256, HMAC, SHA1
 from pymacaroons import Macaroon, Verifier
 import hashlib
 import hashlib, binascii
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from platformdirs import *
 import re
 import tempfile
@@ -337,8 +336,8 @@ class PintheonMachine(object):
         result = True
         if caveat.startswith('time < '):
             try:
-                now = datetime.datetime.now()
-                when = datetime.datetime.strptime(caveat[7:], '%Y-%m-%d %H:%M:%S.%f')
+                now = datetime.now()
+                when = datetime.strptime(caveat[7:], '%Y-%m-%d %H:%M:%S.%f')
 
                 result = now < when
             
@@ -420,7 +419,7 @@ class PintheonMachine(object):
         keypair = self._new_keypair()
         self.session_priv = keypair['priv']
         self.session_pub = keypair['pub']
-        self.session_started = datetime.datetime.now()
+        self.session_started = datetime.now()
         self.session_ends = self.session_started + timedelta(hours=self.session_hours)
         self.session_nonce = str(uuid.uuid4())
 
@@ -1411,6 +1410,8 @@ class PintheonMachine(object):
         self.node_descriptor = node_data['node_descriptor']
         self.node_contract = node_data['node_contract']
         self.url_host = node_data['url_host']
+        if self.DEBUG:
+            self.url_host = DEBUG_URL_HOST
         self.node_contract = node_data['node_contract']
         self.root_token = node_data['root_token']
         self.theme = customization['current_theme']
@@ -1728,7 +1729,7 @@ class PintheonMachine(object):
             'peer_id': peer_id,
             'gateway': self.url_host,
             'network': network,
-            'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'generated_at': datetime.now(timezone.utc).isoformat(),
             'files': files,
         }
 
@@ -1854,7 +1855,7 @@ class PintheonMachine(object):
                 'ipfs_path': result.get('Value'),
                 'mfs_path': mfs_path,
                 'key_name': key_name or 'self',
-                'timestamp': datetime.datetime.now().isoformat()
+                'timestamp': datetime.now().isoformat()
             })
             self.db.close()
             return result

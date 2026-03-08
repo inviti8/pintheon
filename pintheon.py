@@ -152,28 +152,24 @@ def require_local_access(f):
         # Get the current custom hostname from Pintheon
         custom_host = PINTHEON.url_host if PINTHEON.url_host else None
         port = str(config.PORT)
-        
-        # If no custom hostname is set (still localhost), allow access
-        if not custom_host or custom_host in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
-            print(f"DEBUG: Allowed local access to {f.__name__} - no custom domain set")
-            return f(*args, **kwargs)
-        
-        # Extract hostname from custom_host (remove protocol if present)
-        if custom_host.startswith(('http://', 'https://')):
+
+        # Extract hostname from custom_host (strip protocol if present)
+        custom_hostname = custom_host
+        if custom_host and custom_host.startswith(('http://', 'https://')):
             from urllib.parse import urlparse
             parsed = urlparse(custom_host)
-            custom_hostname = parsed.netloc
-        else:
-            custom_hostname = custom_host
-        
-        # Check if request is coming through the custom domain
-        request_hosts = [host, forwarded_host]
-        for request_host in request_hosts:
+            custom_hostname = parsed.netloc or parsed.hostname
+
+        # If no custom hostname is set (still localhost), allow access
+        local_hosts = ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']
+        if not custom_hostname or custom_hostname in local_hosts:
+            return f(*args, **kwargs)
+
+        # Check if request is coming through the custom domain — block it
+        for request_host in [host, forwarded_host]:
             if request_host and custom_hostname in request_host:
-                print(f"DEBUG: Blocked external access to {f.__name__} from {request_host} (custom domain: {custom_hostname})")
                 raise Forbidden()
-        
-        print(f"DEBUG: Allowed local access to {f.__name__} from Host: {host}, X-Forwarded-Host: {forwarded_host}")
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -430,16 +426,14 @@ def admin():
     forwarded_host = request.headers.get('X-Forwarded-Host', '')
     custom_host = PINTHEON.url_host if PINTHEON.url_host else None
     port = str(config.PORT)
-    if custom_host and custom_host not in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
-        # Extract hostname from custom_host (remove protocol if present)
-        if custom_host.startswith(('http://', 'https://')):
-            from urllib.parse import urlparse
-            parsed = urlparse(custom_host)
-            custom_hostname = parsed.netloc
-        else:
-            custom_hostname = custom_host
+    custom_hostname = custom_host
+    if custom_host and custom_host.startswith(('http://', 'https://')):
+        from urllib.parse import urlparse
+        parsed = urlparse(custom_host)
+        custom_hostname = parsed.netloc or parsed.hostname
+    local_hosts = ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']
+    if custom_hostname and custom_hostname not in local_hosts:
         if (host and custom_hostname in host) or (forwarded_host and custom_hostname in forwarded_host):
-            print(f"DEBUG: Blocked external access to admin from {host} / {forwarded_host} (custom domain: {custom_hostname})")
             raise Forbidden()
     print('-----------------------------------')
     print(PINTHEON.state)
