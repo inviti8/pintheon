@@ -7,7 +7,7 @@ from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden, NotFound, HTTPException
 from pymacaroons import Macaroon, Verifier
 from tinydb import TinyDB, Query
-from platformdirs import *
+import config
 from StellarTomlGenerator import StellarTomlGenerator
 from pintheonMachine import PintheonMachine
 from pymacaroons import Macaroon, Verifier, MACAROON_V1, MACAROON_V2
@@ -35,90 +35,22 @@ app.config['MAX_FORM_MEMORY_SIZE'] = 200 * MEGABYTE
 CORS(app)
 
 SCRIPT_DIR = os.path.abspath( os.path.dirname( __file__ ) )
-LOCAL_DEBUG = True
 
-# Use platformdirs for cross-platform data directory management
-def get_data_directory():
-    """Get the appropriate data directory using platformdirs with fallback"""
-    # Try environment variable first
-    env_data_dir = os.environ.get('PINTHEON_DATA_DIR')
-    if env_data_dir:
-        return env_data_dir
-    
-    # For local debug, use ~/.local/share/PINTHEON/
-    if LOCAL_DEBUG:
-        local_path = os.path.expanduser('~/.local/share/PINTHEON')
-        os.makedirs(local_path, exist_ok=True)
-        return local_path
-    
-    # Use platformdirs for default location (no app author)
-    dirs = PlatformDirs('PINTHEON', ensure_exists=True)
-    
-    # For container environments, prefer /home/pintheon/data
-    # For development, use platformdirs user_data_dir directly
-    if os.path.exists('/.dockerenv') or os.environ.get('APPTAINER_CONTAINER'):
-        # Container environment
-        default_container_path = '/home/pintheon/data'
-        try:
-            os.makedirs(default_container_path, exist_ok=True)
-            return default_container_path
-        except (OSError, PermissionError):
-            # Fallback to platformdirs if container path not writable
-            return dirs.user_data_dir
-    else:
-        # Development environment - use platformdirs directly
-        return dirs.user_data_dir
-
-# Get data directory with fallback
-PINTHEON_DATA_DIR = get_data_directory()
-PINTHEON_IPFS_PATH = os.environ.get('PINTHEON_IPFS_PATH', os.path.join(PINTHEON_DATA_DIR, 'ipfs'))
-PINTHEON_DB_PATH = os.environ.get('PINTHEON_DB_PATH', os.path.join(PINTHEON_DATA_DIR, 'db'))
-
-# Updated paths using environment variables
+# Paths derived from config.py (which handles env vars, CLI flags, .env file)
 STATIC_PATH = os.path.join(SCRIPT_DIR, "static")
-DB_PATH = os.path.join(PINTHEON_DB_PATH, "enc_db.json")
+DB_PATH = os.path.join(config.DB_PATH, "enc_db.json")
 COMPONENT_PATH = os.path.join(SCRIPT_DIR, "components")
+CUSTOM_HOMEPAGE_PATH = config.CUSTOM_HOMEPAGE_PATH
 
-# Ensure data directories exist with error handling
-def ensure_directories():
-    """Create data directories if they don't exist"""
-    global PINTHEON_DATA_DIR, PINTHEON_IPFS_PATH, PINTHEON_DB_PATH, CUSTOM_HOMEPAGE_PATH
-    
-    # Define CUSTOM_HOMEPAGE_PATH here after PINTHEON_DATA_DIR is set
-    CUSTOM_HOMEPAGE_PATH = os.path.join(PINTHEON_DATA_DIR, "custom_homepage")
-    
-    directories = [PINTHEON_DATA_DIR, PINTHEON_DB_PATH, PINTHEON_IPFS_PATH, CUSTOM_HOMEPAGE_PATH]
-    for directory in directories:
-        try:
-            os.makedirs(directory, exist_ok=True)
-        except (OSError, PermissionError) as e:
-            print(f"Warning: Could not create directory {directory}: {e}")
-            # If we can't create the main data dir, try a fallback
-            if directory == PINTHEON_DATA_DIR:
-                fallback_dir = os.path.join(os.path.expanduser("~"), "pintheon_data")
-                try:
-                    os.makedirs(fallback_dir, exist_ok=True)
-                    print(f"Using fallback directory: {fallback_dir}")
-                    # Update all paths to use fallback
-                    PINTHEON_DATA_DIR = fallback_dir
-                    PINTHEON_IPFS_PATH = os.path.join(fallback_dir, 'ipfs')
-                    PINTHEON_DB_PATH = os.path.join(fallback_dir, 'db')
-                    CUSTOM_HOMEPAGE_PATH = os.path.join(fallback_dir, 'custom_homepage')
-                    # Create the subdirectories
-                    os.makedirs(PINTHEON_IPFS_PATH, exist_ok=True)
-                    os.makedirs(PINTHEON_DB_PATH, exist_ok=True)
-                    os.makedirs(CUSTOM_HOMEPAGE_PATH, exist_ok=True)
-                    break
-                except (OSError, PermissionError) as e2:
-                    print(f"Error: Could not create fallback directory {fallback_dir}: {e2}")
-                    raise
-
-ensure_directories()
-
-# Now define CUSTOM_HOMEPAGE_PATH globally after ensure_directories() has run
-CUSTOM_HOMEPAGE_PATH = os.path.join(PINTHEON_DATA_DIR, "custom_homepage")
-
-PINTHEON = PintheonMachine(static_path=STATIC_PATH, db_path=DB_PATH, toml_gen=StellarTomlGenerator, testnet=True, debug=False, fake_ipfs=False)
+PINTHEON = PintheonMachine(
+    static_path=STATIC_PATH,
+    db_path=DB_PATH,
+    ipfs_daemon=config.IPFS_DAEMON,
+    toml_gen=StellarTomlGenerator,
+    testnet=(config.NETWORK == 'testnet'),
+    debug=config.DEBUG,
+    fake_ipfs=config.FAKE_IPFS,
+)
 if PINTHEON.state == None or PINTHEON.state == 'spawned':
      PINTHEON.initialize()
 
@@ -219,9 +151,7 @@ def require_local_access(f):
         
         # Get the current custom hostname from Pintheon
         custom_host = PINTHEON.url_host if PINTHEON.url_host else None
-        port = str(PINTHEON.port)
-        if LOCAL_DEBUG:
-            port = '5000'
+        port = str(config.PORT)
         
         # If no custom hostname is set (still localhost), allow access
         if not custom_host or custom_host in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
@@ -499,9 +429,7 @@ def admin():
     host = request.headers.get('Host', '')
     forwarded_host = request.headers.get('X-Forwarded-Host', '')
     custom_host = PINTHEON.url_host if PINTHEON.url_host else None
-    port = str(PINTHEON.port)
-    if LOCAL_DEBUG:
-            port = '5000'
+    port = str(config.PORT)
     if custom_host and custom_host not in ['localhost', '127.0.0.1', f'localhost:{port}', f'127.0.0.1:{port}']:
         # Extract hostname from custom_host (remove protocol if present)
         if custom_host.startswith(('http://', 'https://')):
@@ -1509,4 +1437,4 @@ def api_heartbeat():
         
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
