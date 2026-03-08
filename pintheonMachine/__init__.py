@@ -2,6 +2,7 @@
 
 __version__ = "0.01"
 import os
+import io
 import uuid
 import json
 import base64
@@ -19,6 +20,9 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+from Crypto.Util import Counter
+from Crypto.Hash import SHA256, HMAC, SHA1
 from pymacaroons import Macaroon, Verifier
 import hashlib
 import hashlib, binascii
@@ -46,6 +50,7 @@ import py7zr
 from pathlib import Path
 import configparser
 import traceback
+import mimetypes
 
 HVYM_BG_RGB = (152, 49, 74)
 HVYM_FG_RGB = (175, 232, 197)
@@ -55,11 +60,11 @@ STELLAR_BG_RGB = (255, 255, 255)
 STELLAR_FG_RGB = (0, 0, 0)
 
 XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_TESTNET = 'CBVM3CP5YEYZFMWLT4A5UCI2DSUQMUJ3URCHYO2YJNRPS5S4D75QJG2N'
-OPUS_TESTNET = 'CDUGFWQQAUUAMEIHVKMIZB6H3TDDA3LKM24NJ7VFOWRC2DJZVH3WUUQ3'
+COLLECTIVE_TESTNET = 'CANUWIHCFJLWEJ22CV5IBQDZ64GF4ECRYMNN6FGLWT2GXSFCCRYAOPYA'
+OPUS_TESTNET = 'CCI3S3PCQXZ65CB5JDCBH2B2CKXPISSNWRV6RXID5LPESJQPB6TDMYKL'
 XLM_MAINNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_MAINNET = 'CBVM3CP5YEYZFMWLT4A5UCI2DSUQMUJ3URCHYO2YJNRPS5S4D75QJG2N'
-OPUS_MAINNET = 'CDUGFWQQAUUAMEIHVKMIZB6H3TDDA3LKM24NJ7VFOWRC2DJZVH3WUUQ3'
+COLLECTIVE_MAINNET = 'CANUWIHCFJLWEJ22CV5IBQDZ64GF4ECRYMNN6FGLWT2GXSFCCRYAOPYA'
+OPUS_MAINNET = 'CCI3S3PCQXZ65CB5JDCBH2B2CKXPISSNWRV6RXID5LPESJQPB6TDMYKL'
 
 DEBUG_SEED = "puppy address situate future gown trade limb rival crane increase when faculty category vague alpha program remember pill waste light broom decade buddy knock"
 DEBUG_NODE_CONTRACT = "CBYP223JS7VYBIIFYUJ6ZQLAOOYXCIFZGMOHKIASMWKCZGFULVPNPV3H"
@@ -1752,6 +1757,8 @@ class PintheonMachine(object):
         
         else:
             return None
+
+    
         
     def resolve_ipns(self, name):
         url = f'{self.ipfs_endpoint}/name/resolve?arg={name}'
@@ -1761,6 +1768,53 @@ class PintheonMachine(object):
         else:
             return None
         
+    def upload_folder_to_ipfs(self, folder_path):
+        if self.FAKE_IPFS:
+            return self.create_fake_ipfs_data()
+        else:
+            url = f'{self.ipfs_endpoint}/add'
+            files = {}
+            for root, dirs, files in os.walk(folder_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    with open(file_path, 'rb') as f:
+                        files[file] = (file, f.read(), 'application/octet-stream')
+            params = {
+                'quiet': 'false',
+                'quieter': 'false',
+                'silent': 'false',
+                'progress': 'false',
+                'trickle': 'false',
+                'only-hash': 'false',
+                'wrap-with-directory': 'true',
+                'chunker': 'size-262144',
+                'raw-leaves': 'false',
+                'nocopy': 'false',
+                'fscache': 'false',
+                'cid-version': '0',
+                'hash': 'sha2-256',
+                'inline': 'false',
+                'inline-limit': '32',
+                'pin': 'true'
+            }
+            response = requests.post(url, files=files, params=params)
+            if response.status_code == 200:
+                ipfs_data = response.json()
+                cid = self.pin_cid_to_ipfs(ipfs_data['Hash'])
+                if cid != None:
+                    self._open_db()
+                    file = Query()
+                    record = self.file_book.get(file.CID == cid)
+                    if record != None:
+                        self.file_book.update({'Name': ipfs_data['Name'], 'Type': 'directory', 'Encrypted': False, 'Hash': ipfs_data['Hash'], 'CID': cid, 'ContractID': "", 'Size': ipfs_data['Size'], 'IsLogo': False, 'IsBgImg': False, 'Balance': 0, 'RecieverPub': None})
+                    else:
+                        self.file_book.insert({'Name': ipfs_data['Name'], 'Type': 'directory', 'Encrypted': False, 'Hash': ipfs_data['Hash'], 'CID': cid, 'ContractID': "", 'Size': ipfs_data['Size'], 'IsLogo': False, 'IsBgImg': False, 'Balance': 0, 'RecieverPub': None})
+                    all_file_info = self.file_book.all()
+                    self.db.close()
+                    return all_file_info
+            else:
+                return None
+
     def get_dashboard_data(self):
         # Ensure host is always just the hostname, not a full URL
         host = self.url_host

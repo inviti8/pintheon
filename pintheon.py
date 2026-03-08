@@ -726,6 +726,40 @@ def api_upload():
         required = ['access_token']
         return _handle_upload(required=required, request=request, is_logo=False, is_bg_img=False, encrypted=encrypted, return_file_info=True)
 
+@app.route('/api/upload_folder', methods=['POST'])
+@cross_origin()
+@require_local_access
+@require_fields(['access_token'], source='form')
+def api_upload_folder():
+    token = request.form['access_token']
+    if not PINTHEON.authorize_access_token(token):
+        abort(403)
+    
+    if 'files[]' not in request.files:
+        return jsonify({'error': 'No files provided'}), 400
+    
+    files = request.files.getlist('files[]')
+    if not files:
+        return jsonify({'error': 'No files selected'}), 400
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        for file in files:
+            if file.filename == '':
+                continue
+            file_path = os.path.join(temp_dir, file.filename)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            file.save(file_path)
+        
+        result = PINTHEON.upload_folder_to_ipfs(temp_dir)
+        if result:
+            return jsonify({
+                'success': True,
+                'directory_hash': result['directory_hash'],
+                'files': result['files']
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to upload folder to IPFS'}), 500
+
 @app.route('/update_logo', methods=['POST'])
 @cross_origin()
 @require_local_access
