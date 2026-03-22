@@ -146,9 +146,6 @@ document.addEventListener('init', function(event) {
     if (page.id === 'new_node') {
 
         setTimeout(showTermsDialog, 500);
-        document.querySelector('#open-token-gen').onclick = function () {
-            open_token_gen();
-        };
 
         document.querySelector('#establish-button').onclick = function () {
             window.fn.validateAllInputsAndCall(
