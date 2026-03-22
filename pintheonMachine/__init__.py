@@ -1347,13 +1347,7 @@ class PintheonMachine(object):
     @property
     def create_new_node(self):
         print('creating new node...')
-        seed = None
-        if self.DEBUG:
-            seed = DEBUG_SEED
-        else:
-            seed = self._seed
-
-        self._create_stellar_keypair_from_seed(seed)
+        self._create_stellar_keypair_from_seed(self._seed)
 
         if self.stellar_account != None and self.stellar_xlm_balance() >= self.XLM_REQUIRED_START_BALANCE:
             self._create_root_token()
