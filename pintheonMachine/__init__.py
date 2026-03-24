@@ -177,7 +177,7 @@ class PintheonMachine(object):
         self.mainnet_transaction = "/public/tx/"
         self.stellar_initializing_keypair = Keypair.random()
         self.stellar_initializing_25519_keypair = Stellar25519KeyPair(self.stellar_initializing_keypair)
-        self.XLM_REQUIRED_START_BALANCE = 22
+        self.XLM_REQUIRED_START_BALANCE = 10
         if self.use_testnet:
             self.soroban_rpc_url = self.config['Init']['testnet_soroban_server']
             self.stellar_server = Server(self.config['Init']['testnet_horizon_server'])
