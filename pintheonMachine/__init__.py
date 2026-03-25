@@ -36,12 +36,13 @@ from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
 from qrcode.image.styles.colormasks import SolidFillColorMask
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
 from PIL import Image, ImageDraw
-from stellar_sdk import Keypair, Network, Server, SorobanServer, soroban_rpc, scval
+from stellar_sdk import Asset, Keypair, Network, Server, SorobanServer, soroban_rpc, scval
 from stellar_sdk import xdr as stellar_xdr
 from .hvym_collective_bindings import Client as Collective
 from .opus_bindings import Client as Opus
 from .ipfs_token_bindings import Client as IPFS_Token
 from .pinning_service_bindings import Client as PinService
+from .hvym_registry_bindings import Client as RegistryClient, Network as RegistryNetwork, NetworkKind
 import json
 import requests
 import time
@@ -59,16 +60,6 @@ OPUS_FG_RGB = (202, 132, 2)
 STELLAR_BG_RGB = (255, 255, 255)
 STELLAR_FG_RGB = (0, 0, 0)
 
-XLM_TESTNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_TESTNET = 'CAYD2PS5KR4VSEQPQZEUDF3KHT2NDWTGVXAHPPMLLS4HHM5ARUNALFUU'
-PINNING_TESNET = 'CCEDYFIHUCJFITWEOT7BWUO2HBQQ72L244ZXQ4YNOC6FYRDN3MKDQFK7'
-OPUS_TESTNET = 'CB3MM62JMDTNVJVOXORUOOPBFAWVTREJLA5VN4YME4MBNCHGBHQPQH7G'
-XLM_MAINNET = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'
-COLLECTIVE_MAINNET = 'CDHCUQAWJMKHOFKTUGG5V42EUVL34YHI3JO4ZPN5VRZM5U5O3CKAW2CG'
-PINNING_MAINNET = 'CAWZQ2AWO4H5YCWUHCMGADLZJ4P45PF7XNMFK3AM5W3XTQ2DPZQCK36G'
-OPUS_MAINNET = 'CBFPP5MAVQOCRTH2EYMWQTK4XRIZTDREK54SUUC5QABERSXVQZCLUKKR'
-
-DEBUG_SEED = "puppy address situate future gown trade limb rival crane increase when faculty category vague alpha program remember pill waste light broom decade buddy knock"
 DEBUG_NODE_CONTRACT = "CBYP223JS7VYBIIFYUJ6ZQLAOOYXCIFZGMOHKIASMWKCZGFULVPNPV3H"
 DEBUG_URL_HOST = 'http://127.0.0.1:5000'
 FAKE_IPFS_HOST = 'https://sapphire-giant-butterfly-891.mypinata.cloud'
@@ -82,6 +73,9 @@ TESTNET_HORIZON_SERVER = 'https://horizon-testnet.stellar.org'
 
 MAINNET_SOROBAN_SERVER = 'https://mainnet.sorobanrpc.com'
 MAINNET_HORIZON_SERVER = 'https://horizon.stellar.org'
+
+# Registry contract lives on mainnet only — stores contract IDs for both networks
+REGISTRY_CONTRACT = 'CA6KQ5GYGI33VZB5IGWW7XXLLHR2MPEBWVDREU4P5ZGCSKRGHXBCRKXV'
 
 # Default timeout for IPFS API requests (in seconds)
 IPFS_API_TIMEOUT = 60
@@ -177,25 +171,29 @@ class PintheonMachine(object):
         self.mainnet_transaction = "/public/tx/"
         self.stellar_initializing_keypair = Keypair.random()
         self.stellar_initializing_25519_keypair = Stellar25519KeyPair(self.stellar_initializing_keypair)
-        self.XLM_REQUIRED_START_BALANCE = 22
+        self.XLM_REQUIRED_START_BALANCE = 10
         if self.use_testnet:
             self.soroban_rpc_url = self.config['Init']['testnet_soroban_server']
             self.stellar_server = Server(self.config['Init']['testnet_horizon_server'])
-            self.XLM_ID = XLM_TESTNET
-            self.COLLECTIVE_ID = COLLECTIVE_TESTNET
-            self.OPUS_ID = OPUS_TESTNET
-            self.PINNING_ID = PINNING_TESNET
             self.NETWORK_PASSPHRASE = Network.TESTNET_NETWORK_PASSPHRASE
         else:
             self.soroban_rpc_url = self.config['Init']['mainnet_soroban_server']
-            self.stellar_server = Server(self.config['Init']['testnet_horizon_server'])
-            self.XLM_ID = XLM_MAINNET
-            self.COLLECTIVE_ID = COLLECTIVE_MAINNET
-            self.OPUS_ID = OPUS_MAINNET
-            self.PINNING_ID = PINNING_MAINNET
+            self.stellar_server = Server(self.config['Init']['mainnet_horizon_server'])
             self.NETWORK_PASSPHRASE = Network.PUBLIC_NETWORK_PASSPHRASE
         self.soroban_server = SorobanServer(self.soroban_rpc_url)
         self.BASE_FEE = self.stellar_server.fetch_base_fee()
+
+        # XLM SAC address — derived from the network passphrase
+        self.XLM_ID = Asset.native().contract_id(self.NETWORK_PASSPHRASE)
+
+        # Contract IDs from on-chain registry (mainnet)
+        registry = self._load_contract_ids_from_registry()
+        if not registry:
+            raise RuntimeError("Failed to load contract IDs from registry — cannot start without them")
+        self.COLLECTIVE_ID = registry['hvym_collective']
+        self.OPUS_ID = registry['opus_token']
+        self.PINNING_ID = registry['hvym_pin_service']
+
         self.stellar_account = None
         self.stellar_keypair = None
         self.stellar_25519_keypair = None
@@ -289,6 +287,31 @@ class PintheonMachine(object):
     def get_client_session_pub(self):
         return self._client_session_pub
     
+    def _load_contract_ids_from_registry(self):
+        """Load contract IDs from the on-chain registry (mainnet only).
+        Uses the Network enum to select testnet or mainnet entries."""
+        try:
+            registry = RegistryClient(
+                REGISTRY_CONTRACT,
+                MAINNET_SOROBAN_SERVER,
+                Network.PUBLIC_NETWORK_PASSPHRASE
+            )
+            network_kind = NetworkKind.Testnet if self.use_testnet else NetworkKind.Mainnet
+            network = RegistryNetwork(kind=network_kind)
+            entries = registry.get_all_contracts(network).result()
+
+            contracts = {}
+            for entry in entries:
+                name = entry.name.decode('utf-8') if isinstance(entry.name, bytes) else entry.name
+                cid = entry.contract_id
+                contracts[name] = cid.address if hasattr(cid, 'address') else str(cid)
+
+            print(f"Registry: loaded {len(contracts)} contracts — {list(contracts.keys())}")
+            return contracts
+        except Exception as e:
+            print(f"Warning: registry lookup failed ({e}), using fallback contract IDs")
+            return None
+
     def set_seed(self, seed):
         self._seed = seed
 
@@ -1347,13 +1370,7 @@ class PintheonMachine(object):
     @property
     def create_new_node(self):
         print('creating new node...')
-        seed = None
-        if self.DEBUG:
-            seed = DEBUG_SEED
-        else:
-            seed = self._seed
-
-        self._create_stellar_keypair_from_seed(seed)
+        self._create_stellar_keypair_from_seed(self._seed)
 
         if self.stellar_account != None and self.stellar_xlm_balance() >= self.XLM_REQUIRED_START_BALANCE:
             self._create_root_token()
