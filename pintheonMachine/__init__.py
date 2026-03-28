@@ -2115,21 +2115,70 @@ class PintheonMachine(object):
         return all_token_info
     
     def authorize_access_token(self, access_token):
-        result = False
-        tokenVerifier = StellarSharedKeyTokenVerifier(self.stellar_25519_keypair, access_token)
-        sender_pub = tokenVerifier.sender_pub()
-        result = tokenVerifier.valid()
-        self._open_db()
-        file = Query()
+        """Verify an access token created by this node for a client.
 
-        record = self.access_tokens.get(file.pub == sender_pub)
+        The token was built with sender=node, receiver=client. The macaroon
+        was signed with a key derived from Box(node_priv, client_pub).
+        To verify, we reconstruct that same signing key using the stored
+        client pub and check the macaroon signature directly."""
+        try:
+            from nacl.public import Box, PublicKey
+            from pymacaroons import Macaroon, Verifier
+            from hvym_stellar import _derive_signing_key, DomainSeparation, _get_current_timestamp
+            import hashlib
 
-        if record['timestamped']:
-            result = not tokenVerifier.is_expired()
+            # Parse token and validate checksum
+            if isinstance(access_token, bytes):
+                access_token = access_token.decode('utf-8')
+            token_parts = access_token.rsplit('|', 1)
+            if len(token_parts) != 2:
+                return False
 
-        self.db.close()
+            token_data, provided_checksum = token_parts
+            calculated_checksum = hashlib.sha256(token_data.encode('utf-8')).hexdigest()[:8]
+            if calculated_checksum != provided_checksum:
+                return False
 
-        return result
+            mac = Macaroon.deserialize(token_data)
+
+            self._open_db()
+            all_tokens = self.access_tokens.all()
+            self.db.close()
+
+            if not all_tokens:
+                return False
+
+            node_priv = self.stellar_25519_keypair.private_key()
+
+            for record in all_tokens:
+                try:
+                    client_pub_b64 = record['pub']
+                    client_pub = PublicKey(base64.urlsafe_b64decode(client_pub_b64.encode('utf-8')))
+                    box = Box(node_priv, client_pub)
+                    raw_shared_secret = box.shared_key()
+                    signing_key = _derive_signing_key(raw_shared_secret, DomainSeparation.TOKEN_SIGNING)
+
+                    v = Verifier()
+                    v.satisfy_general(lambda p: True)
+                    v.verify(mac, signing_key)
+
+                    # Signature verified — check expiration if timestamped
+                    if record.get('timestamped'):
+                        for caveat in mac.caveats:
+                            cid = caveat.caveat_id if hasattr(caveat, 'caveat_id') else str(caveat)
+                            if cid.startswith('exp = '):
+                                exp_time = int(cid.split('= ')[1])
+                                if _get_current_timestamp() > exp_time:
+                                    return False
+
+                    return True
+                except Exception:
+                    continue
+
+            return False
+        except Exception as e:
+            print(f"Access token authorization failed: {e}")
+            return False
     
     def all_access_token_info(self):
         self._open_db()
