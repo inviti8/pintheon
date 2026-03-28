@@ -155,7 +155,8 @@ document.addEventListener('init', function(event) {
                 );
         };
 
-        document.querySelector('#new-node-logo').src = window.constants.LOGO;
+        var logo = document.querySelector('#new-node-logo');
+        if (logo) { logo.src = window.constants.LOGO; }
 
     } else if (page.id === 'establish') {
 
