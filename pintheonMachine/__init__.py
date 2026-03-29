@@ -1785,6 +1785,8 @@ class PintheonMachine(object):
 
     def copy_to_mfs(self, cid, mfs_path):
         """Copy an IPFS CID to an MFS path."""
+        if not mfs_path.startswith('/'):
+            mfs_path = '/' + mfs_path
         url = f'{self.ipfs_endpoint}/files/cp'
         params = [('arg', f'/ipfs/{cid}'), ('arg', mfs_path)]
         response = requests.post(url, params=params, timeout=IPFS_API_TIMEOUT)
