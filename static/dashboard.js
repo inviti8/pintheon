@@ -38,12 +38,25 @@ async function init() {
     let node = JSON.parse(localStorage.getItem(window.dash.NODE));
 
     if(sess_keys && node){
-        window.dash.USING_STORED_SESSION = true
-        window.dash.session_keys = await importJWKCryptoKeyPair(sess_keys['privateKey'], sess_keys['publicKey']);
-        window.dash.node_data = node;
-        window.dash.CLIENT_PUBLIC_KEY = await exportKey(window.dash.session_keys.publicKey);
-        window.dash.data.session_token = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, node.expires );
-        window.dash.data.auth_token = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'PINTHEON_AUTH', node.nonce, node.expires );
+
+        if(!window.constants || !window.constants.SERVER_PUBLIC_KEY){
+            console.warn('Server session expired — clearing stored credentials');
+            logged_out();
+            return;
+        }
+
+        try {
+            window.dash.USING_STORED_SESSION = true
+            window.dash.session_keys = await importJWKCryptoKeyPair(sess_keys['privateKey'], sess_keys['publicKey']);
+            window.dash.node_data = node;
+            window.dash.CLIENT_PUBLIC_KEY = await exportKey(window.dash.session_keys.publicKey);
+            window.dash.data.session_token = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, node.expires );
+            window.dash.data.auth_token = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'PINTHEON_AUTH', node.nonce, node.expires );
+        } catch(e) {
+            console.warn('Failed to restore session — clearing stored credentials:', e);
+            logged_out();
+            return;
+        }
 
         const body = {
             'token': window.dash.data.session_token.serialize(),
@@ -52,7 +65,7 @@ async function init() {
         };
 
         let requestBody = JSON.stringify(body);
-    
+
         fetch('/authorized', {
             method: 'POST',
             headers: {
@@ -93,12 +106,11 @@ async function init() {
           })
           .catch(error => {
             console.error('Authorization request failed:', error);
-            window.dlg.hide('loading-dialog');
-            window.dlg.show('fail-dialog');
+            logged_out();
           });
 
     };
-    
+
 };
 
 init();
@@ -237,14 +249,17 @@ const on_authorized = async (node) => {
 
 const deauthorize = async () => {
 
-    const session = _getSessionData();
-
-    const body = {
-        'token': session.token.serialize(),
-        'client_pub': session.pub
-    };
-
-    window.fn.call(body, '/deauthorize', logged_out);
+    try {
+        const session = _getSessionData();
+        const body = {
+            'token': session.token.serialize(),
+            'client_pub': session.pub
+        };
+        window.fn.call(body, '/deauthorize', logged_out);
+    } catch(e) {
+        console.warn('Deauthorize failed, clearing session locally:', e);
+        logged_out();
+    }
 };
 
 const logged_out = () => {
