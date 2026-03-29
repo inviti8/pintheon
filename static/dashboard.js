@@ -1355,27 +1355,24 @@ document.addEventListener('init', function(event) {
         window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
 
         // Tab switching
-        const segment = document.getElementById('file-dir-segment');
-        if (segment && !segment._dirTabBound) {
-            segment._dirTabBound = true;
-            var segBtns = segment.querySelectorAll('button');
-            var filesTab = document.getElementById('files-tab-content');
-            var dirsTab = document.getElementById('directories-tab-content');
+        var tabFilesBtn = document.getElementById('tab-files-btn');
+        var tabDirsBtn = document.getElementById('tab-dirs-btn');
+        var filesTab = document.getElementById('files-tab-content');
+        var dirsTab = document.getElementById('directories-tab-content');
 
-            if (segBtns.length >= 2) {
-                segBtns[0].addEventListener('click', function() {
-                    filesTab.style.display = '';
-                    dirsTab.style.display = 'none';
-                    window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
-                });
-                segBtns[1].addEventListener('click', function() {
-                    filesTab.style.display = 'none';
-                    dirsTab.style.display = '';
-                    if (window.dash.data.directory_list && window.dash.data.directory_list.length > 0) {
-                        window.rndr.directoryListItems(window.dash.data.host, window.dash.data.directory_list);
-                    }
-                });
-            }
+        if (tabFilesBtn && tabDirsBtn) {
+            tabFilesBtn.onclick = function() {
+                filesTab.style.display = '';
+                dirsTab.style.display = 'none';
+                window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
+            };
+            tabDirsBtn.onclick = function() {
+                filesTab.style.display = 'none';
+                dirsTab.style.display = '';
+                if (window.dash.data.directory_list && window.dash.data.directory_list.length > 0) {
+                    window.rndr.directoryListItems(window.dash.data.host, window.dash.data.directory_list);
+                }
+            };
         }
 
     };
