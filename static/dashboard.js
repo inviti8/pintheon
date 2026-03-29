@@ -1057,7 +1057,7 @@ document.addEventListener('init', function(event) {
             let displayUrl = fileUrl;
             let displayHash = cid;
             if (ipnsHash) {
-                ipnsUrl = 'https://ipfs.io/ipns/' + ipnsHash + '/' + fileName;
+                ipnsUrl = protocol + '//' + host + '/ipns/' + ipnsHash + '/' + fileName;
                 displayUrl = ipnsUrl;
                 displayHash = ipnsHash;
             }

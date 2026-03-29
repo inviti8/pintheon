@@ -1928,20 +1928,22 @@ class PintheonMachine(object):
             return key.get('Id')
         return None
 
-    def get_ipns_url(self, ipns_hash, file_name=None, gateway='https://ipfs.io'):
+    def get_ipns_url(self, ipns_hash, file_name=None, gateway=None):
         """
         Construct an IPNS URL for accessing content.
 
         Args:
             ipns_hash: The IPNS hash (key ID)
             file_name: Optional file name to append to the path
-            gateway: The IPFS gateway to use (default: https://ipfs.io)
+            gateway: The IPFS gateway to use (default: this node's gateway)
 
         Returns:
             The full IPNS URL
         """
         if not ipns_hash:
             return None
+        if not gateway:
+            gateway = f'https://{self.url_host}' if self.url_host else 'https://localhost:9998'
         base_url = f'{gateway}/ipns/{ipns_hash}'
         if file_name:
             return f'{base_url}/{file_name}'
