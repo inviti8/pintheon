@@ -86,14 +86,14 @@
                 <ons-card modifier="default outlined">
                   <H3>FILES</H3>
                   <div class="content">
-                    <div class="center-both" style="gap: 12px;">
+                    <div style="display: flex; gap: 12px;">
                       <ons-button modifier="large" id="upload-button" ripple><ons-icon icon="fa-plus-square"></ons-icon>_upload</ons-button>
                       <ons-button modifier="large" id="create-directory-button" ripple><ons-icon icon="fa-folder-plus"></ons-icon>_new folder</ons-button>
                     </div>
                   </div>
                   <div class="content">
                     <!-- Tab segment -->
-                    <div class="center-both" style="margin-bottom: 12px;">
+                    <div style="margin-top: 12px; margin-bottom: 12px;">
                       <ons-segment id="file-dir-segment" style="width: 280px;">
                         <button>Files</button>
                         <button>Directories</button>
@@ -107,7 +107,7 @@
                             <ons-search-input id="file-search" class="dash-input"  placeholder="Search" onchange="fn.filterItems(this.value)" modifier="material"></ons-search-input>
                         </p>
                       </div>
-                      <ons-list id="file-list-main" style="overflow:hidden; overflow-y:scroll;">
+                      <ons-list id="file-list-main" style="overflow:hidden; overflow-y:scroll; min-height: 100px;">
                         <ons-list-header>File List</ons-list-header>
                         <ons-lazy-repeat id="file-list-items"></ons-lazy-repeat>
                       </ons-list>
@@ -115,7 +115,7 @@
 
                     <!-- Directories tab content -->
                     <div id="directories-tab-content" style="display: none;">
-                      <ons-list id="directory-list-main" style="overflow:hidden; overflow-y:scroll;">
+                      <ons-list id="directory-list-main" style="overflow:hidden; overflow-y:scroll; min-height: 100px;">
                         <ons-list-header>IPNS Directories</ons-list-header>
                         <ons-lazy-repeat id="directory-list-items"></ons-lazy-repeat>
                       </ons-list>

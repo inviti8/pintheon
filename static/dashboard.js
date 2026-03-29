@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'HVYM Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'directory_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': [],};
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'HVYM Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'directory_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': []};
 window.dash.SESSION_KEYS = 'PINTHEON_SESSION';
 window.dash.NODE = 'PINTHEON_NODE';
 window.dash.CURRENT_PAGE = 'PINTHEON_CURRENT_PAGE';
@@ -1169,58 +1169,80 @@ document.addEventListener('init', function(event) {
             let dirCid = dir.cid;
             let fileCount = dir.file_count || 0;
 
-            clone.querySelector('#dir-list-item-name p').textContent = dirName;
-            clone.querySelector('#dir-list-item-ipns').textContent = ipnsHash || 'Not published';
+            var el;
 
-            // IPNS URL
-            let ipnsUrl = null;
-            let ipnsLink = clone.querySelector('#dir-list-item-ipns-url');
-            if (ipnsHash) {
-                ipnsUrl = protocol + '//' + host + '/ipns/' + ipnsHash + '/';
-                ipnsLink.href = ipnsUrl;
-                ipnsLink.textContent = ipnsUrl;
-            } else {
-                ipnsLink.textContent = 'Not published to IPNS';
-                ipnsLink.removeAttribute('href');
+            // Name
+            el = clone.querySelector('#dir-list-item-name');
+            if (el) {
+                var nameP = el.querySelector('p');
+                if (nameP) { nameP.textContent = dirName; } else { el.textContent = dirName; }
             }
 
-            clone.querySelector('#dir-list-item-cid').textContent = dirCid || '--';
-            clone.querySelector('#dir-list-item-file-count').textContent = fileCount;
+            // IPNS hash (collapsed)
+            el = clone.querySelector('#dir-list-item-ipns');
+            if (el) { el.textContent = ipnsHash || 'Not published'; }
+
+            // IPNS URL (expanded)
+            let ipnsUrl = null;
+            el = clone.querySelector('#dir-list-item-ipns-url');
+            if (el) {
+                if (ipnsHash) {
+                    ipnsUrl = protocol + '//' + host + '/ipns/' + ipnsHash + '/';
+                    el.href = ipnsUrl;
+                    el.textContent = ipnsUrl;
+                } else {
+                    el.textContent = 'Not published to IPNS';
+                    el.removeAttribute('href');
+                }
+            }
+
+            // CID
+            el = clone.querySelector('#dir-list-item-cid');
+            if (el) { el.textContent = dirCid || '--'; }
+
+            // File count
+            el = clone.querySelector('#dir-list-item-file-count');
+            if (el) { el.textContent = fileCount; }
 
             // File chips
-            let filesContainer = clone.querySelector('#dir-list-item-files');
-            if (window.dash.data.file_list) {
-                let dirFiles = window.dash.data.file_list.filter(function(f){
+            el = clone.querySelector('#dir-list-item-files');
+            if (el && window.dash.data.file_list) {
+                var dirFiles = window.dash.data.file_list.filter(function(f){
                     return (f.Directory || '/').replace(/^\//, '') === dirName;
                 });
                 dirFiles.forEach(function(f){
-                    let chip = document.createElement('span');
+                    var chip = document.createElement('span');
                     chip.className = 'notification';
                     chip.style.cssText = 'margin: 2px; padding: 2px 8px; font-size: 11px;';
                     chip.textContent = f.Name;
-                    filesContainer.appendChild(chip);
+                    el.appendChild(chip);
                 });
             }
 
             // Action buttons
-            clone.querySelector('#dir-copy-ipns-url').onclick = function() {
-                if (ipnsUrl) {
-                    navigator.clipboard.writeText(ipnsUrl);
-                    ons.notification.toast('IPNS URL copied', {timeout: 1500});
-                } else {
-                    ons.notification.toast('Directory not published to IPNS', {timeout: 1500});
-                }
-            };
+            el = clone.querySelector('#dir-copy-ipns-url');
+            if (el) {
+                el.onclick = function() {
+                    if (ipnsUrl) {
+                        navigator.clipboard.writeText(ipnsUrl);
+                        ons.notification.toast('IPNS URL copied', {timeout: 1500});
+                    } else {
+                        ons.notification.toast('Directory not published to IPNS', {timeout: 1500});
+                    }
+                };
+            }
 
-            clone.querySelector('#dir-open-browser').onclick = function() {
-                if (ipnsUrl) {
-                    window.open(ipnsUrl, '_blank');
-                }
-            };
+            el = clone.querySelector('#dir-open-browser');
+            if (el) {
+                el.onclick = function() {
+                    if (ipnsUrl) { window.open(ipnsUrl, '_blank'); }
+                };
+            }
 
-            clone.querySelector('#dir-republish').onclick = function() {
-                republish_directory(dirName);
-            };
+            el = clone.querySelector('#dir-republish');
+            if (el) {
+                el.onclick = function() { republish_directory(dirName); };
+            }
         };
 
         if (dirList.length === 0) {
@@ -1332,25 +1354,28 @@ document.addEventListener('init', function(event) {
         //window.rndr.networkTraffic('100', '99');
         window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
 
-        if (window.dash.data.directory_list) {
-            window.rndr.directoryListItems(window.dash.data.host, window.dash.data.directory_list);
-        }
-
-        // Tab segment switching
+        // Tab switching
         const segment = document.getElementById('file-dir-segment');
         if (segment && !segment._dirTabBound) {
             segment._dirTabBound = true;
-            segment.addEventListener('postchange', function(e) {
-                const filesTab = document.getElementById('files-tab-content');
-                const dirsTab = document.getElementById('directories-tab-content');
-                if (e.index === 0) {
+            var segBtns = segment.querySelectorAll('button');
+            var filesTab = document.getElementById('files-tab-content');
+            var dirsTab = document.getElementById('directories-tab-content');
+
+            if (segBtns.length >= 2) {
+                segBtns[0].addEventListener('click', function() {
                     filesTab.style.display = '';
                     dirsTab.style.display = 'none';
-                } else {
+                    window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
+                });
+                segBtns[1].addEventListener('click', function() {
                     filesTab.style.display = 'none';
                     dirsTab.style.display = '';
-                }
-            });
+                    if (window.dash.data.directory_list && window.dash.data.directory_list.length > 0) {
+                        window.rndr.directoryListItems(window.dash.data.host, window.dash.data.directory_list);
+                    }
+                });
+            }
         }
 
     };
