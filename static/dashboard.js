@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'HVYM Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': [],};
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'HVYM Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'directory_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': [],};
 window.dash.SESSION_KEYS = 'PINTHEON_SESSION';
 window.dash.NODE = 'PINTHEON_NODE';
 window.dash.CURRENT_PAGE = 'PINTHEON_CURRENT_PAGE';
@@ -351,6 +351,29 @@ const create_directory = async () => {
         window.dlg.hide('loading-dialog');
         console.error('Error creating directory:', error);
         ons.notification.alert('Error creating directory');
+    }
+};
+
+const republish_directory = async (dirName) => {
+    const session = _getSessionData();
+    const formData = new FormData();
+    formData.append('token', session.token.serialize());
+    formData.append('client_pub', session.pub);
+    formData.append('directory', '/' + dirName);
+
+    try {
+        const response = await fetch('/api_publish_directory', {
+            method: 'POST',
+            body: formData
+        });
+        if (response.ok) {
+            ons.notification.toast('Directory republished to IPNS', {timeout: 2000});
+            dash_data(dash_updated);
+        } else {
+            ons.notification.alert('Failed to republish directory');
+        }
+    } catch (error) {
+        console.error('Republish error:', error);
     }
 };
 
@@ -1034,7 +1057,7 @@ document.addEventListener('init', function(event) {
             let displayUrl = fileUrl;
             let displayHash = cid;
             if (ipnsHash) {
-                ipnsUrl = 'https://ipfs.io/ipns/' + ipnsHash + '/' + fileName;
+                ipnsUrl = protocol + '//' + host + '/ipns/' + ipnsHash + '/' + fileName;
                 displayUrl = ipnsUrl;
                 displayHash = ipnsHash;
             }
@@ -1133,6 +1156,80 @@ document.addEventListener('init', function(event) {
         window.rndr.RENDER_LIST('file-list-items', fileList, _updateElem, host, fileList, logo);
     };
 
+    window.rndr.directoryListItems = function(host, dirList){
+        const dirListContainer = document.getElementById('directory-list-items');
+        if (!dirListContainer || !dirList) return;
+
+        let protocol = window.location.protocol;
+
+        let _updateElem = function(clone, i, host, dirList){
+            let dir = dirList[i];
+            let dirName = dir.name;
+            let ipnsHash = dir.ipns_hash;
+            let dirCid = dir.cid;
+            let fileCount = dir.file_count || 0;
+
+            clone.querySelector('#dir-list-item-name p').textContent = dirName;
+            clone.querySelector('#dir-list-item-ipns').textContent = ipnsHash || 'Not published';
+
+            // IPNS URL
+            let ipnsUrl = null;
+            let ipnsLink = clone.querySelector('#dir-list-item-ipns-url');
+            if (ipnsHash) {
+                ipnsUrl = protocol + '//' + host + '/ipns/' + ipnsHash + '/';
+                ipnsLink.href = ipnsUrl;
+                ipnsLink.textContent = ipnsUrl;
+            } else {
+                ipnsLink.textContent = 'Not published to IPNS';
+                ipnsLink.removeAttribute('href');
+            }
+
+            clone.querySelector('#dir-list-item-cid').textContent = dirCid || '--';
+            clone.querySelector('#dir-list-item-file-count').textContent = fileCount;
+
+            // File chips
+            let filesContainer = clone.querySelector('#dir-list-item-files');
+            if (window.dash.data.file_list) {
+                let dirFiles = window.dash.data.file_list.filter(function(f){
+                    return (f.Directory || '/').replace(/^\//, '') === dirName;
+                });
+                dirFiles.forEach(function(f){
+                    let chip = document.createElement('span');
+                    chip.className = 'notification';
+                    chip.style.cssText = 'margin: 2px; padding: 2px 8px; font-size: 11px;';
+                    chip.textContent = f.Name;
+                    filesContainer.appendChild(chip);
+                });
+            }
+
+            // Action buttons
+            clone.querySelector('#dir-copy-ipns-url').onclick = function() {
+                if (ipnsUrl) {
+                    navigator.clipboard.writeText(ipnsUrl);
+                    ons.notification.toast('IPNS URL copied', {timeout: 1500});
+                } else {
+                    ons.notification.toast('Directory not published to IPNS', {timeout: 1500});
+                }
+            };
+
+            clone.querySelector('#dir-open-browser').onclick = function() {
+                if (ipnsUrl) {
+                    window.open(ipnsUrl, '_blank');
+                }
+            };
+
+            clone.querySelector('#dir-republish').onclick = function() {
+                republish_directory(dirName);
+            };
+        };
+
+        if (dirList.length === 0) {
+            _updateElem = function(clone, i, host, dirList){};
+        };
+
+        window.rndr.RENDER_LIST('directory-list-items', dirList, _updateElem, host, dirList);
+    };
+
     window.rndr.settingsNodeInfo = function(multiaddress, url){
 
         let _updateElem = function(clone, elem, multiaddress, url){
@@ -1227,13 +1324,34 @@ document.addEventListener('init', function(event) {
 
         console.log('window.dash:')
         console.log(window.dash)
-        
+
         document.querySelector('ons-toolbar .center').innerHTML = window.dash.data.name;
         window.rndr.nodeCardHeader(window.dash.data.logo, window.dash.data.name, window.dash.data.descriptor);
         window.rndr.nodeInfo(window.dash.data.repo.RepoSize, window.dash.data.repo.StorageMax, window.dash.data.repo.usedPercentage);
         window.rndr.tokenInfo(window.dash.data.token_info, window.dash.data.address);
         //window.rndr.networkTraffic('100', '99');
         window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
+
+        if (window.dash.data.directory_list) {
+            window.rndr.directoryListItems(window.dash.data.host, window.dash.data.directory_list);
+        }
+
+        // Tab segment switching
+        const segment = document.getElementById('file-dir-segment');
+        if (segment && !segment._dirTabBound) {
+            segment._dirTabBound = true;
+            segment.addEventListener('postchange', function(e) {
+                const filesTab = document.getElementById('files-tab-content');
+                const dirsTab = document.getElementById('directories-tab-content');
+                if (e.index === 0) {
+                    filesTab.style.display = '';
+                    dirsTab.style.display = 'none';
+                } else {
+                    filesTab.style.display = 'none';
+                    dirsTab.style.display = '';
+                }
+            });
+        }
 
     };
 

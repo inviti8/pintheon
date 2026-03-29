@@ -1928,20 +1928,22 @@ class PintheonMachine(object):
             return key.get('Id')
         return None
 
-    def get_ipns_url(self, ipns_hash, file_name=None, gateway='https://ipfs.io'):
+    def get_ipns_url(self, ipns_hash, file_name=None, gateway=None):
         """
         Construct an IPNS URL for accessing content.
 
         Args:
             ipns_hash: The IPNS hash (key ID)
             file_name: Optional file name to append to the path
-            gateway: The IPFS gateway to use (default: https://ipfs.io)
+            gateway: The IPFS gateway to use (default: this node's gateway)
 
         Returns:
             The full IPNS URL
         """
         if not ipns_hash:
             return None
+        if not gateway:
+            gateway = f'https://{self.url_host}' if self.url_host else 'https://localhost:9998'
         base_url = f'{gateway}/ipns/{ipns_hash}'
         if file_name:
             return f'{base_url}/{file_name}'
@@ -2410,6 +2412,7 @@ class PintheonMachine(object):
             result['file_list'] = files_list
             result['peer_id'] = 'FAKE-PEER-ID'
             result['access_tokens'] = access_tokens
+            result['directory_list'] = []
         else:
             self._open_db()
             repo_response = self.ipfs_repo_stats()
@@ -2446,6 +2449,26 @@ class PintheonMachine(object):
 
             if peer_id_response.status_code == 200:
                 result['peer_id'] = peer_id_response.json()['Value']
+
+            # Build directory list with IPNS info
+            try:
+                directories = self.list_mfs_directories('/')
+                dir_list = []
+                for d in directories:
+                    ipns_hash = self.get_directory_ipns_hash(d['Name'])
+                    dir_cid = self.get_mfs_cid(d['Path'])
+                    file_count = len([f for f in files_list if f.get('Directory', '/').strip('/') == d['Name']]) if files_list else 0
+                    dir_list.append({
+                        'name': d['Name'],
+                        'path': d['Path'],
+                        'ipns_hash': ipns_hash,
+                        'cid': dir_cid,
+                        'file_count': file_count,
+                    })
+                result['directory_list'] = dir_list
+            except Exception as e:
+                print(f'Directory list fetch failed: {e}')
+                result['directory_list'] = []
 
         return result
 

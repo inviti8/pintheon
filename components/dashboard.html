@@ -92,15 +92,34 @@
                     </div>
                   </div>
                   <div class="content">
-                    <div class="content_top">
-                      <p>
-                          <ons-search-input id="file-search" class="dash-input"  placeholder="Search" onchange="fn.filterItems(this.value)" modifier="material"></ons-search-input>
-                      </p> 
-                    </div>  
-                    <ons-list  id="file-list-main" style="overflow:hidden; overflow-y:scroll;">
-                      <ons-list-header>File List</ons-list-header>
-                      <ons-lazy-repeat id="file-list-items"></ons-lazy-repeat>
-                    </ons-list>
+                    <!-- Tab segment -->
+                    <div class="center-both" style="margin-bottom: 12px;">
+                      <ons-segment id="file-dir-segment" style="width: 280px;">
+                        <button>Files</button>
+                        <button>Directories</button>
+                      </ons-segment>
+                    </div>
+
+                    <!-- Files tab content -->
+                    <div id="files-tab-content">
+                      <div class="content_top">
+                        <p>
+                            <ons-search-input id="file-search" class="dash-input"  placeholder="Search" onchange="fn.filterItems(this.value)" modifier="material"></ons-search-input>
+                        </p>
+                      </div>
+                      <ons-list id="file-list-main" style="overflow:hidden; overflow-y:scroll;">
+                        <ons-list-header>File List</ons-list-header>
+                        <ons-lazy-repeat id="file-list-items"></ons-lazy-repeat>
+                      </ons-list>
+                    </div>
+
+                    <!-- Directories tab content -->
+                    <div id="directories-tab-content" style="display: none;">
+                      <ons-list id="directory-list-main" style="overflow:hidden; overflow-y:scroll;">
+                        <ons-list-header>IPNS Directories</ons-list-header>
+                        <ons-lazy-repeat id="directory-list-items"></ons-lazy-repeat>
+                      </ons-list>
+                    </div>
                   </div>
               </ons-card>
              </ons-col>
@@ -583,6 +602,62 @@
               </ons-button>
               <ons-button class="scale-on-hover-icon file-remove" modifier="quiet" onclick="" id="" title="Remove file">
                 <ons-icon icon="fa-remove"></ons-icon>
+              </ons-button>
+            </div>
+          </ons-list-item>
+        </ons-list>
+      </div>
+    </ons-list-item>
+  </template>
+
+  <template id="directory-list-items-template">
+    <ons-list-item expandable ripple>
+      <div class="fab-container left">
+        <span class="left"><ons-icon icon="fa-folder" style="font-size: 28px; color: #e8a735;"></ons-icon></span>
+      </div>
+      <div class="center">
+        <span id="dir-list-item-name" class="list-item__title"><p class="truncate"></p></span>
+      </div>
+      <div class="center">
+        <ons-list modifier="noborder no-color">
+          <header class="center-both">
+            <ons-list-item>
+              <span id="dir-list-item-ipns" class="truncate" style="max-width: 300px;"></span>
+            </ons-list-item>
+          </header>
+        </ons-list>
+      </div>
+
+      <div class="expandable-content">
+        <ons-list modifier="default">
+          <ons-list-item>
+            <div class="center">
+              <span class="thick">IPNS:</span><pre> </pre>
+              <a id="dir-list-item-ipns-url" class="truncate" href="" target="_blank" style="max-width: 400px;"></a>
+            </div>
+          </ons-list-item>
+          <ons-list-item>
+            <div class="center">
+              <span class="thick">CID:</span><pre> </pre>
+              <span id="dir-list-item-cid" class="truncate" style="max-width: 300px;"></span>
+              <pre>  </pre>
+              <span class="thick">Files:</span><pre> </pre>
+              <span id="dir-list-item-file-count"></span>
+            </div>
+          </ons-list-item>
+          <ons-list-item>
+            <div id="dir-list-item-files" class="center" style="flex-wrap: wrap; gap: 4px;"></div>
+          </ons-list-item>
+          <ons-list-item>
+            <div class="right">
+              <ons-button class="scale-on-hover-icon" modifier="quiet" id="dir-copy-ipns-url" title="Copy IPNS URL">
+                <ons-icon icon="fa-globe"></ons-icon>
+              </ons-button>
+              <ons-button class="scale-on-hover-icon" modifier="quiet" id="dir-open-browser" title="Open in browser">
+                <ons-icon icon="fa-external-link"></ons-icon>
+              </ons-button>
+              <ons-button class="scale-on-hover-icon" modifier="quiet" id="dir-republish" title="Republish to IPNS">
+                <ons-icon icon="fa-refresh"></ons-icon>
               </ons-button>
             </div>
           </ons-list-item>
