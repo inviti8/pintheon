@@ -37,10 +37,12 @@ async function init() {
     let sess_keys = JSON.parse(localStorage.getItem(window.dash.SESSION_KEYS));
     let node = JSON.parse(localStorage.getItem(window.dash.NODE));
 
+    console.log('[INIT] sess_keys:', !!sess_keys, 'node:', !!node);
+
     if(sess_keys && node){
 
         if(!window.constants || !window.constants.SERVER_PUBLIC_KEY){
-            console.warn('Server session expired — clearing stored credentials');
+            console.warn('[INIT] Server session expired — clearing stored credentials');
             logged_out();
             return;
         }
@@ -52,8 +54,9 @@ async function init() {
             window.dash.CLIENT_PUBLIC_KEY = await exportKey(window.dash.session_keys.publicKey);
             window.dash.data.session_token = await generateTimestampedAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, node.expires );
             window.dash.data.auth_token = await generateNonceTimestampAuthToken(window.constants.SERVER_PUBLIC_KEY, window.dash.session_keys.privateKey, 'PINTHEON_AUTH', node.nonce, node.expires );
+            console.log('[INIT] Session restored, calling /authorized');
         } catch(e) {
-            console.warn('Failed to restore session — clearing stored credentials:', e);
+            console.warn('[INIT] Failed to restore session:', e);
             logged_out();
             return;
         }
@@ -74,7 +77,7 @@ async function init() {
             body: requestBody
           })
           .then(response => {
-            console.log(response)
+            console.log('[INIT] /authorized response:', response.status);
             if (response.status === 200) {
                 return response.json();
             } else {
@@ -84,28 +87,32 @@ async function init() {
             }
           })
           .then(data => {
+            console.log('[INIT] /authorized data keys:', Object.keys(data));
+            console.log('[INIT] file_list count:', (data.file_list||[]).length);
+            console.log('[INIT] directory_list count:', (data.directory_list||[]).length);
+            console.log('[INIT] token_info count:', (data.token_info||[]).length);
             window.dlg.hide('loading-dialog');
             window.dash.updateDashData(data);
             window.dash.AUTHORIZED = true;
+            console.log('[INIT] After updateDashData — file_list:', (window.dash.data.file_list||[]).length, 'directory_list:', (window.dash.data.directory_list||[]).length);
 
-            // Render the dashboard first
-            window.rndr.dashboard();
-
-            // Check if there's a saved page to load
+            // Push dashboard page — rndr.dashboard() is triggered by the page's init event
             const savedPage = localStorage.getItem(window.dash.CURRENT_PAGE);
-            if (savedPage && savedPage !== 'dashboard') {
-                // Push the saved page
-                window.fn.pushPage(savedPage, null, () => {
-                    // After page is loaded, call its specific render function if it exists
-                    const pageRenderFunction = window.rndr[savedPage];
-                    if (pageRenderFunction && typeof pageRenderFunction === 'function') {
-                        pageRenderFunction();
-                    }
-                });
-            }
+            console.log('[INIT] Pushing dashboard page, savedPage:', savedPage);
+            window.fn.pushPage('dashboard', data, () => {
+                console.log('[INIT] Dashboard page pushed callback');
+                if (savedPage && savedPage !== 'dashboard') {
+                    window.fn.pushPage(savedPage, null, () => {
+                        const pageRenderFunction = window.rndr[savedPage];
+                        if (pageRenderFunction && typeof pageRenderFunction === 'function') {
+                            pageRenderFunction();
+                        }
+                    });
+                }
+            });
           })
           .catch(error => {
-            console.error('Authorization request failed:', error);
+            console.error('[INIT] Authorization request failed:', error);
             logged_out();
           });
 
@@ -262,13 +269,13 @@ const deauthorize = async () => {
     }
 };
 
-const logged_out = () => {
+function logged_out() {
     localStorage.removeItem(window.dash.SESSION_KEYS);
     localStorage.removeItem(window.dash.NODE);
     localStorage.removeItem(window.dash.CURRENT_PAGE);
     window.dash.AUTHORIZED = false;
     location.reload();
-};
+}
 
 const upload_file_dlg = async (callback) => {
     window.dlg.showLoadFileDlg('upload-file-dialog', callback, false, [], 'FILE');
@@ -1344,6 +1351,8 @@ document.addEventListener('init', function(event) {
 
     window.rndr.dashboard = function(){
 
+        console.log('[RNDR] dashboard called — file_list:', (window.dash.data.file_list||[]).length, 'directory_list:', (window.dash.data.directory_list||[]).length, 'token_info:', (window.dash.data.token_info||[]).length);
+        console.log('[RNDR] host:', window.dash.data.host);
         console.log('window.dash:')
         console.log(window.dash)
 
@@ -2183,7 +2192,13 @@ document.addEventListener('init', function(event) {
             dash_data(settings_updated);
         };
 
-        window.rndr.dashboard();
+        // If data is empty (e.g. page refresh), fetch it before rendering
+        if (!window.dash.data.file_list || window.dash.data.file_list.length === 0) {
+            console.log('[RNDR] Dashboard data empty, fetching...');
+            dash_data(dash_updated);
+        } else {
+            window.rndr.dashboard();
+        }
 
     }else if (page.id === 'settings') {
         document.querySelector('#settings-back-button').options.callback = function () {
