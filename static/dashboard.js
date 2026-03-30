@@ -1,5 +1,5 @@
 window.dash = {};
-window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'HVYM Network', 'address': undefined, 'host': window.location.host, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'directory_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': []};
+window.dash.data = { 'logo': '/static/hvym_logo.png', 'name': 'PINTHEON', 'descriptor': 'HVYM Network', 'address': undefined, 'host': window.location.host, 'gateway': null, 'customization': {}, 'repo': {}, 'stats': null, 'token_info': [], 'file_list': [], 'directory_list': [], 'peer_id':"", 'peer_list': [], 'session_token':undefined, 'auth_token':undefined, 'access_tokens': []};
 window.dash.SESSION_KEYS = 'PINTHEON_SESSION';
 window.dash.NODE = 'PINTHEON_NODE';
 window.dash.CURRENT_PAGE = 'PINTHEON_CURRENT_PAGE';
@@ -1361,7 +1361,7 @@ document.addEventListener('init', function(event) {
         window.rndr.nodeInfo(window.dash.data.repo.RepoSize, window.dash.data.repo.StorageMax, window.dash.data.repo.usedPercentage);
         window.rndr.tokenInfo(window.dash.data.token_info, window.dash.data.address);
         //window.rndr.networkTraffic('100', '99');
-        window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
+        window.rndr.fileListItems(window.dash.data.gateway || window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
 
         // Tab switching
         var tabFilesBtn = document.getElementById('tab-files-btn');
@@ -1373,13 +1373,13 @@ document.addEventListener('init', function(event) {
             tabFilesBtn.onclick = function() {
                 filesTab.style.display = '';
                 dirsTab.style.display = 'none';
-                window.rndr.fileListItems(window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
+                window.rndr.fileListItems(window.dash.data.gateway || window.dash.data.host, window.dash.data.file_list, window.dash.data.customization.logo);
             };
             tabDirsBtn.onclick = function() {
                 filesTab.style.display = 'none';
                 dirsTab.style.display = '';
                 if (window.dash.data.directory_list && window.dash.data.directory_list.length > 0) {
-                    window.rndr.directoryListItems(window.dash.data.host, window.dash.data.directory_list);
+                    window.rndr.directoryListItems(window.dash.data.gateway || window.dash.data.host, window.dash.data.directory_list);
                 }
             };
         }
@@ -1950,7 +1950,7 @@ document.addEventListener('init', function(event) {
     }
 
     window.rndr.settings = function(){
-        window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.dash.data.host);
+        window.rndr.settingsNodeInfo(window.dash.data.peer_id, window.dash.data.gateway || window.dash.data.host);
         window.rndr.settingsAppearance(window.dash.data.customization.current_theme, window.dash.data.customization.themes, window.dash.data.customization.bg_img);
         window.rndr.settingsHomepageType(window.dash.data.customization.homepage_type, window.dash.data.customization.homepage_types, window.dash.data.customization.homepage_hash);
         window.rndr.settingsHomepage();

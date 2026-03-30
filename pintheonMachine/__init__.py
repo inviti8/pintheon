@@ -124,7 +124,9 @@ class PintheonMachine(object):
         self.node_descriptor = None
         self.node_meta_data = None
         self.url_host = None
+        self.gateway_host = None
         self.port = 9999
+        self.gateway_port = 9998
 
         #-------DB--------
         self.db_path = db_path
@@ -312,6 +314,17 @@ class PintheonMachine(object):
             print(f"Warning: registry lookup failed ({e}), using fallback contract IDs")
             return None
 
+    def _derive_gateway_host(self):
+        """Derive the gateway host from url_host.
+        Local: replace admin port (9999) with gateway port (9998).
+        Custom domain: use as-is (tunnel handles routing)."""
+        if self.url_host:
+            self.gateway_host = self.url_host.replace(
+                ':' + str(self.port), ':' + str(self.gateway_port)
+            )
+        else:
+            self.gateway_host = None
+
     def set_seed(self, seed):
         self._seed = seed
 
@@ -331,6 +344,8 @@ class PintheonMachine(object):
             self.node_contract = DEBUG_NODE_CONTRACT
             if not self.url_host:
                 self.url_host = DEBUG_URL_HOST
+
+        self._derive_gateway_host()
         else:
             self.join_collective()
             self._update_token_book_balance(self.XLM_ID, self.stellar_xlm_balance())
@@ -1429,6 +1444,7 @@ class PintheonMachine(object):
         self.url_host = node_data['url_host']
         if self.DEBUG:
             self.url_host = DEBUG_URL_HOST
+        self._derive_gateway_host()
         self.node_contract = node_data['node_contract']
         self.root_token = node_data['root_token']
         self.theme = customization['current_theme']
@@ -1943,7 +1959,7 @@ class PintheonMachine(object):
         if not ipns_hash:
             return None
         if not gateway:
-            gateway = f'https://{self.url_host}' if self.url_host else 'https://localhost:9998'
+            gateway = f'https://{self.gateway_host}' if self.gateway_host else 'https://localhost:9998'
         base_url = f'{gateway}/ipns/{ipns_hash}'
         if file_name:
             return f'{base_url}/{file_name}'
@@ -2376,21 +2392,24 @@ class PintheonMachine(object):
                 return None
 
     def get_dashboard_data(self):
-        # Ensure host is always just the hostname, not a full URL
-        host = self.url_host
-        if host and '://' in host:
-            # Extract hostname from full URL
-            from urllib.parse import urlparse
-            parsed = urlparse(host)
-            host = parsed.netloc
+        # Ensure hosts are just hostnames, not full URLs
+        def _strip_protocol(h):
+            if h and '://' in h:
+                from urllib.parse import urlparse
+                return urlparse(h).netloc
+            return h
+
+        host = _strip_protocol(self.url_host)
+        gateway = _strip_protocol(self.gateway_host)
+
         address = None
         key_25519 = None
         if self.stellar_keypair != None:
             address = self.stellar_keypair.public_key
         if self.stellar_25519_keypair != None:
             key_25519 = self.stellar_25519_keypair.public_key()
-        
-        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': address, '25519_pub': key_25519, 'logo': self.logo_url, 'host': host, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None, 'access_tokens': []}
+
+        result = {'name': self.node_name, 'descriptor':self.node_descriptor, 'address': address, '25519_pub': key_25519, 'logo': self.logo_url, 'host': host, 'gateway': gateway, 'customization': None, 'token_info': None, 'stats': None, 'repo': None, 'nonce': self.auth_nonce, 'stats':None, 'file_list':None, 'peer_id': None, 'expires': str(self.session_ends), 'authorized': True, 'transaction_data': None, 'access_tokens': []}
         # Refresh pin statuses from on-chain state before reading files
         try:
             self.refresh_all_pin_statuses()
