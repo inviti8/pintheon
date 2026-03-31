@@ -344,12 +344,12 @@ class PintheonMachine(object):
             self.node_contract = DEBUG_NODE_CONTRACT
             if not self.url_host:
                 self.url_host = DEBUG_URL_HOST
-
-        self._derive_gateway_host()
         else:
             self.join_collective()
             self._update_token_book_balance(self.XLM_ID, self.stellar_xlm_balance())
             self.node_contract = self.deploy_node_token(name, descriptor)
+
+        self._derive_gateway_host()
 
         self.stellar_toml = self.TOML_GEN(
             file_path=self.static_path,
