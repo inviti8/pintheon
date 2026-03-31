@@ -36,6 +36,7 @@ from qrcode.image.styles.moduledrawers.pil import RoundedModuleDrawer
 from qrcode.image.styles.colormasks import SolidFillColorMask
 from qrcode.image.styles.colormasks import RadialGradiantColorMask
 from PIL import Image, ImageDraw
+import toml
 from stellar_sdk import Asset, Keypair, Network, Server, SorobanServer, soroban_rpc, scval
 from stellar_sdk import xdr as stellar_xdr
 from .hvym_collective_bindings import Client as Collective
@@ -854,7 +855,7 @@ class PintheonMachine(object):
             caller=self.stellar_keypair.public_key,
             cid=self._to_bytes(cid),
             filename=self._to_bytes(filename),
-            gateway=self._to_bytes(self.url_host),
+            gateway=self._to_bytes(self.gateway_host or self.url_host),
             offer_price=offer_price,
             pin_qty=pin_qty,
             source=self.stellar_keypair.public_key,
@@ -1760,7 +1761,7 @@ class PintheonMachine(object):
         return {
             'node_address': address,
             'peer_id': peer_id,
-            'gateway': self.url_host,
+            'gateway': self.gateway_host or self.url_host,
             'network': network,
             'generated_at': datetime.now(timezone.utc).isoformat(),
             'files': files,
@@ -1896,10 +1897,42 @@ class PintheonMachine(object):
             return result
         return None
 
+    def _update_subscriber_directory_toml(self, subscriber_pub, ipns_hash):
+        """Update stellar.toml with subscriber's IPNS directory mapping.
+
+        Adds or updates the [SUBSCRIBER_DIRECTORIES] section so that
+        subscribers can discover their IPNS directory by reading the
+        node's public /.well-known/stellar.toml endpoint.
+
+        Args:
+            subscriber_pub: Subscriber's Stellar 25519 public key (directory name)
+            ipns_hash: IPNS key ID (k51qzi5...)
+        """
+        toml_path = os.path.join(self.static_path, 'stellar.toml')
+        try:
+            if os.path.exists(toml_path):
+                with open(toml_path, 'r') as f:
+                    data = toml.load(f)
+            else:
+                data = {}
+
+            if 'SUBSCRIBER_DIRECTORIES' not in data:
+                data['SUBSCRIBER_DIRECTORIES'] = {}
+
+            data['SUBSCRIBER_DIRECTORIES'][subscriber_pub] = ipns_hash
+
+            with open(toml_path, 'w') as f:
+                toml.dump(data, f)
+
+            print(f"Updated stellar.toml: {subscriber_pub[:20]}... -> {ipns_hash}")
+        except Exception as e:
+            print(f"Error updating stellar.toml: {e}")
+
     def _auto_publish_directory_to_ipns(self, mfs_directory):
         """
         Auto-publish an MFS directory to IPNS.
         Creates an IPNS key named after the directory if it doesn't exist.
+        Updates stellar.toml with the subscriber → IPNS mapping.
 
         Args:
             mfs_directory: The MFS directory path to publish
@@ -1921,7 +1954,14 @@ class PintheonMachine(object):
         # Publish the directory to IPNS
         result = self.publish_mfs_to_ipns(mfs_directory, key_name)
         if result:
-            print(f"Published {mfs_directory} to IPNS: {result.get('Name')}")
+            ipns_hash = result.get('Name')
+            print(f"Published {mfs_directory} to IPNS: {ipns_hash}")
+
+            # Update stellar.toml with subscriber directory mapping
+            # The MFS directory name IS the subscriber's public key
+            subscriber_pub = mfs_directory.strip('/')
+            if ipns_hash and subscriber_pub:
+                self._update_subscriber_directory_toml(subscriber_pub, ipns_hash)
         else:
             print(f"Failed to publish {mfs_directory} to IPNS")
         return result
