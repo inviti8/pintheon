@@ -854,7 +854,7 @@ class PintheonMachine(object):
             caller=self.stellar_keypair.public_key,
             cid=self._to_bytes(cid),
             filename=self._to_bytes(filename),
-            gateway=self._to_bytes(self.url_host),
+            gateway=self._to_bytes(self.gateway_host or self.url_host),
             offer_price=offer_price,
             pin_qty=pin_qty,
             source=self.stellar_keypair.public_key,
@@ -1760,7 +1760,7 @@ class PintheonMachine(object):
         return {
             'node_address': address,
             'peer_id': peer_id,
-            'gateway': self.url_host,
+            'gateway': self.gateway_host or self.url_host,
             'network': network,
             'generated_at': datetime.now(timezone.utc).isoformat(),
             'files': files,
